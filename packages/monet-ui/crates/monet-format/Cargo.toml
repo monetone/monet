@@ -1,0 +1,37 @@
+[package]
+name = "monet-format"
+description = "Monet's shared format library: the universal `.monet` project envelope (read/write/convert) plus importers for foreign layered-image documents (PSD/PSB/XCF, …). Pure logic by default — host- and wasm-compilable; the `wasm` feature adds wasm-bindgen JS bindings for the project format."
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[lib]
+# rlib: native `cargo test` + linking into the Vision wasm engine (path dep).
+# cdylib: so `wasm-pack build --features wasm` can emit a JS/WASM package for
+# the app frontends. A dependent (Vision) only ever pulls the rlib.
+crate-type = ["cdylib", "rlib"]
+
+# wasm-pack's bundled wasm-opt is too old to validate the `trunc_sat` (non-
+# trapping float→int) ops rustc emits here. The format lib is tiny, so skip the
+# optimizer rather than pin a newer wasm-opt.
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[features]
+default = []
+# Expose the `.monet` project-format API to JS via wasm-bindgen. OFF by default
+# so the crate stays a pure rlib when the Vision engine links it (that crate runs
+# its own wasm-bindgen) — the feature is enabled only for the standalone
+# wasm-pack build consumed by the frontends.
+wasm = ["dep:wasm-bindgen", "dep:serde-wasm-bindgen"]
+
+[dependencies]
+# importer: pure-Rust zlib inflate (PSD ZIP channels, XCF v11 zlib tiles).
+miniz_oxide = "0.8"
+# format: the `.monet` envelope is serde-modelled JSON. `preserve_order` keeps
+# foreign per-app `data` bags byte-faithful across a non-owning app's round-trip.
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+# wasm bindings (only when `wasm` is enabled).
+wasm-bindgen = { version = "0.2", optional = true }
+serde-wasm-bindgen = { version = "0.6", optional = true }

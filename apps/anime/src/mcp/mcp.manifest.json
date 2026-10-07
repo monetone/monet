@@ -1,0 +1,315 @@
+{
+  "app": "anime",
+  "version": "0.1.0",
+  "tools": [
+    {
+      "name": "comp.resize",
+      "description": "Resize the active composition.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "width": {
+            "type": "number",
+            "description": "New width in pixels.",
+            "minimum": 1,
+            "maximum": 16384
+          },
+          "height": {
+            "type": "number",
+            "description": "New height in pixels.",
+            "minimum": 1,
+            "maximum": 16384
+          }
+        },
+        "required": [
+          "width",
+          "height"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "comp.setBackground",
+      "description": "Set the background color of the active composition.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "description": "CSS hex color (e.g. #0b0b10)."
+          }
+        },
+        "required": [
+          "color"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "comp.setDuration",
+      "description": "Set the duration of the active composition.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "seconds": {
+            "type": "number",
+            "description": "Duration in seconds.",
+            "minimum": 0.1,
+            "maximum": 3600
+          }
+        },
+        "required": [
+          "seconds"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "comp.setFps",
+      "description": "Set the frame rate of the active composition.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "fps": {
+            "type": "number",
+            "description": "Frames per second.",
+            "minimum": 1,
+            "maximum": 240
+          }
+        },
+        "required": [
+          "fps"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "doc.open",
+      "description": "Open a `.mani` (or any Monet container) document from disk, replacing the current project. Native desktop only; use `layer.addImage` to bring in an image instead.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute path of the `.mani` (or any Monet container) document to open."
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.add",
+      "description": "Add a new layer of the given kind and select it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "Layer kind to create."
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.addEffect",
+      "description": "Add an effect to the selected layer with its default parameters.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "Effect kind to add."
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.addImage",
+      "description": "Add an image layer from a file on disk (no dialog) and select it. The image\nis embedded as a data URL, so it travels inside the saved `.mani` container.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute path to an image file (png, jpg, jpeg, gif, webp, bmp, avif, svg)."
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.deleteSelected",
+      "description": "Delete the currently selected layer(s).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.keyAllTransform",
+      "description": "Key all core transform properties at the playhead on the selected layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.keyProperty",
+      "description": "Add a keyframe at the playhead for one transform property on the selected layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prop": {
+            "type": "string",
+            "description": "Transform property to key."
+          }
+        },
+        "required": [
+          "prop"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.setOpacity",
+      "description": "Set the opacity of the selected layer (0..100).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "opacity": {
+            "type": "number",
+            "description": "Opacity percent.",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "opacity"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.setRotation",
+      "description": "Set the rotation of the selected layer in degrees.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "degrees": {
+            "type": "number",
+            "description": "Rotation in degrees.",
+            "minimum": -3600,
+            "maximum": 3600
+          }
+        },
+        "required": [
+          "degrees"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.setTransform",
+      "description": "Set a transform property on the selected layer. If the property is animated\nthis writes a keyframe at the playhead, otherwise it sets the static value.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prop": {
+            "type": "string",
+            "description": "Transform property to set."
+          },
+          "value": {
+            "type": "number",
+            "description": "New value (px for position/anchor, percent for scale, degrees for rotation,for opacity).",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "prop",
+          "value"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.toggleAnimation",
+      "description": "Toggle keyframe animation (the stopwatch) for a transform property on the\nselected layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prop": {
+            "type": "string",
+            "description": "Transform property to toggle animation for."
+          }
+        },
+        "required": [
+          "prop"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "playback.goToEnd",
+      "description": "Move the playhead to the end of the composition.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "playback.goToStart",
+      "description": "Move the playhead to the start of the composition.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "playback.stepFrame",
+      "description": "Step the playhead by a number of frames (negative steps backward).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "frames": {
+            "type": "number",
+            "description": "Number of frames to step.",
+            "minimum": -600,
+            "maximum": 600
+          }
+        },
+        "required": [
+          "frames"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "playback.togglePlay",
+      "description": "Toggle play/pause of the timeline.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    }
+  ]
+}

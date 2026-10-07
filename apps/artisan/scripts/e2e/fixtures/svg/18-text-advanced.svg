@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- text-anchor start/middle/end, font-weight, font-style, tspan dx/dy + per-span fill -->
+  <line x1="200" y1="20" x2="200" y2="200" stroke="#dddddd"/>
+  <text x="200" y="50" font-size="22" fill="#e0573a" text-anchor="start">start anchor</text>
+  <text x="200" y="90" font-size="22" fill="#3ac06a" text-anchor="middle">middle anchor</text>
+  <text x="200" y="130" font-size="22" fill="#4a9eff" text-anchor="end">end anchor</text>
+  <text x="40" y="180" font-size="26" fill="#222222" font-weight="bold">Bold</text>
+  <text x="170" y="180" font-size="26" fill="#222222" font-style="italic">Italic</text>
+  <text x="40" y="245" font-size="22" fill="#333333">spans: <tspan fill="#e0573a" dy="-10">up</tspan><tspan fill="#3ac06a" dy="18">down</tspan></text>
+</svg>

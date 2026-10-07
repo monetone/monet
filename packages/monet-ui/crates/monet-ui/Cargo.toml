@@ -1,0 +1,31 @@
+[package]
+name = "monet-ui"
+description = "Monet — Tauri 2 integration for the liquid-glass panel design system: transparent + native-vibrancy windows, custom chrome window controls, and per-app accents."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+readme = "README.md"
+
+[dependencies]
+# `macos-private-api` is required for the transparent window
+# (`WebviewWindowBuilder::transparent(true)` on macOS) so that the crate
+# compiles standalone with `cargo check -p monet-ui` rather than only as part
+# of an example that enables the feature.
+tauri = { workspace = true, features = ["macos-private-api"] }
+tauri-plugin-dialog = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+window-vibrancy = { workspace = true }
+# Decode the percent-encoded `x-destination` header on the raw-body atomic_write.
+percent-encoding = "2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# F_FULLFSYNC — the only way to get real power-loss durability on APFS/HFS+.
+libc = "0.2"
+# Native popups are shown with a plain `orderFront` (Tauri's `show` makes the
+# window key, which blurs the app window). Already in the tree through wry.
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSResponder", "NSWindow", "NSApplication"] }
+objc2-web-kit = { version = "0.3", default-features = false, features = ["std", "WKWebView", "WKWebViewConfiguration", "WKPreferences"] }

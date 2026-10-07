@@ -1,0 +1,51 @@
+[package]
+name = "monet-vision"
+description = "Monet Vision — a Photoshop-class raster editor on Monet UI"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+# macOS uses this filename as the app name for `tauri dev` (there is no bundle).
+[[bin]]
+name = "Vision"
+path = "src/main.rs"
+
+[build-dependencies]
+rcgen = "0.13"
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["macos-private-api", "protocol-asset"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-drag = "2.1.1"
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = { version = "3.3", default-features = false, features = ["rustls"] }
+sha2 = "0.10"
+libc = "0.2"
+monet-ui = { path = "../../../packages/monet-ui/crates/monet-ui" }
+monet-mcp = { path = "../../../packages/monet-ui/crates/monet-mcp" }
+# Signed, embedded C2PA Content Credentials (File ▸ Export). Pure-Rust crypto
+# (rust_native_crypto: p256 ES256) — no OpenSSL C linking, which keeps the
+# thin-LTO / panic=abort release profile happy. `http_ureq` adds a sync,
+# rustls-based (still no OpenSSL) HTTP client so an opt-in RFC-3161 timestamp
+# authority URL actually countersigns during Builder::sign; with no TSA URL set
+# (the default) signing stays fully local, no egress.
+c2pa = { version = "0.89", default-features = false, features = ["rust_native_crypto", "http_ureq"] }
+
+[profile.release]
+codegen-units = 1
+# Thin (not fat) LTO: fat LTO miscompiles window-vibrancy's NSVisualEffectView
+# Objective-C class registration ("symbol multiply defined" / bitcode load
+# failure) on macOS — tauri pulls window-vibrancy 0.6 while monet-ui pulls 0.7.
+# Thin LTO keeps the size/perf win without that collision.
+lto = "thin"
+opt-level = "s"
+panic = "abort"
+strip = true
+
+# Standalone crate — detached from the shared monet-ui Cargo workspace.
+[workspace]

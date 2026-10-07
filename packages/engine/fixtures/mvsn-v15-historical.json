@@ -1,0 +1,15 @@
+{
+  "generatorCommit": "5d9192e4d5830555419095b83a09aa3f7ba6338c",
+  "provenanceCommand": "pnpm --filter monet-galerie test:mvsn-v15-provenance",
+  "sha256": "f23accb1185a21c73673faff17bf96ef826ba1cc939f95994df3e09ead33b5c0",
+  "version": 15,
+  "width": 4,
+  "height": 3,
+  "filterIds": [0, 17],
+  "blurRadius": 0.8,
+  "develop": {
+    "exposure": 0.3,
+    "texture": 0.4,
+    "dehaze": 0.2
+  }
+}

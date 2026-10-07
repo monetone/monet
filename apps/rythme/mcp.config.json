@@ -1,0 +1,6 @@
+{
+  "app": "rythme",
+  "version": "0.1.0",
+  "src": ["src/mcp/commands.ts"],
+  "out": "src/mcp"
+}

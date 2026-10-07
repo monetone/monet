@@ -1,0 +1,45 @@
+[package]
+name = "monet_rythme"
+description = "Monet Rythme — a liquid-glass digital audio workstation."
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+# macOS uses this filename as the app name for `tauri dev` (there is no bundle).
+[[bin]]
+name = "Rythme"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# `macos-private-api` is required for Monet's transparent + native-vibrancy
+# window on macOS.
+tauri = { version = "2", features = ["macos-private-api"] }
+
+# The Monet Tauri integration crate, consumed from the shared monet-ui package
+# in this monorepo (packages/monet-ui/crates/monet-ui).
+monet-ui = { path = "../../../packages/monet-ui/crates/monet-ui" }
+
+# Local MCP server plugin: exposes Rythme's @mcp commands to MCP clients over a
+# loopback HTTP endpoint (token in the app config dir's mcp.json).
+monet-mcp = { path = "../../../packages/monet-ui/crates/monet-mcp" }
+
+# Native OS file/save/message dialogs. Registered via `monet_ui::dialog_plugin()`
+# in main.rs and matched by the `@tauri-apps/plugin-dialog` JS package.
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+serde = { version = "1", features = ["derive"] }
+
+# A slimmer release profile for the bundled app.
+[profile.release]
+codegen-units = 1
+# Thin (not fat) LTO: fat LTO miscompiles window-vibrancy's NSVisualEffectView
+# Objective-C class registration ("symbol multiply defined" / bitcode load
+# failure) on macOS — tauri pulls window-vibrancy 0.6 while monet-ui pulls 0.7.
+# Thin LTO keeps the size/perf win without that collision.
+lto = "thin"
+opt-level = "s"
+panic = "abort"
+strip = true

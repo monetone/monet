@@ -1,0 +1,1555 @@
+/* ─────────────────────────────────────────────────────────────
+   Monet Panel System — liquid glass tokens & primitives
+   ─────────────────────────────────────────────────────────────
+   Original panel chrome inspired by macOS Tahoe-style liquid glass:
+   layered translucency, soft inner highlights, generous backdrop blur,
+   no neon gradients. Per-app accents tint highlights only, never chrome.
+*/
+
+:root {
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter Display", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;
+
+  /* base desktop tone — dark, slightly cool, slightly warm in highlights */
+  --desktop-0: #0b0e14;
+  --desktop-1: #131722;
+  --desktop-2: #1a1f2c;
+
+  /* glass surfaces — three depths */
+  --glass-0: rgba(255, 255, 255, 0.04);   /* deep, behind toolbars */
+  --glass-1: rgba(255, 255, 255, 0.06);   /* panel body */
+  --glass-2: rgba(255, 255, 255, 0.09);   /* raised — toolbars, headers */
+  --glass-3: rgba(255, 255, 255, 0.13);   /* hover / pressed */
+
+  --stroke-soft: rgba(255, 255, 255, 0.06);
+  --stroke-medium: rgba(255, 255, 255, 0.10);
+  --stroke-strong: rgba(255, 255, 255, 0.16);
+
+  /* highlights — top inner light line that gives liquid glass its lift */
+  --hi-top: rgba(255, 255, 255, 0.22);
+  --hi-bottom: rgba(0, 0, 0, 0.35);
+
+  --text-1: rgba(255, 255, 255, 0.92);
+  --text-2: rgba(255, 255, 255, 0.62);
+  --text-3: rgba(255, 255, 255, 0.38);
+  --text-disabled: rgba(255, 255, 255, 0.22);
+
+  --radius-window: 14px;
+  --radius-panel: 10px;
+  --radius-control: 7px;
+  --radius-pill: 999px;
+
+  /* component metrics — fixed chrome heights, mirroring the METRICS export
+     in src/index.ts. Every literal height below is wired as
+     var(--monet-…, <default>), so these defaults are authoritative and a
+     consumer (or [data-density="compact"]) can retune them without touching
+     the rules. Net visual change at the default density is zero. */
+  --monet-h-titlebar-mac: 48px;
+  --monet-h-titlebar-win: 36px;
+  --monet-h-tabstrip-win: 42px;
+  --monet-h-menustrip: 28px;
+  --monet-h-toolbar: 44px;
+  --monet-w-tool-rail: 48px;
+  --monet-sz-tool-button: 36px;
+  --monet-h-panel-tabstrip: 32px;
+  --monet-h-statusbar: 24px;
+
+  /* text colour used on top of an accent fill (dark glyphs on a light chip) */
+  --on-accent: #0b0e14;
+
+  --shadow-window: 0 24px 80px -8px rgba(0, 0, 0, 0.55),
+                   0 8px 24px -4px rgba(0, 0, 0, 0.35),
+                   0 0 0 0.5px rgba(255, 255, 255, 0.08);
+
+  --blur-strong: blur(40px) saturate(180%);
+  --blur-medium: blur(24px) saturate(160%);
+  --blur-light: blur(14px) saturate(140%);
+
+  /* per-app accents — only used in highlights, never structural */
+  --accent-raster: oklch(0.78 0.14 200);   /* cyan */
+  --accent-vector: oklch(0.80 0.14 70);    /* amber */
+  --accent-audio:  oklch(0.74 0.16 305);   /* violet */
+  --accent-motion: oklch(0.75 0.18 350);   /* magenta */
+}
+
+/* ─── window shell ─── */
+.monet-window {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(120% 80% at 20% 0%, rgba(40, 50, 80, 0.45), transparent 60%),
+    radial-gradient(100% 80% at 90% 100%, rgba(80, 30, 60, 0.30), transparent 60%),
+    linear-gradient(180deg, var(--desktop-1), var(--desktop-0));
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text-1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-window);
+  box-shadow: var(--shadow-window);
+  isolation: isolate;
+}
+
+/* subtle desktop noise so glass has something to bend */
+.monet-window::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 30% 70%, rgba(120, 180, 255, 0.10), transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(255, 160, 200, 0.08), transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── title bar ─── */
+/* Round the title bar's own top corners — a child with backdrop-filter is not
+   clipped by the window's border-radius, so it must round itself. */
+.monet-window > .monet-titlebar {
+  border-radius: var(--radius-window) var(--radius-window) 0 0;
+}
+.monet-window--win > .monet-titlebar {
+  border-radius: 9px 9px 0 0;
+}
+.monet-titlebar {
+  position: relative;
+  z-index: 5;
+  height: var(--monet-h-titlebar-mac, 48px);
+  flex: 0 0 var(--monet-h-titlebar-mac, 48px);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: var(--blur-strong);
+  -webkit-backdrop-filter: var(--blur-strong);
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+
+.monet-traffic {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.monet-traffic > i {
+  width: 12px; height: 12px; border-radius: 50%;
+  display: block;
+  box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.3), inset 0 -0.5px 0 rgba(0,0,0,0.2);
+}
+.monet-traffic > i:nth-child(1) { background: #ff5f57; }
+.monet-traffic > i:nth-child(2) { background: #febc2e; }
+.monet-traffic > i:nth-child(3) { background: #28c840; }
+
+/* Document tabs below a real native window frame. This deliberately carries
+   no traffic lights, app pill, or other OS-shaped controls. */
+.monet-documentbar {
+  position: relative;
+  z-index: 5;
+  height: 40px;
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: var(--blur-strong);
+  -webkit-backdrop-filter: var(--blur-strong);
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+.monet-documentbar .monet-tab-row { padding-left: 0; }
+
+.monet-tab-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  padding-left: 12px;
+  overflow: hidden;
+}
+.monet-doctab {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 38px;
+  padding: 0 18px 0 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.16s cubic-bezier(.2,.8,.2,1), opacity 0.16s ease;
+}
+.monet-doctab:hover { background: var(--glass-1); color: var(--text-1); }
+.monet-doctab:active { cursor: grabbing; }
+.monet-doctab.is-active {
+  position: relative;
+  background: var(--glass-2);
+  color: var(--text-1);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), 0 1px 2px rgba(0,0,0,0.3);
+}
+/* dragging: lift off the strip and follow the pointer */
+.monet-doctab.is-dragging {
+  z-index: 20;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.45), inset 0 0.5px 0 var(--hi-top);
+  background: var(--glass-2);
+  color: var(--text-1);
+  cursor: grabbing;
+}
+.monet-doctab-label,
+.monet-doctab > span:nth-child(2) {
+  position: relative;
+  top: 0;
+  transition: transform 0.18s cubic-bezier(.2,.8,.2,1);
+}
+/* selecting a tab nudges its title upward */
+.monet-doctab.is-active .monet-doctab-label,
+.monet-doctab.is-active > span:nth-child(2) {
+  transform: translateY(-4px);
+}
+.monet-doctab.is-active .monet-doctab-label::after,
+.monet-doctab.is-active > span:nth-child(2)::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -7px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.monet-doctab .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+}
+.monet-doctab.is-modified .dot { opacity: 1; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.monet-doctab .close {
+  width: 17px; height: 17px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 4px;
+  opacity: 0.5;
+  font-size: 11px;
+  margin-left: 2px;
+}
+.monet-doctab .close:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+
+.monet-titlebar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.monet-app-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  padding: 0 12px 0 8px;
+  border-radius: var(--radius-pill);
+  background: var(--glass-2);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-1);
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 0.5px 0 var(--hi-top);
+}
+.monet-app-pill .glyph {
+  width: 14px; height: 14px; border-radius: 4px;
+  background: var(--accent);
+  display: block;
+  box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.4);
+}
+/* The pill is a button when the host supplies an app info panel. */
+button.monet-app-pill { border: 0; font-family: inherit; cursor: pointer; }
+button.monet-app-pill:hover { background: var(--glass-3); }
+button.monet-app-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* ─── Windows chrome ─── */
+/* top row is a slim, darker system bar carrying the app menus + window controls */
+.monet-titlebar.is-win {
+  height: var(--monet-h-titlebar-win, 36px);
+  flex: 0 0 var(--monet-h-titlebar-win, 36px);
+  padding: 0 0 0 12px;
+  gap: 8px;
+  background: var(--glass-0);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  border-bottom: none;
+}
+.monet-win-appicon {
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+  box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.45);
+}
+.monet-win-applabel {
+  font-size: 12px;
+  color: var(--text-1);
+  font-weight: 600;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  letter-spacing: 0.04em;
+}
+.monet-winmenus {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex: 0 0 auto;
+  margin-left: 6px;
+}
+.monet-winmenus .monet-menu {
+  padding: 3px 9px;
+  border-radius: 4px;
+}
+.monet-win-drag {
+  flex: 1 1 auto;
+  align-self: stretch;
+  -webkit-app-region: drag;
+}
+.monet-tab-row.is-win {
+  flex: 1;
+  padding-left: 0;
+  gap: 2px;
+  height: 100%;
+  align-items: flex-end;
+}
+.monet-doctab.is-win {
+  border-radius: 6px 6px 0 0;
+  height: 100%;
+  align-self: flex-end;
+  padding: 0 10px;
+}
+.monet-doctab.is-win.is-active {
+  background: var(--glass-1);
+  box-shadow: none;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+}
+/* glowing accent line along the tab's bottom edge — the line itself glows */
+.monet-doctab.is-win.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+/* Windows uses the bottom-of-tab border as its active indicator —
+   drop the macOS-style underline that sits directly below the label,
+   and keep the title vertically centered (no lift) */
+.monet-doctab.is-win.is-active .monet-doctab-label::after {
+  display: none;
+}
+.monet-doctab.is-win.is-active .monet-doctab-label {
+  transform: none;
+}
+.monet-winctrls {
+  display: flex;
+  align-items: stretch;
+  flex: 0 0 auto;
+  margin-left: auto;
+  height: 100%;
+}
+.monet-winctrl {
+  width: 46px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  padding: 0;
+}
+.monet-winctrl:hover { background: var(--glass-2); color: var(--text-1); }
+.monet-winctrl.is-close:hover { background: #e81123; color: #fff; }
+
+/* Windows window frame — squarer, mica-style flat top */
+.monet-window--win {
+  border-radius: 9px;
+}
+/* document-tab band — shares the toolbar material so it blends into the chrome */
+.monet-tabstrip-win {
+  flex: 0 0 var(--monet-h-tabstrip-win, 42px);
+  height: var(--monet-h-tabstrip-win, 42px);
+  display: flex;
+  align-items: flex-end;
+  padding: 0 8px;
+  background: var(--glass-0);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  position: relative;
+  z-index: 4;
+}
+.monet-menustrip.is-win {
+  height: 26px;
+  flex: 0 0 26px;
+  background: rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+}
+.monet-menustrip.is-win .monet-menu {
+  padding: 3px 9px;
+  border-radius: 4px;
+}
+
+/* ─── menu strip ─── */
+.monet-menustrip {
+  height: var(--monet-h-menustrip, 28px);
+  flex: 0 0 var(--monet-h-menustrip, 28px);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px;
+  background: rgba(0, 0, 0, 0.18);
+  backdrop-filter: var(--blur-light);
+  border-bottom: 0.5px solid var(--stroke-soft);
+  font-size: 12px;
+  position: relative;
+  z-index: 4;
+}
+.monet-menu {
+  padding: 4px 10px;
+  border-radius: 5px;
+  color: var(--text-2);
+  cursor: default;
+}
+.monet-menu:hover { background: var(--glass-1); color: var(--text-1); }
+.monet-menu.is-open { background: var(--glass-2); color: var(--text-1); }
+
+/* ─── options bar (legacy — content reused inside Toolbar) ─ */
+.monet-optionsbar {
+  display: contents;
+}
+
+/* ─── main work area ─── */
+.monet-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── toolbar (relocatable strip) ───────────────────────── */
+.monet-toolbar {
+  position: relative;
+  display: flex;
+  background: var(--glass-0);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  flex: 0 0 auto;
+  z-index: 3;
+}
+.monet-toolbar--h {
+  height: var(--monet-h-toolbar, 44px);
+  flex-direction: row;
+  align-items: stretch;
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+.monet-toolbar--v {
+  width: var(--monet-w-tool-rail, 48px);
+  flex-direction: column;
+  align-items: stretch;
+  border-right: 0.5px solid var(--stroke-soft);
+}
+.monet-toolbar.is-float {
+  position: absolute;
+  border-radius: 10px;
+  border: none !important;
+  background: var(--glass-1);
+  backdrop-filter: var(--blur-strong);
+  box-shadow:
+    0 20px 48px rgba(0,0,0,0.5),
+    0 4px 12px rgba(0,0,0,0.3),
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px var(--stroke-medium);
+  overflow: hidden;
+  z-index: 9;
+}
+.monet-toolbar.is-dragging { opacity: 0.5; }
+
+/* A horizontal-only toolbar (e.g. the options bar) parked in a vertical slot —
+   a tb column inside a side dock, or a left/right edge strip — keeps each
+   control group as a horizontal row, but stacks the groups vertically so the
+   lane stays narrow (just wide enough to fit the controls) and the neighbouring
+   panels keep their space instead of being squished to nothing. */
+[data-dock-col-kind="tb"]:is([data-side="left"],[data-side="right"]) > .monet-toolbar--h,
+.monet-tb-strip--v > .monet-toolbar--h {
+  width: 232px;
+  height: auto;
+  min-height: var(--monet-h-toolbar, 44px);
+}
+[data-dock-col-kind="tb"]:is([data-side="left"],[data-side="right"]) > .monet-toolbar--h > .monet-toolbar-body,
+.monet-tb-strip--v > .monet-toolbar--h > .monet-toolbar-body {
+  flex-direction: column;
+  align-items: stretch;
+  align-content: flex-start;
+  gap: 12px;
+  padding: 10px;
+  overflow: visible;
+}
+[data-dock-col-kind="tb"]:is([data-side="left"],[data-side="right"]) > .monet-toolbar--h .group,
+.monet-tb-strip--v > .monet-toolbar--h .group {
+  height: auto;
+  width: 100%;
+  flex-wrap: wrap;
+  border-right: none;
+  padding-right: 0;
+  padding-bottom: 12px;
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+[data-dock-col-kind="tb"]:is([data-side="left"],[data-side="right"]) > .monet-toolbar--h .group:last-child,
+.monet-tb-strip--v > .monet-toolbar--h .group:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* ─── toolbar lanes — one edge can hold several stacked lanes ─── */
+/* Top/bottom: each lane is a horizontal row; lanes stack vertically.
+   Left/right: each lane is a vertical column; lanes sit side by side. */
+.monet-tb-lanes {
+  display: flex;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 3;
+}
+.monet-tb-lanes--h { flex-direction: column; }
+.monet-tb-lanes--v { flex-direction: row; }
+
+/* ─── toolbar strip — container for stacked toolbars on one edge ─── */
+.monet-tb-strip {
+  display: flex;
+  flex: 0 0 auto;
+  background: var(--glass-0);
+  position: relative;
+  z-index: 3;
+}
+.monet-tb-strip--h {
+  flex-direction: row;
+  align-items: stretch;
+  min-height: var(--monet-h-toolbar, 44px);
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+.monet-tb-strip--h .monet-toolbar--h {
+  border-bottom: none;
+  /* Fill the full width of the docked strip and resize with it. Multiple
+     stacked toolbars share the width; the trailing flex spacer inside the
+     options bar then pushes its last group out to the far edge. */
+  flex: 1 1 0;
+  min-width: 0;
+  /* Grow taller (unbounded) when width is tight — groups wrap to new rows
+     rather than the bar capping out and squashing each control. */
+  height: auto;
+  min-height: var(--monet-h-toolbar, 44px);
+}
+.monet-tb-strip--h .monet-toolbar--h > .monet-toolbar-body {
+  flex-wrap: wrap;
+  align-content: center;
+  row-gap: 8px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  overflow: visible;
+}
+/* Keep each control group intact and let it wrap as a whole unit. */
+.monet-tb-strip--h .monet-toolbar--h .monet-toolbar-body .group {
+  flex: 0 0 auto;
+  height: auto;
+  white-space: nowrap;
+}
+.monet-tb-strip--h .monet-toolbar--h + .monet-toolbar--h {
+  border-left: 0.5px solid var(--stroke-soft);
+}
+.monet-tb-strip--v {
+  flex-direction: row;
+  align-items: stretch;
+  min-width: var(--monet-w-tool-rail, 48px);
+  border-right: 0.5px solid var(--stroke-soft);
+}
+[data-tb-side="right"].monet-tb-strip--v {
+  border-right: none;
+  border-left: 0.5px solid var(--stroke-soft);
+}
+.monet-tb-strip--v .monet-toolbar--v {
+  border-right: none;
+  flex: 0 0 auto;
+}
+.monet-tb-strip--v .monet-toolbar--v + .monet-toolbar--v {
+  border-left: 0.5px solid var(--stroke-soft);
+}
+
+.monet-toolbar-grip {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  cursor: grab;
+  user-select: none;
+  background: transparent;
+  transition: background 0.12s, color 0.12s;
+}
+.monet-toolbar--h .monet-toolbar-grip { width: 14px; }
+.monet-toolbar--v .monet-toolbar-grip { height: 14px; }
+.monet-toolbar-grip:hover { background: var(--glass-1); color: var(--text-2); }
+.monet-toolbar-grip:active { cursor: grabbing; }
+
+.monet-toolbar-body {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+.monet-toolbar--h .monet-toolbar-body {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 0 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.monet-toolbar--v .monet-toolbar-body {
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0;
+}
+
+/* group separators inside an options-bar style toolbar */
+.monet-toolbar-body .group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 14px;
+  border-right: 0.5px solid var(--stroke-soft);
+  height: 100%;
+}
+.monet-toolbar-body .group:last-child { border-right: none; padding-right: 0; }
+
+/* ─── legacy tool rail (kept for non-Toolbar uses) ─────── */
+.monet-toolrail {
+  width: var(--monet-w-tool-rail, 48px);
+  flex: 0 0 var(--monet-w-tool-rail, 48px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: var(--blur-medium);
+  border-right: 0.5px solid var(--stroke-soft);
+}
+.monet-tool {
+  width: var(--monet-sz-tool-button, 36px); height: var(--monet-sz-tool-button, 36px);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  cursor: default;
+  position: relative;
+}
+.monet-tool:hover {
+  background: var(--glass-1);
+  color: var(--text-1);
+}
+.monet-tool.is-active {
+  background: var(--glass-3);
+  color: var(--text-1);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), 0 1px 3px rgba(0,0,0,0.3);
+}
+.monet-tool.is-active::after {
+  content: "";
+  position: absolute;
+  right: -1px; top: 50%;
+  transform: translateY(-50%);
+  width: 2px; height: 16px;
+  border-radius: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+/* horizontal orientation: indicator moves to bottom edge */
+.monet-tool[data-orient="h"].is-active::after {
+  right: auto; top: auto; transform: none;
+  left: 50%; bottom: -1px;
+  margin-left: -8px;
+  width: 16px; height: 2px;
+}
+.monet-tool .badge {
+  position: absolute;
+  bottom: 4px; right: 4px;
+  width: 4px; height: 4px;
+  border-bottom: 4px solid var(--text-3);
+  border-right: 4px solid transparent;
+}
+/* Photoshop-style flyout group: corner triangle marking a slot that holds more
+   than one tool. The slot behaves like a normal .monet-tool otherwise. */
+.monet-tool-group { cursor: default; }
+.monet-tool-flyout {
+  position: absolute;
+  right: 2px; bottom: 2px;
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 0 0 4px 4px;
+  border-color: transparent transparent var(--text-3) transparent;
+  opacity: 0.75;
+  pointer-events: none;
+}
+.monet-tool-group:hover .monet-tool-flyout,
+.monet-tool-group.is-active .monet-tool-flyout { opacity: 1; }
+/* The flyout panel (a .monet-popover): a compact, frosted-glass list of the
+   group's tools. A stronger glass treatment than the base popover so it reads
+   clearly as a floating surface over the canvas. Generic — any app can reuse it
+   via `.monet-flyout` on a Popover. */
+.monet-popover.monet-flyout {
+  min-width: 0;
+  padding: 5px;
+  border-radius: 12px;
+  /* The white-glass tokens are near-transparent, so over a dark canvas the panel
+     vanished. Use an OPAQUE-leaning, darker frosted surface instead: it reads as
+     a real floating panel (Photoshop-style) while keeping a touch of blur. */
+  background: linear-gradient(180deg, rgba(46, 51, 62, 0.86), rgba(31, 35, 43, 0.9));
+  backdrop-filter: blur(30px) saturate(170%);
+  -webkit-backdrop-filter: blur(30px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 18px 44px -12px rgba(0, 0, 0, 0.72), /* deep, soft cast for separation */
+    0 4px 12px -4px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1); /* faint top sheen */
+}
+:root[data-theme="light"] .monet-flyout,
+.monet-window[data-theme="light"] .monet-flyout {
+  background: linear-gradient(180deg, rgba(252, 253, 255, 0.93), rgba(244, 246, 250, 0.95));
+  border-color: rgba(20, 28, 46, 0.12);
+  box-shadow:
+    0 18px 44px -12px rgba(0, 0, 0, 0.22),
+    0 4px 12px -4px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+.monet-flyout-list { display: flex; flex-direction: column; gap: 2px; }
+.monet-flyout-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 30px;
+  padding: 0 16px 0 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-1);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: default;
+  outline: none;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.monet-flyout-item:hover { background: var(--glass-3); }
+.monet-flyout-item.is-active,
+.monet-flyout-item.is-active:hover {
+  /* the accent with a top sheen + lower shade reads like a glossy glass pill */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.1)), var(--accent);
+  color: #06121a;
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.3), 0 1px 4px -1px rgba(0, 0, 0, 0.35);
+}
+.monet-flyout-icon {
+  flex: 0 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+}
+.monet-flyout-item:hover .monet-flyout-icon,
+.monet-flyout-item.is-active .monet-flyout-icon { color: inherit; }
+.monet-flyout-label { flex: 1 1 auto; }
+.monet-toolrail .monet-divider,
+.monet-divider[data-orient="v"] {
+  width: 26px; height: 0.5px;
+  background: var(--stroke-soft);
+  margin: 4px 0;
+  flex: 0 0 0.5px;
+}
+.monet-divider[data-orient="h"] {
+  width: 0.5px; height: 26px;
+  background: var(--stroke-soft);
+  margin: 0 4px;
+  flex: 0 0 0.5px;
+}
+
+/* ─── canvas area ─── */
+.monet-canvas {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  background:
+    repeating-conic-gradient(rgba(255,255,255,0.015) 0% 25%, transparent 0% 50%) 50% / 16px 16px,
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02), transparent 70%);
+}
+.monet-canvas-shell {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── dock area (panel column container) ─── */
+.monet-dock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.monet-dock--right { width: 320px; flex: 0 0 320px; border-left: 0.5px solid var(--stroke-soft); }
+.monet-dock--left  { width: 280px; flex: 0 0 280px; border-right: 0.5px solid var(--stroke-soft); }
+.monet-dock--bottom { height: 220px; flex: 0 0 220px; border-top: 0.5px solid var(--stroke-soft); }
+.monet-dock--top { height: 200px; flex: 0 0 200px; border-bottom: 0.5px solid var(--stroke-soft); }
+
+/* Collapsed docks retain their panel tree and expanded dimensions. */
+.monet-dock-header { display: flex; justify-content: flex-end; flex: 0 0 20px; background: var(--glass-0); }
+.monet-dock-header .monet-dock-collapse { width: 32px; height: 20px; font-size: 18px; }
+.monet-dock--top .monet-dock-collapse,
+.monet-dock--bottom .monet-dock-collapse { transform: rotate(90deg); }
+.monet-dock.is-collapsed { position: relative; }
+.monet-dock-rail, .monet-dock-rail-group { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.monet-dock-rail { flex: 1; min-height: 0; overflow: auto; padding: 3px; background: var(--glass-0); }
+.monet-dock-rail-group + .monet-dock-rail-group { border-top: 0.5px solid var(--stroke-soft); padding-top: 3px; }
+.monet-dock-rail .monet-iconbtn { width: 30px; height: 30px; flex: 0 0 30px; }
+.monet-dock--top.is-collapsed, .monet-dock--bottom.is-collapsed,
+.monet-dock--top .monet-dock-rail, .monet-dock--bottom .monet-dock-rail,
+.monet-dock--top .monet-dock-rail-group, .monet-dock--bottom .monet-dock-rail-group { flex-direction: row; }
+.monet-dock--top .monet-dock-rail-group + .monet-dock-rail-group,
+.monet-dock--bottom .monet-dock-rail-group + .monet-dock-rail-group { border-top: 0; border-left: 0.5px solid var(--stroke-soft); padding: 0 0 0 3px; }
+.monet-dock--top.is-collapsed .monet-dock-header,
+.monet-dock--bottom.is-collapsed .monet-dock-header { align-items: center; }
+.monet-dock .monet-dock-flyout { z-index: 11; }
+.monet-dock--left .monet-dock-flyout { left: 100%; top: 0; bottom: 0; }
+.monet-dock--right .monet-dock-flyout { right: 100%; top: 0; bottom: 0; }
+.monet-dock--top .monet-dock-flyout { top: 100%; left: 0; right: 0; }
+.monet-dock--bottom .monet-dock-flyout { bottom: 100%; left: 0; right: 0; }
+
+/* ─── splitter ─── */
+.monet-split {
+  flex: 0 0 1px;
+  background: var(--stroke-soft);
+  position: relative;
+  cursor: col-resize;
+  z-index: 2;
+}
+.monet-split.is-h { cursor: row-resize; }
+.monet-split::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  z-index: 1;
+}
+.monet-split:hover::after,
+.monet-split.is-dragging::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--accent, rgba(120,180,255,0.6));
+  box-shadow: 0 0 12px var(--accent, rgba(120,180,255,0.4));
+  transition: background 0.15s;
+}
+
+/* ─── panel ─── */
+.monet-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+  background: var(--glass-1);
+  backdrop-filter: var(--blur-strong);
+  -webkit-backdrop-filter: var(--blur-strong);
+}
+.monet-panel + .monet-panel {
+  border-top: 0.5px solid var(--stroke-soft);
+}
+
+/* ─── tab strip (inside panel) ─── */
+.monet-tabs {
+  display: flex;
+  align-items: stretch;
+  height: var(--monet-h-panel-tabstrip, 32px);
+  flex: 0 0 var(--monet-h-panel-tabstrip, 32px);
+  padding: 0 4px 0 8px;
+  background: rgba(0, 0, 0, 0.16);
+  border-bottom: 0.5px solid var(--stroke-soft);
+  gap: 2px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: relative;
+}
+.monet-tab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 100%;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  border-radius: 6px 6px 0 0;
+  align-self: flex-end;
+  cursor: default;
+  letter-spacing: 0.02em;
+  position: relative;
+}
+.monet-tab:hover { color: var(--text-2); }
+.monet-tab.is-active {
+  color: var(--text-1);
+  background: var(--glass-1);
+  height: calc(100% + 1px);
+}
+.monet-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 10px; right: 10px;
+  top: 4px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  opacity: 0.85;
+}
+.monet-tab-actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+  color: var(--text-3);
+}
+.monet-tab-actions .btn {
+  width: 22px; height: 22px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.monet-tab-actions .btn:hover { background: var(--glass-2); color: var(--text-1); }
+
+/* ─── panel body ─── */
+.monet-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 12px;
+  position: relative;
+}
+.monet-panel-body.is-flush { padding: 0; }
+
+/* sublabel / row ─── */
+.monet-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 4px 0 8px;
+}
+.monet-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.monet-row .lbl { width: 70px; color: var(--text-3); font-size: 11px; }
+.monet-row .val { color: var(--text-1); font-family: var(--font-mono); font-size: 11px; }
+.monet-row .field {
+  flex: 1;
+  background: var(--glass-0);
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-1);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── slider ─── */
+.monet-slider {
+  height: 4px;
+  background: var(--glass-0);
+  border-radius: 2px;
+  position: relative;
+  flex: 1;
+  box-shadow: inset 0 0.5px 0 rgba(0,0,0,0.3);
+}
+.monet-slider .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--accent);
+  opacity: 0.85;
+}
+.monet-slider .knob {
+  position: absolute;
+  top: 50%;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.65));
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5), inset 0 0.5px 0 rgba(255,255,255,0.9);
+}
+
+/* ─── chips / buttons ─── */
+/* Monet draws every control itself — strip the native button chrome so the
+   div/span-derived control classes (.monet-chip, .monet-swatch, .monet-iconbtn,
+   .monet-cv-segment…) render cleanly when used on a real <button>. Only resets
+   `appearance` + `border` (props no control class sets), so it never clobbers
+   custom padding / background / font. */
+.monet-window button,
+.monet-overlay-root button {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+}
+
+.monet-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  height: 24px;
+  border-radius: var(--radius-control);
+  background: var(--glass-1);
+  color: var(--text-1);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: default;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  box-shadow: inset 0 0.5px 0 var(--hi-top);
+}
+.monet-chip:hover { background: var(--glass-2); }
+.monet-chip.is-active {
+  background: var(--glass-3);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), inset 0 0 0 0.5px var(--stroke-strong);
+}
+.monet-chip.is-accent {
+  background: color-mix(in oklch, var(--accent) 25%, transparent);
+  color: var(--text-1);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 50%, transparent);
+}
+
+.monet-iconbtn {
+  /* native-button reset: .monet-iconbtn is rendered on real <button>s
+     (IconButton, AlignBar, Pathfinder, ToggleGroup…); without this macOS
+     WKWebView draws its light native bezel. Transparent by default — glass
+     comes from :hover / .is-active only. */
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+}
+.monet-iconbtn:hover { background: var(--glass-1); color: var(--text-1); }
+.monet-iconbtn.is-active { background: var(--glass-3); color: var(--text-1); box-shadow: inset 0 0.5px 0 var(--hi-top); }
+
+/* ─── color swatch ─── */
+.monet-swatch {
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  display: inline-block;
+  box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.4), inset 0 0.5px 0 rgba(255,255,255,0.25);
+}
+
+/* ─── status bar ─── */
+.monet-statusbar {
+  height: var(--monet-h-statusbar, 24px);
+  flex: 0 0 var(--monet-h-statusbar, 24px);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 14px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-3);
+  background: rgba(14, 18, 24, 0.72);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-top: 0.5px solid var(--stroke-soft);
+  position: relative;
+  z-index: 2;
+}
+.monet-statusbar .grow { flex: 1; }
+
+/* ─── icon rail (collapsed panels) ─── */
+.monet-iconrail {
+  width: 40px;
+  flex: 0 0 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 4px;
+  background: rgba(255,255,255,0.025);
+  backdrop-filter: var(--blur-medium);
+  border-left: 0.5px solid var(--stroke-soft);
+}
+.monet-iconrail .monet-iconbtn { width: 30px; height: 30px; }
+
+/* ─── floating panel ─── */
+.monet-float {
+  position: absolute;
+  border-radius: var(--radius-panel);
+  /* Dark, mostly-opaque tint so a floating palette stays legible over ANY
+     background (canvas, images), matching the dialog/menu overlay treatment. */
+  background: rgba(16, 21, 32, 0.9);
+  backdrop-filter: var(--blur-strong);
+  -webkit-backdrop-filter: var(--blur-strong);
+  box-shadow:
+    0 24px 48px -8px rgba(0,0,0,0.62),
+    0 4px 12px -2px rgba(0,0,0,0.42),
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px var(--stroke-strong);
+  overflow: hidden;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+/* slim move-bar at the top of a floating mini-dock */
+.monet-float-bar {
+  height: 18px;
+  flex: 0 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px 0 6px;
+  color: var(--text-3);
+  cursor: grab;
+  background: rgba(0,0,0,0.22);
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+.monet-float-bar:active { cursor: grabbing; }
+.monet-float-grip { display: inline-flex; align-items: center; color: var(--text-3); }
+.monet-float-bar .monet-iconbtn { color: var(--text-3); }
+.monet-float-bar .monet-iconbtn:hover { background: var(--glass-2); color: var(--text-1); }
+
+/* float-internal panels sit on the float's own glass — keep them light so we
+   don't stack blur-on-blur; the tab strips keep their dark fill. */
+.monet-float .monet-panel {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.monet-float-cols { border-radius: 0 0 var(--radius-panel) var(--radius-panel); overflow: hidden; }
+
+/* ─── directional dock widget (drag overlay) ─── */
+.monet-dockwidget {
+  position: absolute;
+  z-index: 95;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.monet-dw-cell {
+  position: absolute;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-1);
+  background: rgba(16, 21, 32, 0.92);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  box-shadow:
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px var(--stroke-strong),
+    0 6px 18px rgba(0, 0, 0, 0.55);
+  transition: background 0.1s, color 0.1s, transform 0.1s;
+}
+.monet-dw-cell.is-active {
+  background: var(--accent);
+  color: var(--on-accent, #0b0e14);
+  transform: scale(1.12);
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.4),
+    0 0 0 1.5px var(--accent),
+    0 8px 22px color-mix(in oklch, var(--accent) 55%, transparent);
+}
+
+/* ─── edge dock hints (drag overlay) ─── */
+.monet-edgehint {
+  position: absolute;
+  z-index: 88;
+  pointer-events: none;
+  border-radius: 4px;
+  background: color-mix(in oklch, white 8%, transparent);
+  transition: background 0.1s, box-shadow 0.1s;
+}
+.monet-edgehint.is-active {
+  background: color-mix(in oklch, var(--accent) 78%, transparent);
+  box-shadow: 0 0 18px color-mix(in oklch, var(--accent) 60%, transparent);
+}
+
+/* ─── snap zones (drag overlay) ─── */
+.monet-snaplayer {  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+.monet-snapzone {
+  position: absolute;
+  border-radius: 4px;
+  background: color-mix(in oklch, var(--accent) 22%, transparent);
+  box-shadow:
+    inset 0 0 0 1.5px var(--accent),
+    0 0 24px color-mix(in oklch, var(--accent) 40%, transparent);
+  backdrop-filter: var(--blur-light);
+}
+.monet-snaphint {
+  position: absolute;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--on-accent, #0b0e14);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ─── layer row (Photoshop-style) ─── */
+.monet-layer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--text-1);
+}
+.monet-layer:hover { background: var(--glass-1); }
+.monet-layer.is-selected {
+  background: color-mix(in oklch, var(--accent) 18%, transparent);
+  box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 40%, transparent);
+}
+.monet-layer .vis {
+  width: 14px; height: 14px;
+  color: var(--text-2);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.monet-layer .thumb {
+  width: 24px; height: 24px;
+  border-radius: 3px;
+  background: var(--glass-2);
+  flex: 0 0 24px;
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+  position: relative;
+  overflow: hidden;
+}
+.monet-layer .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.monet-layer .meta { font-family: var(--font-mono); font-size: 10px; color: var(--text-3); }
+
+/* ─── timeline row ─── */
+.monet-track {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+.monet-track-head {
+  width: 140px;
+  flex: 0 0 140px;
+  padding: 0 10px;
+  display: flex; align-items: center; gap: 8px;
+  border-right: 0.5px solid var(--stroke-soft);
+  font-size: 11px;
+  color: var(--text-1);
+  background: rgba(0,0,0,0.16);
+  height: 100%;
+}
+.monet-track-body {
+  flex: 1;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+.monet-clip {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 4px;
+  background: color-mix(in oklch, var(--accent) 35%, transparent);
+  box-shadow:
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 70%, transparent);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-1);
+  overflow: hidden;
+}
+
+/* ─── waveform svg fills ─── */
+.monet-wave path { fill: color-mix(in oklch, var(--accent) 60%, transparent); }
+.monet-wave path.peak { fill: color-mix(in oklch, var(--accent) 90%, transparent); }
+
+/* ─── tiny separator ─── */
+.monet-vsep {
+  width: 0.5px;
+  height: 18px;
+  background: var(--stroke-soft);
+}
+
+/* ─── scrollbars ─────────────────────────────────────────────────
+   Chrome strips (toolbars, doc-tab row, menu strips) overflow under
+   pointer control and must stay flush, so they hide their scrollbar.
+   Scrollable *content* surfaces — panel bodies, the canvas, and any
+   element marked .monet-scroll — get a thin, glass-toned overlay
+   scrollbar that is actually usable. The thumb is drawn from the same
+   stroke tokens, so it flips with the theme automatically. */
+
+/* hidden on the non-scrolling chrome lanes */
+.monet-tab-row::-webkit-scrollbar,
+.monet-tabs::-webkit-scrollbar,
+.monet-toolbar-body::-webkit-scrollbar,
+.monet-winmenus::-webkit-scrollbar,
+.monet-menustrip::-webkit-scrollbar { display: none; }
+.monet-tab-row,
+.monet-tabs,
+.monet-toolbar-body,
+.monet-winmenus,
+.monet-menustrip { scrollbar-width: none; }
+
+/* visible, subtle scrollbar on real scrollable content */
+.monet-panel-body,
+.monet-canvas,
+.monet-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--stroke-strong) transparent;
+}
+.monet-panel-body::-webkit-scrollbar,
+.monet-canvas::-webkit-scrollbar,
+.monet-scroll::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+.monet-panel-body::-webkit-scrollbar-track,
+.monet-canvas::-webkit-scrollbar-track,
+.monet-scroll::-webkit-scrollbar-track { background: transparent; }
+.monet-panel-body::-webkit-scrollbar-thumb,
+.monet-canvas::-webkit-scrollbar-thumb,
+.monet-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--stroke-strong);
+  border-radius: var(--radius-pill);
+  /* inset the thumb so it reads as a slim overlay pill, not a full-width bar */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.monet-panel-body::-webkit-scrollbar-thumb:hover,
+.monet-canvas::-webkit-scrollbar-thumb:hover,
+.monet-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-3);
+}
+.monet-panel-body::-webkit-scrollbar-corner,
+.monet-canvas::-webkit-scrollbar-corner,
+.monet-scroll::-webkit-scrollbar-corner { background: transparent; }
+
+/* hover area for panel resize handles */
+.monet-grip-h {
+  position: absolute;
+  left: 0; right: 0; bottom: -3px;
+  height: 6px;
+  cursor: row-resize;
+  z-index: 3;
+}
+.monet-grip-v {
+  position: absolute;
+  top: 0; bottom: 0; right: -3px;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 3;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Light theme — opt-in
+   ─────────────────────────────────────────────────────────────
+   Dark is the unscoped default. A consumer switches a window to light
+   by setting `data-theme="light"` on the .monet-window (or on :root,
+   which then cascades to every window). Only the glass / stroke /
+   highlight / text tokens and the desktop tones are redefined — the
+   per-app accents (--accent-*) and the structural radii are untouched,
+   so accent handling is identical. Because every rule above reads these
+   custom properties, the whole chrome re-tints with no rule changes. */
+:root[data-theme="light"],
+.monet-window[data-theme="light"] {
+  --desktop-0: #c9cfdc;
+  --desktop-1: #e7ebf3;
+  --desktop-2: #f3f5fa;
+
+  --glass-0: rgba(20, 28, 46, 0.04);
+  --glass-1: rgba(20, 28, 46, 0.06);
+  --glass-2: rgba(20, 28, 46, 0.10);
+  --glass-3: rgba(20, 28, 46, 0.16);
+
+  --stroke-soft: rgba(20, 28, 46, 0.08);
+  --stroke-medium: rgba(20, 28, 46, 0.14);
+  --stroke-strong: rgba(20, 28, 46, 0.22);
+
+  /* the top inner light-line stays white; the bottom shade lightens */
+  --hi-top: rgba(255, 255, 255, 0.75);
+  --hi-bottom: rgba(20, 28, 46, 0.12);
+
+  --text-1: rgba(18, 22, 33, 0.94);
+  --text-2: rgba(18, 22, 33, 0.64);
+  --text-3: rgba(18, 22, 33, 0.42);
+  --text-disabled: rgba(18, 22, 33, 0.26);
+
+  /* accents stay light/saturated, so on-accent text remains dark */
+  --on-accent: #0b0e14;
+}
+
+/* The standard (non-bare) window draws its own gradient background from
+   literal dark colours, so it needs an explicit light surface. The bare
+   Tauri window background lives in tauri.css. */
+.monet-window[data-theme="light"],
+:root[data-theme="light"] .monet-window {
+  background:
+    radial-gradient(120% 80% at 20% 0%, rgba(150, 175, 220, 0.40), transparent 60%),
+    radial-gradient(100% 80% at 90% 100%, rgba(210, 160, 190, 0.30), transparent 60%),
+    linear-gradient(180deg, var(--desktop-2), var(--desktop-1));
+  color: var(--text-1);
+}
+.monet-window[data-theme="light"]::before,
+:root[data-theme="light"] .monet-window::before {
+  background-image:
+    radial-gradient(circle at 30% 70%, rgba(90, 130, 220, 0.08), transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(220, 120, 170, 0.06), transparent 40%);
+}
+
+/* The title bar's own translucent fill is keyed to white in dark mode;
+   in light mode tint it toward the glass tokens for legible contrast. */
+:root[data-theme="light"] .monet-titlebar,
+.monet-window[data-theme="light"] .monet-titlebar { background: var(--glass-1); }
+:root[data-theme="light"] .monet-menustrip,
+.monet-window[data-theme="light"] .monet-menustrip { background: rgba(20, 28, 46, 0.05); }
+:root[data-theme="light"] .monet-tabs,
+.monet-window[data-theme="light"] .monet-tabs { background: rgba(20, 28, 46, 0.05); }
+:root[data-theme="light"] .monet-statusbar,
+.monet-window[data-theme="light"] .monet-statusbar { background: rgba(243, 245, 250, 0.72); }
+/* ─────────────────────────────────────────────────────────────
+   Compact density — opt-in
+   ─────────────────────────────────────────────────────────────
+   Set `data-density="compact"` on :root or the .monet-window to tighten
+   every chrome height. Default density is unscoped and byte-identical to
+   the literals above. Only the metric tokens are retuned; rules read them
+   via var(), so nothing else changes. */
+:root[data-density="compact"],
+.monet-window[data-density="compact"] {
+  --monet-h-titlebar-mac: 40px;
+  --monet-h-titlebar-win: 30px;
+  --monet-h-tabstrip-win: 36px;
+  --monet-h-menustrip: 24px;
+  --monet-h-toolbar: 38px;
+  --monet-w-tool-rail: 42px;
+  --monet-sz-tool-button: 30px;
+  --monet-h-panel-tabstrip: 28px;
+  --monet-h-statusbar: 20px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Focus-visible — keyboard ring for all interactive chrome
+   ─────────────────────────────────────────────────────────────
+   Pointer interaction never shows a ring (we key off :focus-visible, not
+   :focus). The in-house controls already carry their own ring in
+   controls.css; this covers the chrome surfaces defined in this sheet:
+   doc tabs, menu triggers, tools, panel tabs, window controls, links,
+   and any element opting in with data-monet-focusable. */
+.monet-doctab:focus-visible,
+.monet-menu:focus-visible,
+.monet-mbg-item:focus-visible,
+.monet-mbg-app:focus-visible,
+.monet-tool:focus-visible,
+.monet-tab:focus-visible,
+.monet-chip:focus-visible,
+.monet-iconbtn:focus-visible,
+.monet-winctrl:focus-visible,
+.monet-traffic > i:focus-visible,
+.monet-layer:focus-visible,
+.monet-window a:focus-visible,
+.monet-window [data-monet-focusable]:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--accent, #6aa0ff) 70%, transparent),
+    0 0 0 3px color-mix(in oklch, var(--accent, #6aa0ff) 28%, transparent);
+}
+/* the Windows close control keeps its red hover fill; give it a contrasting
+   ring so the focus state stays visible on the red background */
+.monet-winctrl.is-close:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.9),
+    0 0 0 3px rgba(232, 17, 35, 0.45);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Reduced motion
+   ─────────────────────────────────────────────────────────────
+   Respect prefers-reduced-motion: drop the heavy chrome animation —
+   drag lift, tab settle/nudge, snap + dock overlays, panel/tool
+   transitions — keeping instant state changes. Focus rings and colour
+   states remain (they are not motion). */
+@media (prefers-reduced-motion: reduce) {
+  .monet-doctab,
+  .monet-doctab-label,
+  .monet-doctab > span:nth-child(2),
+  .monet-dw-cell,
+  .monet-edgehint,
+  .monet-snapzone,
+  .monet-split:hover::after,
+  .monet-split.is-dragging::after,
+  .monet-toolbar-grip,
+  .monet-traffic > i,
+  .monet-traffic > i > svg {
+    transition: none !important;
+  }
+  .monet-doctab.is-active .monet-doctab-label,
+  .monet-doctab.is-active > span:nth-child(2) {
+    transform: none;
+  }
+  .monet-doctab.is-dragging {
+    transform: none;
+  }
+  .monet-dw-cell.is-active {
+    transform: scale(1);
+  }
+}

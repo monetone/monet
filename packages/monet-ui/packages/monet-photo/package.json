@@ -1,0 +1,48 @@
+{
+  "name": "@monet-ui/monet-photo",
+  "version": "0.1.0",
+  "description": "Monet — framework-free photographic develop math: tone-curve LUTs, .cube 3D LUTs, channel histograms + stats/readout, and Rec.601 / Lab / CMYK color conversions. Shared across the Monet photo apps (Vision raster editor, Galerie catalog+develop).",
+  "license": "(MIT AND CC-BY-SA-3.0)",
+  "author": "Monet / monet-ui",
+  "type": "module",
+  "//": "Framework-agnostic: NO React/DOM imports, so it runs in node/workers too. Pure functions over typed arrays. dist/ is built fresh by prepare/prepublishOnly.",
+  "sideEffects": false,
+  "files": ["dist", "data"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "prepare": "pnpm run build",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": ["develop", "camera-raw", "tone-curve", "lut", "histogram", "color", "photo", "monet"],
+  "homepage": "https://github.com/monetone/monet/tree/main/packages/monet-ui/packages/monet-photo#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monetone/monet.git",
+    "directory": "packages/monet-ui/packages/monet-photo"
+  },
+  "bugs": {
+    "url": "https://github.com/monetone/monet/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.8"
+  }
+}

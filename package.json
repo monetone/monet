@@ -1,0 +1,45 @@
+{
+  "name": "monet-core",
+  "private": true,
+  "license": "MIT",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Monet — monorepo of the Monet creative suite (Anime, Artisan, Cinema, Galerie, Jouer, Rythme, Vision) on the shared Monet UI design system.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monetone/monet.git"
+  },
+  "packageManager": "pnpm@11.1.3",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:libs": "pnpm -r --filter \"@monet-ui/*\" run build",
+    "build:engines": "pnpm --filter monet-artisan run engine:build:release && pnpm --filter monet-cinema run engine:build:release && pnpm --filter monet-vision run engine:build:release && pnpm --filter monet-galerie run engine:build:release",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "lint": "pnpm -r --if-present run lint",
+    "test": "pnpm -r --if-present run test:unit && pnpm run test:docs",
+    "mcp:codegen": "pnpm -r --if-present run mcp:codegen",
+    "mcp:check": "pnpm -r --if-present run mcp:check",
+    "verify:release": "pnpm --filter monet-vision run verify:release",
+    "build:web": "pnpm -r --filter \"./apps/*\" run build",
+    "tauri:build": "pnpm --filter ./apps/artisan run tauri build && pnpm --filter ./apps/cinema run tauri build && pnpm --filter ./apps/jouer run tauri build && pnpm --filter ./apps/rythme run tauri build && pnpm --filter ./apps/vision run tauri build && pnpm --filter ./apps/anime run tauri build && pnpm --filter ./apps/galerie run tauri build",
+    "dev:anime": "pnpm --filter monet-anime run tauri dev",
+    "dev:galerie": "pnpm --filter monet-galerie run tauri dev",
+    "dev:artisan": "pnpm --filter monet-artisan run tauri dev",
+    "dev:cinema": "pnpm --filter monet-cinema run tauri dev",
+    "dev:jouer": "pnpm --filter monet-jouer run tauri dev",
+    "dev:rythme": "pnpm --filter monet-rythme run tauri dev",
+    "dev:vision": "pnpm --filter monet-vision run tauri dev",
+    "collab:server": "node scripts/collab-server.mjs",
+    "test:docs": "node --test docs/*.test.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0",
+    "lib0": "^0.2.93",
+    "typescript": "^5.6.3",
+    "ws": "^8.18.0",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.0"
+  }
+}

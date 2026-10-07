@@ -1,0 +1,29 @@
+/* Monet Cinema — app-only styles. The chrome (docks, panels, tracks, clips)
+   comes from @monet-ui/monet-core; this file is for the few editor surfaces
+   Monet doesn't already provide. The app accent is --accent-motion. */
+
+.monet-app-pill .glyph {
+  background: center / cover no-repeat url("../src-tauri/icons/32x32.png");
+}
+
+:root {
+  --cinema-accent: var(--accent-motion);
+}
+
+/* Clips: ensure label legibility over the Monet clip gradient. */
+.monet-clip > span {
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Program/source monitor wells sit on pure black. */
+.cinema-monitor {
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Vertical scrollbars in the timeline lanes, kept subtle. */
+.monet-track-body::-webkit-scrollbar {
+  height: 8px;
+}

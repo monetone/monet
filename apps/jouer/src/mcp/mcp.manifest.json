@@ -1,0 +1,335 @@
+{
+  "app": "jouer",
+  "version": "0.1.0",
+  "tools": [
+    {
+      "name": "doc.open",
+      "description": "Open a `.jouer` project from disk, replacing the current one. Native desktop only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute path of the `.jouer` (or `.json`) project to open."
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "edit.redo",
+      "description": "Redo the last undone document edit.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "edit.undo",
+      "description": "Undo the last document edit.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "object.add",
+      "description": "Add a new game object of the given kind to the active scene (centred), and\nselect it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "sprite",
+              "image",
+              "text",
+              "rectangle",
+              "ellipse",
+              "triangle",
+              "hexagon",
+              "hexagonFlat",
+              "diamond",
+              "capsule",
+              "container"
+            ],
+            "description": "The object kind to create."
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "object.align",
+      "description": "Align the selected objects to a shared edge or centre (needs 2+ selected).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "edge": {
+            "type": "string",
+            "enum": [
+              "left",
+              "hcenter",
+              "right",
+              "top",
+              "vcenter",
+              "bottom"
+            ],
+            "description": "The alignment edge."
+          }
+        },
+        "required": [
+          "edge"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "object.delete",
+      "description": "Delete the current selection from the active scene.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "object.duplicate",
+      "description": "Duplicate the current selection (offset by 16px) and select the copies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "object.flip",
+      "description": "Flip the selected objects horizontally or vertically (mirrors scale across the\nselection's centre).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "axis": {
+            "type": "string",
+            "enum": [
+              "horizontal",
+              "vertical"
+            ],
+            "description": "The flip axis."
+          }
+        },
+        "required": [
+          "axis"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "object.group",
+      "description": "Wrap the current selection into a new container, preserving world positions.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "scene.add",
+      "description": "Add a new empty scene and make it active.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "select.all",
+      "description": "Select every object in the active scene.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "select.children",
+      "description": "Replace the selection with the descendants of the selected containers.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "select.invert",
+      "description": "Select everything that isn't currently selected.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "select.none",
+      "description": "Clear the selection.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "tool.set",
+      "description": "Set the active editing tool.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string",
+            "enum": [
+              "select",
+              "hand",
+              "rectangle",
+              "ellipse",
+              "sprite",
+              "image",
+              "text"
+            ],
+            "description": "The tool to activate."
+          }
+        },
+        "required": [
+          "tool"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transform.reset",
+      "description": "Reset the selection's transform to identity (position 0, rotation 0, scale 1);\norigin and alpha are preserved.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "enum": [
+              "all",
+              "position",
+              "rotation",
+              "scale"
+            ],
+            "description": "Which component(s) to reset.",
+            "default": "all"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transform.snapToGrid",
+      "description": "Snap each (unlocked) selected object's position to the current grid.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transform.translate",
+      "description": "Translate every (unlocked) selected object by (dx, dy) world pixels.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dx": {
+            "type": "number",
+            "description": "Horizontal delta in pixels."
+          },
+          "dy": {
+            "type": "number",
+            "description": "Vertical delta in pixels."
+          }
+        },
+        "required": [
+          "dx",
+          "dy"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transport.play",
+      "description": "Play or pause the timeline.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "playing": {
+            "type": "boolean",
+            "description": "True to play, false to pause."
+          }
+        },
+        "required": [
+          "playing"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transport.seek",
+      "description": "Move the timeline playhead to a time in seconds (clamped to the timeline).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "seconds": {
+            "type": "number",
+            "description": "Playhead position in seconds (0..)."
+          }
+        },
+        "required": [
+          "seconds"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transport.step",
+      "description": "Step the playhead one frame forward or back (pauses playback first).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "forward": {
+            "type": "boolean",
+            "description": "Step forward when true, back when false."
+          }
+        },
+        "required": [
+          "forward"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "view.grid",
+      "description": "Show or hide the editor grid.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "show": {
+            "type": "boolean",
+            "description": "True to show the grid, false to hide it."
+          }
+        },
+        "required": [
+          "show"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

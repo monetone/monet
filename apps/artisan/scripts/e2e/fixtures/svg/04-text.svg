@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260">
+  <!-- varied font-size, fill, font-family -->
+  <text x="20" y="55" font-size="42" fill="#e0573a">Artisan</text>
+  <text x="20" y="105" font-size="24" fill="#3ac06a" font-family="Georgia, serif">SVG text import</text>
+  <text x="20" y="150" font-size="18" fill="#4a9eff">Small caption — the quick brown fox</text>
+  <text x="20" y="220" font-size="58" fill="#a855f7" font-family="Helvetica, Arial, sans-serif">Big</text>
+</svg>

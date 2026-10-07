@@ -1,0 +1,491 @@
+name: CI
+
+on:
+  pull_request: {}
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vision-ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CI: "1"
+
+jobs:
+  pr-static:
+    name: Workspace/static
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo install wasm-pack --locked --version 0.13.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build:libs
+      - run: pnpm run build:engines
+      - name: Monorepo typecheck
+        run: pnpm run typecheck
+      - name: Monorepo lint
+        run: pnpm run lint
+      - run: pnpm --filter monet-artisan run mcp:check
+      - run: pnpm --filter monet-vision run mcp:check
+      - run: pnpm --filter monet-vision run check:models
+      - run: pnpm --filter monet-vision run check:ort
+      - name: Verify CI helpers
+        run: node --test .github/scripts/*.test.mjs
+      - name: Reject skipped, ignored, todo, fixme, focused, or pending tests
+        run: node .github/scripts/verify-no-test-skips.mjs
+
+  pr-unit:
+    name: Workspace/unit
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo install wasm-pack --locked --version 0.13.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build:libs
+      - run: pnpm run build:engines
+      - name: Monorepo unit and documentation tests
+        run: pnpm run test
+      - run: pnpm --filter monet-vision run test:coverage
+      - name: Ratchet changed Vision source coverage
+        if: github.event_name == 'pull_request'
+        run: node .github/scripts/verify-changed-coverage.mjs "${{ github.event.pull_request.base.sha }}" apps/vision/coverage/coverage-summary.json
+      - name: Full locked engine tests
+        run: cargo test --locked --workspace --manifest-path packages/engine/Cargo.toml
+
+  pr-product-smoke:
+    name: PR/product-smoke
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      CHROME_BIN: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo install wasm-pack --locked --version 0.13.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build:libs
+      - run: pnpm --filter monet-artisan run engine:build:release
+      - run: pnpm --filter monet-vision run engine:build:release
+      - run: pnpm --filter monet-vision exec playwright install --with-deps chromium webkit
+      - name: Vision feature regressions
+        run: pnpm --filter monet-vision exec playwright test e2e/feature-regressions.spec.ts --project=chromium
+      - name: Vision WebKit parity smoke
+        run: pnpm --filter monet-vision exec playwright test e2e/webkit-smoke.spec.ts --project=webkit
+      - name: Production-CSP smoke
+        run: pnpm --filter monet-vision exec playwright test --project=desktop
+      - name: Artisan raster regressions
+        run: pnpm --filter monet-artisan run e2e:raster
+      - name: Artisan SVG regressions
+        run: pnpm --filter monet-artisan run e2e:svg
+      - name: Upload Playwright traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-product-smoke-traces
+          path: apps/vision/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  merge-full-browser:
+    name: Merge/full — Chromium ${{ matrix.name }}
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 1-of-2
+            shard: 1/2
+          - name: 2-of-2
+            shard: 2/2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo install wasm-pack --locked --version 0.13.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build:libs
+      - run: pnpm --filter monet-vision run engine:build:release
+      - run: pnpm --filter monet-vision exec playwright install --with-deps chromium
+      - run: pnpm --filter monet-vision exec playwright test --project=chromium --shard=${{ matrix.shard }}
+      - name: Upload Playwright traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: merge-chromium-${{ matrix.name }}-traces
+          path: apps/vision/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  merge-full-artisan:
+    name: Merge/full — Artisan e2e
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      CHROME_BIN: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo install wasm-pack --locked --version 0.13.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build:libs
+      - run: pnpm --filter monet-artisan run engine:build:release
+      - run: pnpm --filter monet-artisan run e2e:all
+
+  merge-full-desktop-release:
+    name: Merge/full — desktop CSP + release
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo install wasm-pack --locked --version 0.13.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter monet-vision run verify:release
+      - run: pnpm --filter monet-vision exec playwright install chromium webkit
+      - run: pnpm --filter monet-vision exec playwright test e2e/webkit-smoke.spec.ts e2e/system-font-faces.spec.ts --project=webkit
+      - run: pnpm --filter monet-vision exec playwright test --project=desktop
+      - name: Upload Playwright traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: merge-desktop-traces
+          path: apps/vision/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  merge-full-native:
+    name: Merge/full — native Rust tests + no-bundle build (${{ matrix.platform }})
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macOS
+            runner: macos-14
+          - platform: Windows
+            runner: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo install wasm-pack --locked --version 0.13.1
+      - run: pnpm install --frozen-lockfile
+      - name: Locked Tauri tests and no-bundle native compile
+        run: pnpm --filter monet-vision run test:native
+
+  self-hosted-source:
+    name: Self-hosted source — protected ancestry
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      validated_sha: ${{ steps.validate.outputs.validated_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate requested commit against protected main or release history
+        id: validate
+        shell: bash
+        env:
+          REQUESTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          requested="$(printf '%s' "$REQUESTED_SHA" | tr '[:upper:]' '[:lower:]')"
+          [[ "$requested" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::self-hosted source must be an exact 40-character commit"; exit 1; }
+          git cat-file -e "$requested^{commit}" || { echo "::error::requested self-hosted commit is unavailable"; exit 1; }
+
+          trusted_ref=""
+          if git merge-base --is-ancestor "$requested" "origin/main"; then
+            trusted_ref="origin/main"
+          else
+            while IFS= read -r release_ref; do
+              if git merge-base --is-ancestor "$requested" "$release_ref"; then
+                trusted_ref="$release_ref"
+                break
+              fi
+            done < <(git for-each-ref --format='%(refname)' refs/remotes/origin/release/)
+          fi
+          test -n "$trusted_ref" || { echo "::error::self-hosted source is not an ancestor of protected main or release history"; exit 1; }
+
+          validated_sha="$(git rev-parse "$requested^{commit}")"
+          test "$validated_sha" = "$requested" || { echo "::error::requested self-hosted source did not resolve exactly"; exit 1; }
+          printf 'validated_sha=%s\n' "$validated_sha" >> "$GITHUB_OUTPUT"
+
+  merge-full-packaged-smoke-preflight:
+    name: Merge/full — packaged smoke configuration
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      MONET_PACKAGED_SMOKE_MACOS_RUNNER_CONFIGURED: ${{ vars.MONET_PACKAGED_SMOKE_MACOS_RUNNER_CONFIGURED }}
+      MONET_PACKAGED_SMOKE_WINDOWS_RUNNER_CONFIGURED: ${{ vars.MONET_PACKAGED_SMOKE_WINDOWS_RUNNER_CONFIGURED }}
+      MONET_PACKAGED_SMOKE_MACOS_ADAPTER_PATH: ${{ vars.MONET_PACKAGED_SMOKE_MACOS_ADAPTER_PATH }}
+      MONET_PACKAGED_SMOKE_WINDOWS_ADAPTER_PATH: ${{ vars.MONET_PACKAGED_SMOKE_WINDOWS_ADAPTER_PATH }}
+      MONET_PACKAGED_SMOKE_APPLE_TEAM_ID: ${{ vars.MONET_PACKAGED_SMOKE_APPLE_TEAM_ID }}
+      MONET_PACKAGED_SMOKE_APPLE_SIGNING_AUTHORITY: ${{ vars.MONET_PACKAGED_SMOKE_APPLE_SIGNING_AUTHORITY }}
+      MONET_PACKAGED_SMOKE_WINDOWS_CERTIFICATE_THUMBPRINT: ${{ vars.MONET_PACKAGED_SMOKE_WINDOWS_CERTIFICATE_THUMBPRINT }}
+    steps:
+      - name: Require both packaged-smoke runners and host adapters
+        run: >-
+          node -e 'const p=require("node:path"),e=process.env,bad=[];
+          if(e.MONET_PACKAGED_SMOKE_MACOS_RUNNER_CONFIGURED!=="true")bad.push("repository variable MONET_PACKAGED_SMOKE_MACOS_RUNNER_CONFIGURED must be true");
+          if(e.MONET_PACKAGED_SMOKE_WINDOWS_RUNNER_CONFIGURED!=="true")bad.push("repository variable MONET_PACKAGED_SMOKE_WINDOWS_RUNNER_CONFIGURED must be true");
+          if(!p.posix.isAbsolute(e.MONET_PACKAGED_SMOKE_MACOS_ADAPTER_PATH||""))bad.push("MONET_PACKAGED_SMOKE_MACOS_ADAPTER_PATH must be an absolute executable path on the macOS smoke host");
+          if(!p.win32.isAbsolute(e.MONET_PACKAGED_SMOKE_WINDOWS_ADAPTER_PATH||""))bad.push("MONET_PACKAGED_SMOKE_WINDOWS_ADAPTER_PATH must be an absolute executable path on the Windows smoke host");
+          if(!/^[A-Z0-9]{10}$/.test(e.MONET_PACKAGED_SMOKE_APPLE_TEAM_ID||""))bad.push("MONET_PACKAGED_SMOKE_APPLE_TEAM_ID must be the trusted 10-character Apple Team ID");
+          if(!(e.MONET_PACKAGED_SMOKE_APPLE_SIGNING_AUTHORITY||"").trim())bad.push("MONET_PACKAGED_SMOKE_APPLE_SIGNING_AUTHORITY must be the exact trusted codesign Authority");
+          if(!/^[A-F0-9]{40}$/.test(e.MONET_PACKAGED_SMOKE_WINDOWS_CERTIFICATE_THUMBPRINT||""))bad.push("MONET_PACKAGED_SMOKE_WINDOWS_CERTIFICATE_THUMBPRINT must be the trusted uppercase 40-character certificate thumbprint");
+          if(bad.length){for(const message of bad)console.error(`::error::${message}`);process.exit(1)}'
+
+  merge-full-packaged-smoke-macos:
+    name: Merge/full — packaged macOS smoke
+    needs: [self-hosted-source, merge-full-packaged-smoke-preflight]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    environment: monet-vision-packaged-smoke
+    runs-on: [self-hosted, monet-vision, macos, packaged-smoke]
+    env:
+      MONET_PACKAGED_SMOKE_COMMIT: ${{ needs.self-hosted-source.outputs.validated_sha }}
+      MONET_PACKAGED_SMOKE_ADAPTER_PATH: ${{ vars.MONET_PACKAGED_SMOKE_MACOS_ADAPTER_PATH }}
+      MONET_PACKAGED_SMOKE_APPLE_TEAM_ID: ${{ vars.MONET_PACKAGED_SMOKE_APPLE_TEAM_ID }}
+      MONET_PACKAGED_SMOKE_APPLE_SIGNING_AUTHORITY: ${{ vars.MONET_PACKAGED_SMOKE_APPLE_SIGNING_AUTHORITY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.self-hosted-source.outputs.validated_sha }}
+          persist-credentials: false
+      - name: Verify hosted-validated checkout before repository code
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$MONET_PACKAGED_SMOKE_COMMIT"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo install wasm-pack --locked --version 0.13.1
+      - run: pnpm install --frozen-lockfile
+      - name: Build fresh packaged release candidate
+        run: pnpm --filter monet-vision exec tauri build --ci
+      - name: Execute and validate packaged macOS smoke adapter
+        env:
+          MONET_PACKAGED_SMOKE_RESULT: ${{ runner.temp }}/vision-packaged-smoke-macos-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}.json
+          MONET_PACKAGED_SMOKE_EVIDENCE_ROOT: ${{ runner.temp }}/vision-packaged-smoke-macos-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}-evidence
+          MONET_PACKAGED_SMOKE_SIGNATURE_LOG: ${{ runner.temp }}/vision-packaged-smoke-macos-signature-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}.log
+          MONET_PACKAGED_SMOKE_SIGNATURE_ATTESTATION: ${{ runner.temp }}/vision-packaged-smoke-macos-signature-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}.json
+        run: |
+          set -euo pipefail
+          bundle_root="$GITHUB_WORKSPACE/apps/vision/src-tauri/target/release/bundle"
+          test -x "$MONET_PACKAGED_SMOKE_ADAPTER_PATH" || { echo "::error::macOS packaged-smoke adapter is missing or not executable"; exit 1; }
+          test -d "$bundle_root" || { echo "::error::fresh macOS Tauri bundle directory is missing"; exit 1; }
+          test ! -e "$MONET_PACKAGED_SMOKE_RESULT" || { echo "::error::packaged-smoke result path is not fresh"; exit 1; }
+          test ! -e "$MONET_PACKAGED_SMOKE_EVIDENCE_ROOT" || { echo "::error::packaged-smoke evidence root is not fresh"; exit 1; }
+          test ! -e "$MONET_PACKAGED_SMOKE_SIGNATURE_LOG" || { echo "::error::packaged-smoke signature log path is not fresh"; exit 1; }
+          test ! -e "$MONET_PACKAGED_SMOKE_SIGNATURE_ATTESTATION" || { echo "::error::packaged-smoke signature attestation path is not fresh"; exit 1; }
+          mkdir "$MONET_PACKAGED_SMOKE_EVIDENCE_ROOT"
+          # Adapter positional contract: fresh bundle root, exact checkout commit, fresh result JSON path,
+          # fresh evidence root, pinned Team ID, and exact pinned codesign authority.
+          # Full JSON/check contract: .github/scripts/packaged-smoke-adapter-contract.md.
+          # Result schema v3 requires the common checks plus every macos-* check declared by verify-packaged-smoke-result.mjs.
+          # Each check must have status=pass and its own non-empty, in-root evidence file with an exact lowercase SHA-256.
+          "$MONET_PACKAGED_SMOKE_ADAPTER_PATH" "$bundle_root" "$MONET_PACKAGED_SMOKE_COMMIT" "$MONET_PACKAGED_SMOKE_RESULT" "$MONET_PACKAGED_SMOKE_EVIDENCE_ROOT" "$MONET_PACKAGED_SMOKE_APPLE_TEAM_ID" "$MONET_PACKAGED_SMOKE_APPLE_SIGNING_AUTHORITY"
+          node .github/scripts/verify-packaged-smoke-result.mjs "$MONET_PACKAGED_SMOKE_RESULT" macos "$MONET_PACKAGED_SMOKE_COMMIT" "$bundle_root" "$MONET_PACKAGED_SMOKE_EVIDENCE_ROOT" "$MONET_PACKAGED_SMOKE_APPLE_TEAM_ID" "$MONET_PACKAGED_SMOKE_APPLE_SIGNING_AUTHORITY"
+
+          artifact_path="$(node -e 'const fs=require("node:fs"),result=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(result.artifact.path)' "$MONET_PACKAGED_SMOKE_RESULT")"
+          artifact_sha256="$(node -e 'const fs=require("node:fs"),result=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(result.artifact.sha256)' "$MONET_PACKAGED_SMOKE_RESULT")"
+          (
+            set -euo pipefail
+            hdiutil verify "$artifact_path"
+            mount_point="$(mktemp -d "$RUNNER_TEMP/vision-packaged-smoke-mount.XXXXXX")"
+            mounted=0
+            cleanup_mount() {
+              if [ "$mounted" -eq 1 ]; then hdiutil detach "$mount_point" >/dev/null; fi
+              rmdir "$mount_point" 2>/dev/null || true
+            }
+            trap cleanup_mount EXIT
+            hdiutil attach -nobrowse -readonly -mountpoint "$mount_point" "$artifact_path" >/dev/null
+            mounted=1
+            shopt -s nullglob
+            packaged_apps=("$mount_point"/*.app)
+            test "${#packaged_apps[@]}" -eq 1 || { echo "::error::packaged DMG must contain exactly one app bundle"; exit 1; }
+            codesign --verify --deep --strict --verbose=2 "${packaged_apps[0]}"
+            signature_metadata="$(codesign -dvvv "${packaged_apps[0]}" 2>&1)"
+            printf '%s\n' "$signature_metadata"
+            actual_team_id="$(printf '%s\n' "$signature_metadata" | sed -n 's/^TeamIdentifier=//p' | head -n 1)"
+            test "$actual_team_id" = "$MONET_PACKAGED_SMOKE_APPLE_TEAM_ID" || { echo "::error::packaged macOS Team ID does not match the pinned identity"; exit 1; }
+            printf '%s\n' "$signature_metadata" | grep -Fqx "Authority=$MONET_PACKAGED_SMOKE_APPLE_SIGNING_AUTHORITY" || { echo "::error::packaged macOS codesign authority does not match the pinned identity"; exit 1; }
+            spctl --assess --type execute --verbose=2 "${packaged_apps[0]}"
+          ) 2>&1 | tee "$MONET_PACKAGED_SMOKE_SIGNATURE_LOG"
+          signature_log_sha256="$(shasum -a 256 "$MONET_PACKAGED_SMOKE_SIGNATURE_LOG" | cut -d ' ' -f 1)"
+          node -e 'const fs=require("node:fs"),[file,commit,artifactSha256,logSha256,teamId,authority]=process.argv.slice(1);fs.writeFileSync(file,`${JSON.stringify({schemaVersion:1,platform:"macos",commit,artifactSha256,signatureLogSha256:logSha256,teamId,authority,status:"trusted"},null,2)}\n`)' \
+            "$MONET_PACKAGED_SMOKE_SIGNATURE_ATTESTATION" "$MONET_PACKAGED_SMOKE_COMMIT" "$artifact_sha256" "$signature_log_sha256" "$MONET_PACKAGED_SMOKE_APPLE_TEAM_ID" "$MONET_PACKAGED_SMOKE_APPLE_SIGNING_AUTHORITY"
+      - name: Archive macOS packaged-smoke result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vision-packaged-smoke-macos-${{ needs.self-hosted-source.outputs.validated_sha }}
+          path: |
+            ${{ runner.temp }}/vision-packaged-smoke-macos-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}.json
+            ${{ runner.temp }}/vision-packaged-smoke-macos-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}-evidence
+            ${{ runner.temp }}/vision-packaged-smoke-macos-signature-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}.log
+            ${{ runner.temp }}/vision-packaged-smoke-macos-signature-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  merge-full-packaged-smoke-windows:
+    name: Merge/full — packaged Windows smoke
+    needs: [self-hosted-source, merge-full-packaged-smoke-preflight]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    environment: monet-vision-packaged-smoke
+    runs-on: [self-hosted, monet-vision, windows, packaged-smoke]
+    env:
+      MONET_PACKAGED_SMOKE_COMMIT: ${{ needs.self-hosted-source.outputs.validated_sha }}
+      MONET_PACKAGED_SMOKE_ADAPTER_PATH: ${{ vars.MONET_PACKAGED_SMOKE_WINDOWS_ADAPTER_PATH }}
+      MONET_PACKAGED_SMOKE_WINDOWS_CERTIFICATE_THUMBPRINT: ${{ vars.MONET_PACKAGED_SMOKE_WINDOWS_CERTIFICATE_THUMBPRINT }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.self-hosted-source.outputs.validated_sha }}
+          persist-credentials: false
+      - name: Verify hosted-validated checkout before repository code
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD).Trim() -ne $env:MONET_PACKAGED_SMOKE_COMMIT) { throw "checkout does not match hosted-validated commit" }
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo install wasm-pack --locked --version 0.13.1
+      - run: pnpm install --frozen-lockfile
+      - name: Build fresh packaged release candidate
+        run: pnpm --filter monet-vision exec tauri build --ci
+      - name: Execute and validate packaged Windows smoke adapter
+        shell: pwsh
+        env:
+          MONET_PACKAGED_SMOKE_RESULT: ${{ runner.temp }}\vision-packaged-smoke-windows-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}.json
+          MONET_PACKAGED_SMOKE_EVIDENCE_ROOT: ${{ runner.temp }}\vision-packaged-smoke-windows-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}-evidence
+          MONET_PACKAGED_SMOKE_SIGNATURE_LOG: ${{ runner.temp }}\vision-packaged-smoke-windows-signature-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}.log
+          MONET_PACKAGED_SMOKE_SIGNATURE_ATTESTATION: ${{ runner.temp }}\vision-packaged-smoke-windows-signature-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}.json
+        run: |
+          $ErrorActionPreference = "Stop"
+          $bundleRoot = Join-Path $env:GITHUB_WORKSPACE "apps/vision/src-tauri/target/release/bundle"
+          if (-not (Test-Path -LiteralPath $env:MONET_PACKAGED_SMOKE_ADAPTER_PATH -PathType Leaf)) { throw "Windows packaged-smoke adapter is missing" }
+          if (-not (Test-Path -LiteralPath $bundleRoot -PathType Container)) { throw "Fresh Windows Tauri bundle directory is missing" }
+          if (Test-Path -LiteralPath $env:MONET_PACKAGED_SMOKE_RESULT) { throw "Packaged-smoke result path is not fresh" }
+          if (Test-Path -LiteralPath $env:MONET_PACKAGED_SMOKE_EVIDENCE_ROOT) { throw "Packaged-smoke evidence root is not fresh" }
+          if (Test-Path -LiteralPath $env:MONET_PACKAGED_SMOKE_SIGNATURE_LOG) { throw "Packaged-smoke signature log path is not fresh" }
+          if (Test-Path -LiteralPath $env:MONET_PACKAGED_SMOKE_SIGNATURE_ATTESTATION) { throw "Packaged-smoke signature attestation path is not fresh" }
+          New-Item -ItemType Directory -Path $env:MONET_PACKAGED_SMOKE_EVIDENCE_ROOT | Out-Null
+          # Adapter positional contract: fresh bundle root, exact checkout commit, fresh result JSON path,
+          # fresh evidence root, and the pinned Authenticode certificate thumbprint.
+          # Full JSON/check contract: .github/scripts/packaged-smoke-adapter-contract.md.
+          # Result schema v3 requires the common checks plus every windows-* check declared by verify-packaged-smoke-result.mjs.
+          # Each check must have status=pass and its own non-empty, in-root evidence file with an exact lowercase SHA-256.
+          $global:LASTEXITCODE = 0
+          & $env:MONET_PACKAGED_SMOKE_ADAPTER_PATH $bundleRoot $env:MONET_PACKAGED_SMOKE_COMMIT $env:MONET_PACKAGED_SMOKE_RESULT $env:MONET_PACKAGED_SMOKE_EVIDENCE_ROOT $env:MONET_PACKAGED_SMOKE_WINDOWS_CERTIFICATE_THUMBPRINT
+          $adapterSucceeded = $?
+          $adapterExitCode = $LASTEXITCODE
+          if (-not $adapterSucceeded -or $adapterExitCode -ne 0) { throw "Windows packaged-smoke adapter failed with exit code $adapterExitCode" }
+          node .github/scripts/verify-packaged-smoke-result.mjs $env:MONET_PACKAGED_SMOKE_RESULT windows $env:MONET_PACKAGED_SMOKE_COMMIT $bundleRoot $env:MONET_PACKAGED_SMOKE_EVIDENCE_ROOT $env:MONET_PACKAGED_SMOKE_WINDOWS_CERTIFICATE_THUMBPRINT
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $result = Get-Content -LiteralPath $env:MONET_PACKAGED_SMOKE_RESULT -Raw | ConvertFrom-Json
+          $artifactPath = $result.artifact.path
+          $signature = Get-AuthenticodeSignature -LiteralPath $artifactPath
+          if ($signature.Status -ne "Valid" -or $null -eq $signature.SignerCertificate) { throw "Packaged Windows artifact does not have a valid trusted Authenticode signature: $($signature.StatusMessage)" }
+          $actualThumbprint = ($signature.SignerCertificate.Thumbprint -replace '\s', '').ToUpperInvariant()
+          if ($actualThumbprint -ne $env:MONET_PACKAGED_SMOKE_WINDOWS_CERTIFICATE_THUMBPRINT) { throw "Packaged Windows certificate thumbprint does not match the pinned identity" }
+          [ordered]@{
+            status = $signature.Status.ToString()
+            statusMessage = $signature.StatusMessage
+            expectedThumbprint = $env:MONET_PACKAGED_SMOKE_WINDOWS_CERTIFICATE_THUMBPRINT
+            actualThumbprint = $actualThumbprint
+            subject = $signature.SignerCertificate.Subject
+            issuer = $signature.SignerCertificate.Issuer
+          } | ConvertTo-Json | Set-Content -LiteralPath $env:MONET_PACKAGED_SMOKE_SIGNATURE_LOG -Encoding utf8NoBOM
+          $signatureLogSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $env:MONET_PACKAGED_SMOKE_SIGNATURE_LOG).Hash.ToLowerInvariant()
+          [ordered]@{
+            schemaVersion = 1
+            platform = "windows"
+            commit = $env:MONET_PACKAGED_SMOKE_COMMIT
+            artifactSha256 = $result.artifact.sha256
+            signatureLogSha256 = $signatureLogSha256
+            certificateThumbprint = $actualThumbprint
+            status = "trusted"
+          } | ConvertTo-Json | Set-Content -LiteralPath $env:MONET_PACKAGED_SMOKE_SIGNATURE_ATTESTATION -Encoding utf8NoBOM
+      - name: Archive Windows packaged-smoke result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vision-packaged-smoke-windows-${{ needs.self-hosted-source.outputs.validated_sha }}
+          path: |
+            ${{ runner.temp }}\vision-packaged-smoke-windows-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}.json
+            ${{ runner.temp }}\vision-packaged-smoke-windows-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}-evidence
+            ${{ runner.temp }}\vision-packaged-smoke-windows-signature-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}.log
+            ${{ runner.temp }}\vision-packaged-smoke-windows-signature-${{ needs.self-hosted-source.outputs.validated_sha }}-${{ github.run_id }}-${{ github.run_attempt }}.json
+          if-no-files-found: warn
+          retention-days: 14

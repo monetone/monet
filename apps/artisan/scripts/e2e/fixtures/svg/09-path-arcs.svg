@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- elliptical arcs: each large-arc/sweep flag combination + x-axis rotation -->
+  <path d="M60 80 A 40 40 0 0 0 100 120" fill="none" stroke="#e0573a" stroke-width="4"/>
+  <path d="M160 80 A 40 40 0 0 1 200 120" fill="none" stroke="#3ac06a" stroke-width="4"/>
+  <path d="M260 80 A 40 40 0 1 0 300 120" fill="none" stroke="#4a9eff" stroke-width="4"/>
+  <path d="M360 80 A 40 40 0 1 1 320 120" fill="none" stroke="#a855f7" stroke-width="4"/>
+  <path d="M250 240 L 250 175 A 65 65 0 0 1 315 240 Z" fill="#e0a13a"/>
+  <path d="M60 200 A 60 35 35 1 0 170 245" fill="none" stroke="#ec4899" stroke-width="4"/>
+</svg>

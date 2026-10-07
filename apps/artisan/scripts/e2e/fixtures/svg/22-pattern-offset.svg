@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- pattern with a non-zero x/y origin + patternTransform (userSpaceOnUse) -->
+  <defs>
+    <pattern id="dots" x="7" y="7" width="30" height="30" patternUnits="userSpaceOnUse" patternTransform="rotate(15)">
+      <rect width="30" height="30" fill="#eeeeff"/>
+      <circle cx="15" cy="15" r="8" fill="#3ac06a"/>
+    </pattern>
+  </defs>
+  <rect x="40" y="40" width="320" height="220" fill="url(#dots)" stroke="#222222" stroke-width="3"/>
+</svg>

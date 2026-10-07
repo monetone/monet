@@ -1,0 +1,107 @@
+{
+  "source": "https://raw.pixls.us/json/getrepository.php?set=all",
+  "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "fixtures": [
+    {
+      "id": "cr3-canon-eos-250d-craw",
+      "format": "CR3",
+      "camera": "Canon EOS 250D",
+      "megapixels": 24,
+      "url": "https://raw.pixls.us/getfile.php/3383/nice/Canon%20-%20EOS%20250D%20-%20C-RAW%20(3:2).CR3",
+      "sha256": "69bdd267defb3d676f41f62a5e5ea65651669a04191cf4e89740917c59cedbcc"
+    },
+    {
+      "id": "cr2-canon-eos-350d",
+      "format": "CR2",
+      "camera": "Canon EOS 350D",
+      "megapixels": 7.96,
+      "url": "https://raw.pixls.us/getfile.php/758/nice/Canon%20-%20EOS%20350D%20-%20RAW%20(3:2).CR2",
+      "sha256": "8cbb84e04d93b005fe082da9c954122a612b5281af00aa088d767850f343fd38"
+    },
+    {
+      "id": "nef-nikon-d40x",
+      "format": "NEF",
+      "camera": "Nikon D40X",
+      "megapixels": 10.21,
+      "url": "https://raw.pixls.us/getfile.php/804/nice/Nikon%20-%20D40X%20-%2012bit%2012bit%20compressed%20(Lossy%20(type%201))%20(3:2).NEF",
+      "sha256": "c3e4956f7e2d1f1b3f846b6ec9552678073db0bcaeb51132ec4c60bd2229d56e"
+    },
+    {
+      "id": "arw-sony-slt-a57",
+      "format": "ARW",
+      "camera": "Sony SLT-A57",
+      "megapixels": 16.14,
+      "url": "https://raw.pixls.us/getfile.php/858/nice/Sony%20-%20SLT-A57%20-%2012bit%2012bit%20compressed%20(3:2).arw",
+      "sha256": "0e9064f369a3947f892c1d7b1971f75d3879f5673134932d5cc7a67bf4263ba4"
+    },
+    {
+      "id": "colorchecker-sony-ilce-7m2",
+      "format": "ARW",
+      "camera": "Sony ILCE-7M2 ColorChecker Passport D65",
+      "megapixels": 24.33,
+      "url": "https://raw.pixls.us/getfile.php/967/nice/Sony%20-%20ILCE-7M2%20-%2014bit%2014bit%20compressed%20(3:2).arw",
+      "sha256": "891b098c6cad16f01af4cbbe229d89652008b0108ad343079a4fc688b320fa14"
+    },
+    {
+      "id": "orientation-6-samsung-nx200",
+      "format": "SRW",
+      "camera": "Samsung NX200",
+      "megapixels": 20.3,
+      "orientation": 6,
+      "sourceRecord": "https://raw.pixls.us/getfile.php/839/exif/2013-05-08-194524__sam6589.srw.exif.txt",
+      "url": "https://raw.pixls.us/getfile.php/839/nice/Samsung%20-%20NX200%20-%2012bit%20(3:2).srw",
+      "sha256": "03563eadfe4ef32b5bf2a2850abb40b29fcc1f8d56b3b2ed92ef307b90d7d9dc"
+    },
+    {
+      "id": "dng-pentax-kx",
+      "format": "DNG",
+      "camera": "Pentax K-x",
+      "megapixels": 12.48,
+      "url": "https://raw.pixls.us/getfile.php/830/nice/Pentax%20-%20K-x%20-%2012bit%20(3:2).DNG",
+      "sha256": "7a594b66b54f99bb5aba4627c78abfc41213d6911ea54e4f5d2dd6c8505f6968"
+    },
+    {
+      "id": "dng-mosaic-canon-5d3",
+      "format": "DNG",
+      "camera": "Adobe DNG Converter / Canon EOS 5D Mark III",
+      "megapixels": 23.38,
+      "url": "https://raw.pixls.us/getfile.php/1022/nice/Adobe%20DNG%20Converter%20-%20Canon%20EOS%205D%20Mark%20III%20-%2016bit%2016bit%20uncompressed%20(3:2).DNG",
+      "sha256": "95dc76a2f255e623acaa5149b320389f7da7c995da890c3e0d511c0ff681b2e1"
+    },
+    {
+      "id": "raf-fujifilm-xt2-compressed",
+      "format": "RAF",
+      "camera": "Fujifilm X-T2",
+      "megapixels": 24.42,
+      "url": "https://raw.pixls.us/getfile.php/865/nice/Fujifilm%20-%20X-T2%20-%2014bit%2014bit%20compressed%20(3:2).RAF",
+      "sha256": "f756ad5be551a8b3e1b503a8a6f7e8e637fba519c0b0f8c79dd58e94b0287602"
+    },
+    {
+      "id": "bench-45mp-canon-eos-r5",
+      "format": "CR3",
+      "camera": "Canon EOS R5",
+      "megapixels": 44.76,
+      "benchmarkTier": 45,
+      "url": "https://raw.pixls.us/getfile.php/4698/nice/Canon%20-%20EOS%20R5%20-%203:2.CR3",
+      "sha256": "2deae46b816e56ba91ae7a3892ca121290e12d5b22afb11f5b05a3d8f09f759f"
+    },
+    {
+      "id": "bench-60mp-sony-a7riv",
+      "format": "ARW",
+      "camera": "Sony ILCE-7RM4",
+      "megapixels": 61.21,
+      "benchmarkTier": 60,
+      "url": "https://raw.pixls.us/getfile.php/3479/nice/Sony%20-%20ILCE-7RM4%20-%2012bit%2012bit%20compressed%20(3:2).ARW",
+      "sha256": "3421b919ee81224d59f78872ee099a021bff0e2a47ae5fbbac385b182ac7241e"
+    },
+    {
+      "id": "bench-100mp-fujifilm-gfx100ii",
+      "format": "RAF",
+      "camera": "Fujifilm GFX100 II",
+      "megapixels": 103.37,
+      "benchmarkTier": 100,
+      "url": "https://raw.pixls.us/getfile.php/7176/nice/Fujifilm%20-%20GFX100%20II%20-%2014bit%2014bit%20compressed%20(4:3).RAF",
+      "sha256": "03cf2a46b6b6b058547bbbbb46f2cd6fd546a7839f082da614a1e295b36368fa"
+    }
+  ]
+}

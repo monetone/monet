@@ -1,0 +1,414 @@
+/* ─────────────────────────────────────────────────────────────
+   Monet — overlay layer (tooltips, popovers, menus, dialogs, toasts)
+   ─────────────────────────────────────────────────────────────
+   Floating surfaces rendered through the in-house Portal into
+   #monet-overlay-root on <body>. They live outside .monet-window, so
+   they restate the typography tokens and lean on the same liquid-glass
+   vocabulary (--glass-*, --stroke-*, --hi-top, --accent, --radius-*).
+   Behavior + a11y come from monet-react; this file is visuals only.
+*/
+
+/* The managed portal root — a transparent, click-through-by-default layer.
+   Individual surfaces re-enable pointer events on themselves. It sits above
+   every in-app layer (fullscreen views, app-local modals) so a dropdown, menu
+   or popover opened from any of them is never buried. */
+.monet-overlay-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  font-family: var(--font-ui);
+  color: var(--text-1);
+}
+.monet-overlay-root > * {
+  pointer-events: auto;
+}
+
+/* ─── tooltip ─────────────────────────────────────────────────── */
+.monet-tooltip {
+  max-width: 260px;
+  padding: 5px 9px;
+  border-radius: var(--radius-control);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-1);
+  background: rgba(16, 21, 32, 0.92);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  box-shadow:
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px var(--stroke-medium),
+    0 8px 22px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  animation: monet-fade-in 0.12s ease both;
+}
+
+/* Two-line tool tooltip: a bold name over a muted description. Built by
+   `toolTip()` and shown after the standard 1s dwell on a tool-rail slot. */
+.monet-tool-tip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.monet-tool-tip-name {
+  font-weight: 600;
+}
+.monet-tool-tip-desc {
+  color: var(--text-2);
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
+/* ─── popover / floating panel base ───────────────────────────── */
+.monet-popover {
+  min-width: 160px;
+  border-radius: var(--radius-panel);
+  /* Dark, mostly-opaque tint + deeper shadow so menu text/glyphs stay legible
+     over ANY background (bright canvas, photos) — overlays no longer dim the
+     window, so each panel must carry its own contrast. */
+  background: rgba(16, 21, 32, 0.9);
+  backdrop-filter: var(--blur-strong);
+  -webkit-backdrop-filter: var(--blur-strong);
+  box-shadow:
+    0 24px 48px -8px rgba(0, 0, 0, 0.62),
+    0 4px 12px -2px rgba(0, 0, 0, 0.42),
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px var(--stroke-strong);
+  color: var(--text-1);
+  font-size: 12px;
+  animation: monet-pop-in 0.13s cubic-bezier(0.2, 0.85, 0.25, 1) both;
+}
+.monet-popover:focus { outline: none; }
+
+/* ─── menu list / items ───────────────────────────────────────── */
+.monet-menu-popover {
+  min-width: 200px;
+  padding: 5px;
+  overflow: hidden;
+}
+.monet-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  /* Long menus (e.g. Filter) must scroll rather than overflow off-screen so
+     every item — including those near the bottom — stays reachable. Submenus
+     render in their own portal, so they are not clipped by this container. */
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.monet-menu-list:focus { outline: none; }
+
+.monet-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px 0 6px;
+  border-radius: 6px;
+  color: var(--text-1);
+  cursor: default;
+  user-select: none;
+  white-space: nowrap;
+  outline: none;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.monet-menu-item.is-active:not(.is-disabled) {
+  background: var(--accent);
+  color: #0b0e14;
+}
+.monet-menu-item.is-disabled {
+  color: var(--text-disabled);
+  pointer-events: none;
+}
+
+/* leading check column — fixed width so labels align with or without a check */
+.monet-menu-check {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+.monet-menu-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  opacity: 0.85;
+}
+.monet-menu-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+}
+.monet-menu-shortcut {
+  flex: 0 0 auto;
+  margin-left: 18px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+}
+.monet-menu-item.is-active:not(.is-disabled) .monet-menu-shortcut {
+  color: rgba(11, 14, 20, 0.7);
+}
+.monet-menu-arrow {
+  flex: 0 0 auto;
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-3);
+}
+.monet-menu-item.is-active:not(.is-disabled) .monet-menu-arrow {
+  color: rgba(11, 14, 20, 0.8);
+}
+
+.monet-menu-sep {
+  height: 0.5px;
+  margin: 4px 8px;
+  background: var(--stroke-soft);
+}
+
+/* ─── menu bar (data-driven application menu row) ─────────────── */
+.monet-menubar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.monet-menubar .monet-menu {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+.monet-menubar .monet-menu:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* ─── dialog / modal ──────────────────────────────────────────── */
+.monet-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: transparent;
+  /* Fully transparent scrim — the main window stays sharp AND undimmed behind a
+     dialog: overlays must not obscure it. The scrim only captures backdrop
+     clicks and centers the dialog; the dialog panel itself (.monet-dialog)
+     frosts only its own background. */
+  animation: monet-fade-in 0.14s ease both;
+}
+.monet-dialog {
+  width: min(440px, 100%);
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-window);
+  /* Dark, mostly-opaque tint + deeper shadow so the dialog and its contents
+     stay legible over ANY background now that the scrim no longer dims. */
+  background: rgba(16, 21, 32, 0.86);
+  backdrop-filter: var(--blur-strong);
+  -webkit-backdrop-filter: var(--blur-strong);
+  box-shadow:
+    0 32px 80px -12px rgba(0, 0, 0, 0.7),
+    0 10px 30px -6px rgba(0, 0, 0, 0.52),
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px var(--stroke-strong);
+  color: var(--text-1);
+  overflow: hidden;
+  animation: monet-dialog-in 0.16s cubic-bezier(0.2, 0.85, 0.25, 1) both;
+}
+.monet-dialog:focus { outline: none; }
+.monet-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 0;
+}
+.monet-dialog-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-1);
+}
+.monet-dialog-close {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+.monet-dialog-close:hover { background: var(--glass-3); color: var(--text-1); }
+.monet-dialog-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.monet-dialog-desc {
+  margin: 8px 16px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.monet-dialog-body {
+  padding: 14px 16px;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-1);
+}
+.monet-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px 16px;
+  border-top: 0.5px solid var(--stroke-soft);
+}
+
+/* ─── toaster region + cards ──────────────────────────────────── */
+.monet-toaster {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.monet-toaster--top-left { top: 16px; left: 16px; align-items: flex-start; }
+.monet-toaster--top-right { top: 16px; right: 16px; align-items: flex-end; }
+.monet-toaster--bottom-left { bottom: 16px; left: 16px; align-items: flex-start; }
+.monet-toaster--bottom-right { bottom: 16px; right: 16px; align-items: flex-end; }
+
+.monet-toast {
+  pointer-events: auto;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 10px 10px 12px;
+  border-radius: var(--radius-panel);
+  background: rgba(16, 21, 32, 0.9);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  box-shadow:
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px var(--stroke-medium),
+    0 12px 30px -6px rgba(0, 0, 0, 0.5);
+  /* a left accent rail keyed to the variant */
+  border-left: 2px solid var(--toast-accent, var(--accent));
+  animation: monet-toast-in 0.18s cubic-bezier(0.2, 0.85, 0.25, 1) both;
+}
+.monet-toast--info { --toast-accent: oklch(0.78 0.12 230); }
+.monet-toast--success { --toast-accent: oklch(0.76 0.16 150); }
+.monet-toast--warn { --toast-accent: oklch(0.82 0.15 80); }
+.monet-toast--error { --toast-accent: oklch(0.68 0.20 25); }
+
+.monet-toast-icon {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--toast-accent);
+}
+.monet-toast-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.monet-toast-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 2px;
+}
+.monet-toast-message {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-2);
+  word-break: break-word;
+}
+.monet-toast-action {
+  flex: 0 0 auto;
+  align-self: center;
+  border: none;
+  background: var(--glass-2);
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: var(--radius-control);
+  cursor: default;
+  box-shadow: inset 0 0.5px 0 var(--hi-top);
+}
+.monet-toast-action:hover { background: var(--glass-3); }
+.monet-toast-action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.monet-toast-close {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: -2px -2px 0 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+.monet-toast-close:hover { background: var(--glass-2); color: var(--text-1); }
+.monet-toast-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ─── motion ──────────────────────────────────────────────────── */
+@keyframes monet-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes monet-pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes monet-dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes monet-toast-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monet-tooltip,
+  .monet-popover,
+  .monet-dialog-backdrop,
+  .monet-dialog,
+  .monet-toast {
+    animation: none;
+  }
+}

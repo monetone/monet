@@ -1,0 +1,34 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor / OS junk
+*~
+.idea/
+.vscode/
+Thumbs.db
+
+# Generated canvas state (written at runtime via the omelette bridge)
+.design-canvas.state.json
+**/.design-canvas.state.json
+
+# ─── Tauri 2 + Rust + pnpm workspace ───
+node_modules/
+dist/
+**/dist/
+.turbo/
+
+# Rust / Cargo
+# Cargo.lock IS committed: this workspace builds binaries (the example apps),
+# so the lockfile is checked in for reproducible builds.
+target/
+**/target/
+
+# Tauri generated
+**/src-tauri/gen/
+**/src-tauri/target/
+
+# Vite
+*.local
+.vite/

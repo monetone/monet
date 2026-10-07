@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Monet Anime",
+  "version": "0.1.0",
+  "identifier": "dev.monet.anime",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1425",
+    "beforeDevCommand": "pnpm vite --port 1425 --strictPort",
+    "beforeBuildCommand": "pnpm vite build"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "macOSPrivateApi": true,
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "macOS": {
+      "bundleName": "Anime"
+    },
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "mani"
+        ],
+        "name": "Monet Anime Project",
+        "description": "Monet Anime Project",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "mvis",
+          "mart",
+          "mgal",
+          "mcin",
+          "mjou",
+          "mryt"
+        ],
+        "name": "Monet Document",
+        "description": "Monet document from another app",
+        "role": "Viewer"
+      }
+    ]
+  }
+}

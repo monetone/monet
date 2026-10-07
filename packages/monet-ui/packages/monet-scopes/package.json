@@ -1,0 +1,31 @@
+{
+  "name": "@monet-ui/monet-scopes",
+  "version": "0.1.0",
+  "description": "Monet — framework-free scope displays (waveform monitor, vectorscope) that render a shared engine density grid, plus the U²-Net salient-object pre/post-processing tensor math. Shared across the Monet apps.",
+  "license": "MIT",
+  "author": "Monet / monet-ui",
+  "type": "module",
+  "//": "Framework-agnostic: NO React/DOM imports, so it runs in node/workers too. Pure functions over typed arrays. dist/ is built fresh by prepare/prepublishOnly.",
+  "sideEffects": false,
+  "files": ["dist"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "prepare": "pnpm run build",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": ["scopes", "waveform", "vectorscope", "u2net", "segmentation", "photo", "monet"],
+  "homepage": "https://github.com/monetone/monet/tree/main/packages/monet-ui/packages/monet-scopes#readme",
+  "repository": { "type": "git", "url": "git+https://github.com/monetone/monet.git", "directory": "packages/monet-ui/packages/monet-scopes" },
+  "bugs": { "url": "https://github.com/monetone/monet/issues" },
+  "publishConfig": { "access": "public" },
+  "devDependencies": { "tsup": "^8.3.5", "typescript": "^5.6.3", "vitest": "^4.1.8" }
+}

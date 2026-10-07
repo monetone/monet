@@ -1,0 +1,41 @@
+{
+  "name": "@monet-ui/monet-format",
+  "version": "0.1.0",
+  "description": "Monet — the universal, cross-openable .monet project file format. A thin typed wrapper over the shared Rust `monet-format` crate (compiled to WASM): one envelope every Monet app reads/writes losslessly, with a self-describing per-sequence timeBase and namespaced per-app payload.",
+  "license": "MIT",
+  "author": "Monet / monet-ui",
+  "type": "module",
+  "//": "The format LOGIC lives in the Rust crate at ../../crates/monet-format; this package compiles it to WASM (build:wasm) and wraps it. Call initMonetFormat() once at app startup.",
+  "sideEffects": false,
+  "files": ["dist", "wasm"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build:wasm": "wasm-pack build ../../crates/monet-format --target web --out-dir \"../../packages/monet-format/wasm\" --features wasm",
+    "build": "pnpm run build:wasm && tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "prepare": "pnpm run build",
+    "prepublishOnly": "pnpm --filter @monet-ui/monet-timeline run build && pnpm run build"
+  },
+  "keywords": ["monet", "file-format", "nle", "interchange", "video", "audio", "wasm"],
+  "homepage": "https://github.com/monetone/monet/tree/main/packages/monet-ui/packages/monet-format#readme",
+  "repository": { "type": "git", "url": "git+https://github.com/monetone/monet.git", "directory": "packages/monet-ui/packages/monet-format" },
+  "bugs": { "url": "https://github.com/monetone/monet/issues" },
+  "publishConfig": { "access": "public" },
+  "dependencies": {
+    "@monet-ui/monet-timeline": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.8"
+  }
+}

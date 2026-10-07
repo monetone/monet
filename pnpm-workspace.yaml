@@ -1,0 +1,28 @@
+# Monet monorepo workspace.
+#
+#   apps/*                       -> the five Monet desktop apps (Tauri 2 + Vite + React)
+#   packages/monet-ui/packages/* -> the shared Monet UI design-system packages
+#                                  (monet-core, -react, -format, -timeline, -collab),
+#                                  consumed by every app via `workspace:*`.
+#
+# monet-ui's own `examples/*` and `create-monet-app` are intentionally NOT workspace members.
+packages:
+  - "apps/*"
+  - "packages/monet-ui/packages/*"
+
+# Dependency build scripts (pnpm v10+ blocks them by default). This pnpm honors the
+# `allowBuilds` map; `onlyBuiltDependencies` is kept for compatibility.
+#   esbuild     — needs its native binary built (Vite/tsup).
+#   protobufjs  — transitive via onnxruntime-web; not needed for the browser build.
+#   leveldown   — y-websocket's OPTIONAL LevelDB server persistence; the client never
+#                 loads it and the demo server runs in-memory.
+allowBuilds:
+  esbuild: true
+  protobufjs: false
+  leveldown: false
+onlyBuiltDependencies:
+  - esbuild
+
+# Do not auto-reinstall before every `pnpm run`/`exec` (a harmless ignored build
+# would otherwise make every script invocation exit non-zero).
+verifyDepsBeforeRun: false

@@ -1,0 +1,30 @@
+version: 2
+updates:
+  # npm (pnpm) dependencies for the frontend.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-patch:
+        update-types: [minor, patch]
+
+  # Rust crates for the Tauri host, the WASM engine, and the format crate.
+  - package-ecosystem: cargo
+    directories:
+      - "/src-tauri"
+      - "/engine"
+      - "/crates/monet-format"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      cargo-minor-patch:
+        update-types: [minor, patch]
+
+  # The CI workflow's own actions.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

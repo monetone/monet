@@ -1,0 +1,78 @@
+{
+  "source": {
+    "id": "colorchecker-sony-ilce-7m2",
+    "fixturePathLookupKey": "colorchecker-sony-ilce-7m2",
+    "sha256": "891b098c6cad16f01af4cbbe229d89652008b0108ad343079a4fc688b320fa14"
+  },
+  "acceptedEnvironment": {
+    "osBuild": "Version 26.4 (Build 25E246)",
+    "sdk": "26.4",
+    "backend": "macos-core-image",
+    "backendRevision": "2",
+    "decoderVersion": "8",
+    "rawloaderVersion": "0.37.1"
+  },
+  "mosaicGeometry": {
+    "dimensions": [6048, 4024],
+    "coordinateSpace": "normalized-top-left-full-rawloader-mosaic",
+    "order": "row-major-A1-through-F4",
+    "columns": [0.4237, 0.4646, 0.5054, 0.5449, 0.5847, 0.6253],
+    "rows": [0.3912, 0.4522, 0.5130, 0.5743],
+    "roiHalfSize": [0.008, 0.012]
+  },
+  "productGeometry": {
+    "nativeDimensions": [6000, 4000],
+    "coordinateSpace": "normalized-top-left-orientation-1-core-image-product-output",
+    "order": "row-major-A1-through-F4",
+    "columns": [0.4237, 0.4646, 0.5054, 0.5449, 0.5847, 0.6253],
+    "rows": [0.3912, 0.4522, 0.5130, 0.5743],
+    "roiHalfSize": [0.008, 0.012]
+  },
+  "reference": {
+    "name": "X-Rite ColorChecker24 After November 2014",
+    "sourceRecord": "https://zenodo.org/records/3245895",
+    "archiveFilename": "ColorChecker24_After_Nov2014.zip",
+    "archiveMd5": "bc09e5e6a0a5812a26fe693a710522f1",
+    "illuminant": "D50",
+    "observer": "2deg",
+    "measurementCondition": "M0",
+    "edition": "post-November-2014",
+    "order": "row-major-A1-through-F4",
+    "patches": [
+      {"id": "A1", "labD50": [37.54, 14.37, 14.92]},
+      {"id": "B1", "labD50": [64.66, 19.27, 17.50]},
+      {"id": "C1", "labD50": [49.32, -3.82, -22.54]},
+      {"id": "D1", "labD50": [43.46, -12.74, 22.72]},
+      {"id": "E1", "labD50": [54.94, 9.61, -24.79]},
+      {"id": "F1", "labD50": [70.48, -32.26, -0.37]},
+      {"id": "A2", "labD50": [62.73, 35.83, 56.50]},
+      {"id": "B2", "labD50": [39.43, 10.75, -45.17]},
+      {"id": "C2", "labD50": [50.57, 48.64, 16.67]},
+      {"id": "D2", "labD50": [30.10, 22.54, -20.87]},
+      {"id": "E2", "labD50": [71.77, -24.13, 58.19]},
+      {"id": "F2", "labD50": [71.51, 18.24, 67.37]},
+      {"id": "A3", "labD50": [28.37, 15.42, -49.80]},
+      {"id": "B3", "labD50": [54.38, -39.72, 32.27]},
+      {"id": "C3", "labD50": [42.43, 51.05, 28.62]},
+      {"id": "D3", "labD50": [81.80, 2.67, 80.41]},
+      {"id": "E3", "labD50": [50.63, 51.28, -14.12]},
+      {"id": "F3", "labD50": [49.57, -29.71, -28.32]},
+      {"id": "A4", "labD50": [95.19, -1.03, 2.93]},
+      {"id": "B4", "labD50": [81.29, -0.57, 0.44]},
+      {"id": "C4", "labD50": [66.89, -0.75, -0.06]},
+      {"id": "D4", "labD50": [50.76, -0.13, 0.14]},
+      {"id": "E4", "labD50": [35.63, -0.46, -0.48]},
+      {"id": "F4", "labD50": [20.64, 0.07, -0.46]}
+    ]
+  },
+  "thresholds": {
+    "chromaticMean": 4.0,
+    "p95AllNearestRank": 8.0,
+    "neutralMax": 2.5,
+    "patchCount": 24
+  },
+  "canonicalDigests": {
+    "referenceTuplesSha256": "81c47453e1127088f65dfcf768f999ba5819585e9c15a12b351ef4139b8a894a",
+    "configSha256": "4b60bbe2cd017c0f268604472b548141ca42b08ba6f49324b6c35449fd0d0633"
+  }
+}

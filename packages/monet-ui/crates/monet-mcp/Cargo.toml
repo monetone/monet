@@ -1,0 +1,18 @@
+[package]
+name = "monet-mcp"
+description = "Monet — shared Tauri 2 plugin that exposes a running Monet app as a local Model Context Protocol (MCP) server over HTTP, bridged to the webview command registry via Tauri events."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+tauri = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+# Tiny synchronous HTTP server for the localhost MCP endpoint. Runs on its own
+# thread; no async runtime needed.
+tiny_http = "0.12"
+# Cross-platform CSPRNG for the bearer token.
+getrandom = "0.2"

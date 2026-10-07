@@ -1,0 +1,2126 @@
+{
+  "app": "vision",
+  "version": "0.1.0",
+  "tools": [
+    {
+      "name": "action.batch",
+      "description": "File ▸ Automate ▸ Batch over every open document: play a saved action on each and write the results. Uses the open documents as the source, so it needs no file picker.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionId": {
+            "type": "number",
+            "description": "Action id from action.list."
+          },
+          "destDir": {
+            "type": "string",
+            "description": "Absolute destination folder (native desktop only); omit to download each result instead."
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "png",
+              "jpeg",
+              "tiff"
+            ],
+            "description": "Output format for each processed document.",
+            "default": "png"
+          },
+          "template": {
+            "type": "string",
+            "description": "File Naming template, e.g. \"{name}_{serial}_processed\"; empty uses the default.",
+            "default": ""
+          }
+        },
+        "required": [
+          "actionId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "action.delete",
+      "description": "Delete a saved action.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionId": {
+            "type": "number",
+            "description": "Action id from action.list."
+          }
+        },
+        "required": [
+          "actionId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "action.deleteStep",
+      "description": "Delete one step from an action.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionId": {
+            "type": "number",
+            "description": "Action id from action.list."
+          },
+          "stepIndex": {
+            "type": "number",
+            "description": "Zero-based step index from action.steps."
+          }
+        },
+        "required": [
+          "actionId",
+          "stepIndex"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "action.import",
+      "description": "Import actions from a .mvactions payload or an Adobe .atn pack. Steps whose command this build cannot replay are rejected (.mvactions) or imported as Stops naming them (.atn), never replaced with something else.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "string",
+            "description": "Vision's own mvactions JSON text, or — for format \"atn\" — the Adobe pack's bytes as base64.",
+            "maxLength": 1048576
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "mvactions",
+              "atn"
+            ],
+            "description": "Payload format.",
+            "default": "mvactions"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "action.list",
+      "description": "List the saved actions as JSON (id, name, set, stepCount, favorite, lastPlayedAt).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Case-insensitive filter over action and set names; empty lists everything.",
+            "default": ""
+          },
+          "favoritesOnly": {
+            "type": "boolean",
+            "description": "List only actions marked as favorites.",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "action.moveStep",
+      "description": "Move a step within an action, which is how a recorded sequence is reordered.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionId": {
+            "type": "number",
+            "description": "Action id from action.list."
+          },
+          "fromIndex": {
+            "type": "number",
+            "description": "Zero-based index of the step to move."
+          },
+          "toIndex": {
+            "type": "number",
+            "description": "Zero-based index to move it to."
+          }
+        },
+        "required": [
+          "actionId",
+          "fromIndex",
+          "toIndex"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "action.play",
+      "description": "Play a saved action on the active document, honoring disabled steps, stops and conditionals. Photoshop's Play / Play From Here.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionId": {
+            "type": "number",
+            "description": "Action id from action.list."
+          },
+          "fromStep": {
+            "type": "number",
+            "description": "Zero-based step index to start from (Play From Here).",
+            "default": 0
+          }
+        },
+        "required": [
+          "actionId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "action.record",
+      "description": "Begin or end recording. While recording, every command Photoshop would record becomes a step — MCP tools included, so an agent authors an action by running the tools it wants replayed. Photoshop's Begin/Stop Recording.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "recording": {
+            "type": "boolean",
+            "description": "True to begin a new recording (discarding an unsaved one), false to stop."
+          }
+        },
+        "required": [
+          "recording"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "action.rename",
+      "description": "Rename a saved action.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionId": {
+            "type": "number",
+            "description": "Action id from action.list."
+          },
+          "name": {
+            "type": "string",
+            "description": "The new name."
+          }
+        },
+        "required": [
+          "actionId",
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "action.runDroplet",
+      "description": "Run a droplet saved by File ▸ Automate ▸ Create Droplet over image files or folders, as dropping them on the droplet does: its action, File Naming, format and destination folder (Downloads when it has none). Native desktop only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dropletPath": {
+            "type": "string",
+            "description": "Absolute path of the droplet's .json descriptor (a droplet app keeps it at Contents/Resources/droplet.json)."
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Absolute paths of the images or folders to process."
+          }
+        },
+        "required": [
+          "dropletPath",
+          "paths"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "action.save",
+      "description": "Save what was just recorded as a named action, so it shows up in the Actions panel and replays with action.play.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name for the saved action; empty takes the next default (\"Action 3\").",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "action.saveDroplet",
+      "description": "File ▸ Automate ▸ Create Droplet: save a saved action and Batch settings as a droplet. A path ending in .app builds a droplet app (macOS, signed for this Mac only) that runs when images or folders are dropped on it in Finder; any other path saves the .json descriptor. Native desktop only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute destination path ending in .app or .json."
+          },
+          "actionId": {
+            "type": "number",
+            "description": "Action id from action.list."
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "png",
+              "jpeg",
+              "tiff"
+            ],
+            "description": "Output format for each processed image.",
+            "default": "png"
+          },
+          "template": {
+            "type": "string",
+            "description": "File Naming template, e.g. \"{name}_{serial}_processed\"; empty uses the default.",
+            "default": ""
+          },
+          "destDir": {
+            "type": "string",
+            "description": "Absolute folder the droplet writes to; omit to write to Downloads."
+          },
+          "stopOnError": {
+            "type": "boolean",
+            "description": "Stop at the first image that fails instead of logging it and going on.",
+            "default": false
+          }
+        },
+        "required": [
+          "path",
+          "actionId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "action.setStep",
+      "description": "Set a step's flags: whether it runs at all, and whether playback pauses on it to confirm. Photoshop's step checkbox and modal-dialog toggle.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionId": {
+            "type": "number",
+            "description": "Action id from action.list."
+          },
+          "stepIndex": {
+            "type": "number",
+            "description": "Zero-based step index from action.steps."
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "False skips the step on playback.",
+            "default": true
+          },
+          "dialog": {
+            "type": "boolean",
+            "description": "True pauses playback on the step to confirm it.",
+            "default": false
+          }
+        },
+        "required": [
+          "actionId",
+          "stepIndex"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "action.steps",
+      "description": "List an action's steps as JSON (index, label, args, enabled, dialog, volatile) — the indices every other step tool takes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionId": {
+            "type": "number",
+            "description": "Action id from action.list."
+          }
+        },
+        "required": [
+          "actionId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "adj.blackWhite",
+      "description": "Convert the active layer to black and white using Photoshop-style color-band mixing and optional tinting.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "reds": {
+            "type": "number",
+            "description": "Red contribution.",
+            "minimum": -200,
+            "maximum": 300,
+            "default": 40
+          },
+          "yellows": {
+            "type": "number",
+            "description": "Yellow contribution.",
+            "minimum": -200,
+            "maximum": 300,
+            "default": 60
+          },
+          "greens": {
+            "type": "number",
+            "description": "Green contribution.",
+            "minimum": -200,
+            "maximum": 300,
+            "default": 40
+          },
+          "cyans": {
+            "type": "number",
+            "description": "Cyan contribution.",
+            "minimum": -200,
+            "maximum": 300,
+            "default": 60
+          },
+          "blues": {
+            "type": "number",
+            "description": "Blue contribution.",
+            "minimum": -200,
+            "maximum": 300,
+            "default": 20
+          },
+          "magentas": {
+            "type": "number",
+            "description": "Magenta contribution.",
+            "minimum": -200,
+            "maximum": 300,
+            "default": 80
+          },
+          "tint": {
+            "type": "boolean",
+            "description": "Apply the selected tint to the grayscale result.",
+            "default": false
+          },
+          "tintHue": {
+            "type": "number",
+            "description": "Tint hue in degrees.",
+            "minimum": 0,
+            "maximum": 360,
+            "default": 40
+          },
+          "tintSaturation": {
+            "type": "number",
+            "description": "Tint saturation.",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 20
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "adj.brightnessContrast",
+      "description": "Adjust brightness and contrast of the active layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "brightness": {
+            "type": "number",
+            "description": "Brightness.",
+            "minimum": -150,
+            "maximum": 150
+          },
+          "contrast": {
+            "type": "number",
+            "description": "Contrast.",
+            "minimum": -100,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "brightness",
+          "contrast"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "adj.cameraRawRecipe",
+      "description": "Apply or update a complete canonical Camera Raw recipe on the active layer. Smart Objects retain it as editable fid-17 data. Super Resolution is only supported while opening a RAW source and is rejected here.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "recipeJson": {
+            "type": "string",
+            "description": "JSON object matching the Camera Raw recipe schema, including optional profile, crop, healing, masks, and Enhance fields; enhance.superResolution must be false.",
+            "maxLength": 1048576
+          }
+        },
+        "required": [
+          "recipeJson"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "adj.exposure",
+      "description": "Adjust exposure of the active layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "exposure": {
+            "type": "number",
+            "description": "Exposure in stops.",
+            "minimum": -20,
+            "maximum": 20
+          },
+          "offset": {
+            "type": "number",
+            "description": "Offset.",
+            "minimum": -0.5,
+            "maximum": 0.5
+          },
+          "gamma": {
+            "type": "number",
+            "description": "Gamma correction.",
+            "minimum": 0.01,
+            "maximum": 9.99
+          }
+        },
+        "required": [
+          "exposure",
+          "offset",
+          "gamma"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "adj.hueSaturation",
+      "description": "Adjust hue, saturation and lightness of the active layer, optionally targeting six color ranges or colorizing the result.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "hue": {
+            "type": "number",
+            "description": "Hue shift in degrees, or the target hue while colorizing.",
+            "minimum": -180,
+            "maximum": 360
+          },
+          "saturation": {
+            "type": "number",
+            "description": "Saturation, or the target saturation while colorizing.",
+            "minimum": -100,
+            "maximum": 100
+          },
+          "lightness": {
+            "type": "number",
+            "description": "Lightness.",
+            "minimum": -100,
+            "maximum": 100
+          },
+          "colorize": {
+            "type": "boolean",
+            "description": "Map every pixel to the target hue and saturation.",
+            "default": false
+          },
+          "ranges": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Optional 18 numbers: hue, saturation, lightness triples for Reds, Yellows, Greens, Cyans, Blues, and Magentas. Hue values run from -180 to 180; saturation and lightness from -100 to 100."
+          }
+        },
+        "required": [
+          "hue",
+          "saturation",
+          "lightness"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "adj.invert",
+      "description": "Invert the colors of the active layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "adj.posterize",
+      "description": "Reduce the number of tonal levels (posterize) the active layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "levels": {
+            "type": "number",
+            "description": "Number of levels per channel.",
+            "minimum": 2,
+            "maximum": 255
+          }
+        },
+        "required": [
+          "levels"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "adj.threshold",
+      "description": "Convert the active layer to high-contrast black and white at a threshold.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "number",
+            "description": "Threshold level.",
+            "minimum": 0,
+            "maximum": 255
+          }
+        },
+        "required": [
+          "level"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "adj.vibrance",
+      "description": "Boost less-saturated colors while protecting skin tones.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "vibrance": {
+            "type": "number",
+            "description": "Vibrance.",
+            "minimum": -100,
+            "maximum": 100
+          },
+          "saturation": {
+            "type": "number",
+            "description": "Saturation.",
+            "minimum": -100,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "vibrance",
+          "saturation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "brush.setSymmetry",
+      "description": "Select a Paint Symmetry preset. Changing presets resets its path to the document centre.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "number",
+            "description": "Preset index: 0 Off, 1 Vertical, 2 Horizontal, 3 Dual Axis, 4 Diagonal, 5 Wavy, 6 Circle, 7 Spiral, 8 Parallel Lines, 9 Radial, 10 Mandala."
+          },
+          "segments": {
+            "type": "number",
+            "description": "Radial segments or Mandala segments (3..10).",
+            "minimum": 2,
+            "maximum": 12,
+            "default": 6
+          }
+        },
+        "required": [
+          "mode"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "brush.transformSymmetry",
+      "description": "Transform the active Paint Symmetry path in document coordinates.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "axisX": {
+            "type": "number",
+            "description": "Path centre X in pixels."
+          },
+          "axisY": {
+            "type": "number",
+            "description": "Path centre Y in pixels."
+          },
+          "angle": {
+            "type": "number",
+            "description": "Rotation in degrees (-180..<180).",
+            "default": 0
+          },
+          "scale": {
+            "type": "number",
+            "description": "Uniform path scale.",
+            "minimum": 0.01,
+            "maximum": 100,
+            "default": 1
+          }
+        },
+        "required": [
+          "axisX",
+          "axisY"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cameraRaw.loadProfile",
+      "description": "Load a DNG camera profile (.dcp) into Camera Raw's profile library, as Profile ▸ Load Profile… does. It is offered for RAWs from the camera it was made for (its UniqueCameraModel).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "string",
+            "description": "The DNG camera profile file's bytes, as base64.",
+            "maxLength": 11184812
+          },
+          "name": {
+            "type": "string",
+            "description": "The file name, used when the profile carries no ProfileName.",
+            "default": "Custom.dcp"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cameraRaw.profiles",
+      "description": "List Camera Raw's DNG camera profile library and, when the workspace shows a RAW, the Profile menu for it: the built-in looks, its embedded profile and the library profiles made for its camera. Choose one by setting a recipe's profile to an entry's `profile` (with adj.cameraRawRecipe, or in the workspace).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cameraRaw.selectSession",
+      "description": "Switch the open Camera Raw workspace to a pending session (filmstrip navigation).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "The session id to activate (from cameraRaw.sessions)."
+          }
+        },
+        "required": [
+          "sessionId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cameraRaw.sessions",
+      "description": "List the pending Camera Raw sessions shown in the workspace filmstrip (active session first).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cameraRaw.setImportOptions",
+      "description": "Set Camera Raw's RAW import options. Both persist as import preferences; a new demosaic also re-decodes the RAW the open Camera Raw workspace is showing.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "demosaic": {
+            "type": "string",
+            "enum": [
+              "adaptive",
+              "bilinear"
+            ],
+            "description": "Mosaic (Bayer) demosaic: \"adaptive\" (PPG, edge-directed, fewer colour fringes) or \"bilinear\" (the fast 3×3 average). Omit to keep."
+          },
+          "depth": {
+            "type": "number",
+            "description": "Bits per channel of the document Open makes: 16, or 32 for a float document on the Image ▸ Mode ▸ 32 Bits scale that keeps highlights above white. Omit to keep."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "doc.addLayer",
+      "description": "Add a new empty layer above the active layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "doc.convertToProfile",
+      "description": "Edit ▸ Convert to Profile: convert the document into a built-in RGB profile (an RGB document), or separate it through the bundled working CMYK press profile (ISO Coated v2 300%, FOGRA39), which makes it a CMYK document whose plates come from that profile. 8/16-bit only for the CMYK destination.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "destination": {
+            "type": "string",
+            "enum": [
+              "srgb",
+              "display-p3",
+              "adobe-rgb",
+              "rec-2020",
+              "working-cmyk"
+            ],
+            "description": "Destination profile.",
+            "default": "srgb"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "perceptual",
+              "relative-colorimetric",
+              "saturation",
+              "absolute-colorimetric"
+            ],
+            "description": "Rendering intent.",
+            "default": "relative-colorimetric"
+          },
+          "blackPointCompensation": {
+            "type": "boolean",
+            "description": "Map the source black point onto the destination's, keeping shadow detail. Defaults to Color Settings' Use Black Point Compensation."
+          },
+          "dither": {
+            "type": "boolean",
+            "description": "Dither the converted 8-bit values instead of rounding them (no effect on 16/32-bit documents).",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "doc.exportAs",
+      "description": "Export the flattened composite to an absolute path using any flat format supported by File > Save As (JPEG 2000 is written lossless; Photoshop Raw interleaved, Mac byte order, no header). Leaves the document's own path and unsaved state untouched. Native desktop only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute destination path ending in a supported flat export format."
+          },
+          "quality": {
+            "type": "number",
+            "description": "JPEG quality; ignored by non-JPEG formats.",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 92
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "doc.exportPngBase64",
+      "description": "Export the composited document as PNG image content for the MCP client.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "doc.loadDicomSeries",
+      "description": "File ▸ Scripts ▸ Load Multiple DICOM Files: open a DICOM series as one document with a layer per file, in Instance Number order. Native desktop only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Absolute paths of the DICOM files."
+          }
+        },
+        "required": [
+          "paths"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "doc.new",
+      "description": "Open a new tab with a blank document. Oversized requests are scaled to the engine's safe pixel budget. The reported name is the tab title after de-duplication.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "width": {
+            "type": "number",
+            "description": "Canvas width in the selected unit.",
+            "minimum": 0.00001,
+            "maximum": 32767
+          },
+          "height": {
+            "type": "number",
+            "description": "Canvas height in the selected unit.",
+            "minimum": 0.00001,
+            "maximum": 32767
+          },
+          "name": {
+            "type": "string",
+            "description": "Document name shown in the title.",
+            "default": "Untitled"
+          },
+          "resolutionPpi": {
+            "type": "number",
+            "description": "Physical resolution in pixels per inch.",
+            "minimum": 1,
+            "maximum": 100000,
+            "default": 72
+          },
+          "colorMode": {
+            "type": "string",
+            "enum": [
+              "rgb",
+              "grayscale",
+              "cmyk",
+              "lab",
+              "multichannel"
+            ],
+            "description": "Document color mode.",
+            "default": "rgb"
+          },
+          "colorProfile": {
+            "type": "string",
+            "enum": [
+              "srgb",
+              "display-p3",
+              "adobe-rgb",
+              "rec-2020"
+            ],
+            "description": "Built-in RGB color profile; ignored for non-RGB documents.",
+            "default": "srgb"
+          },
+          "sizeUnit": {
+            "type": "string",
+            "enum": [
+              "px",
+              "in",
+              "cm",
+              "mm",
+              "pt",
+              "pc"
+            ],
+            "description": "Unit for width and height.",
+            "default": "px"
+          }
+        },
+        "required": [
+          "width",
+          "height"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "doc.open",
+      "description": "Open an existing file from disk as a new document tab — the same loader File ▸ Open uses (PSD/PSB/XCF, RAW, PDF, SVG, JPEG 2000, Cineon/DPX, IFF, DICOM, .mvision, .monetgfx, .artisan and the common image formats). A headerless Photoshop Raw file needs doc.openPhotoshopRaw. Native desktop only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute path of the file to open."
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "doc.openPhotoshopRaw",
+      "description": "Open a headerless Photoshop Raw file with the layout File ▸ Open's Photoshop Raw Options dialog asks for. Native desktop only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute path of the raw file."
+          },
+          "width": {
+            "type": "number",
+            "description": "Image width in pixels."
+          },
+          "height": {
+            "type": "number",
+            "description": "Image height in pixels."
+          },
+          "channels": {
+            "type": "number",
+            "description": "1 grey, 2 grey + alpha, 3 RGB, 4 RGBA.",
+            "default": 3
+          },
+          "depth": {
+            "type": "number",
+            "description": "Bits per channel: 8 or 16.",
+            "default": 8
+          },
+          "interleaved": {
+            "type": "boolean",
+            "description": "True when each pixel's channels are stored together; false for one channel plane after another.",
+            "default": true
+          },
+          "byteOrder": {
+            "type": "string",
+            "enum": [
+              "mac",
+              "ibm"
+            ],
+            "description": "Byte order of 16-bit samples.",
+            "default": "mac"
+          },
+          "header": {
+            "type": "number",
+            "description": "Bytes to skip before the samples.",
+            "default": 0
+          }
+        },
+        "required": [
+          "path",
+          "width",
+          "height"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "doc.saveAs",
+      "description": "Save the active document to an absolute path, choosing the format from the extension (JPEG 2000 is written lossless; Photoshop Raw interleaved, Mac byte order, no header). Native desktop only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute destination path ending in a format supported by File > Save As."
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "doc.setColorSettings",
+      "description": "Edit ▸ Color Settings: the Black Point Compensation default profile conversions start from, and the Advanced options. The two blend gammas change how layers composite (and so exports and Flatten); Desaturate Monitor Colors changes only the screen. Omitted options keep their current value.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "blackPointCompensation": {
+            "type": "boolean",
+            "description": "Use Black Point Compensation by default in Convert to Profile and the open/paste profile conversions."
+          },
+          "desaturateMonitorColors": {
+            "type": "number",
+            "description": "Desaturate Monitor Colors By this percent; 0 turns it off.",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "blendRgbGamma": {
+            "type": "number",
+            "description": "Blend RGB Colors Using this gamma, between 1 and 3 (1 blends in linear light); 0 turns it off."
+          },
+          "blendTextGamma": {
+            "type": "number",
+            "description": "Blend Text Colors Using this gamma for type layers, between 1 and 3; 0 turns it off."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "fil.adaptiveWideAngle",
+      "description": "Correct lens barrel/perspective distortion on the active layer — pick a projection model, then optionally give constraint lines/polygons that must end up straight/rectangular. Photoshop's Adaptive Wide Angle filter.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string",
+            "enum": [
+              "fisheye",
+              "perspective",
+              "auto",
+              "spherical"
+            ],
+            "description": "Correction model; auto picks Fisheye or Perspective from focalLength/cropFactor.",
+            "default": "auto"
+          },
+          "focalLength": {
+            "type": "number",
+            "description": "Focal length in mm, as engraved on the lens.",
+            "minimum": 1,
+            "maximum": 400,
+            "default": 16
+          },
+          "cropFactor": {
+            "type": "number",
+            "description": "Sensor crop factor; 1 = full frame.",
+            "minimum": 0.1,
+            "maximum": 10,
+            "default": 1
+          },
+          "scale": {
+            "type": "number",
+            "description": "Re-framing zoom applied after the correction; 1 = leave as corrected.",
+            "minimum": 0.2,
+            "maximum": 5,
+            "default": 1
+          },
+          "constraintsJson": {
+            "type": "string",
+            "description": "JSON array of constraints, each `{kind:\"line\"|\"polygon\",pts:[number,number][]}` in normalizedimage coordinates; lines need 2 points, polygons need 4.",
+            "minimum": 0,
+            "maximum": 1,
+            "maxLength": 65536,
+            "default": "[]"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "fil.box",
+      "description": "Apply a box blur to the active layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "radius": {
+            "type": "number",
+            "description": "Blur radius in pixels.",
+            "minimum": 0,
+            "maximum": 250
+          }
+        },
+        "required": [
+          "radius"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "fil.gaussian",
+      "description": "Apply a Gaussian blur to the active layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "radius": {
+            "type": "number",
+            "description": "Blur radius in pixels.",
+            "minimum": 0,
+            "maximum": 250
+          }
+        },
+        "required": [
+          "radius"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "fil.median",
+      "description": "Apply a median filter (noise reduction) to the active layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "radius": {
+            "type": "number",
+            "description": "Radius in pixels.",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "radius"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "fil.removeDistractions",
+      "description": "Remove small high-contrast distractions from the active layer with local cleanup.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "strength": {
+            "type": "number",
+            "description": "Cleanup strength.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.75
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "fil.removeReflections",
+      "description": "Reduce bright reflection or glare streaks from the active layer with local cleanup.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "strength": {
+            "type": "number",
+            "description": "Cleanup strength.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.65
+          },
+          "split": {
+            "type": "boolean",
+            "description": "Split into Underlying + Reflections layers (recompose to the original) instead of editing in place.",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "fil.sharpen",
+      "description": "Sharpen the active layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Sharpen amount.",
+            "minimum": 0,
+            "maximum": 500
+          }
+        },
+        "required": [
+          "amount"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "fil.sponge",
+      "description": "Apply the Artistic Sponge filter to the active layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "brushSize": {
+            "type": "number",
+            "description": "Sponge dab size.",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "definition": {
+            "type": "number",
+            "description": "Tonal separation.",
+            "minimum": 0,
+            "maximum": 25
+          },
+          "smoothness": {
+            "type": "number",
+            "description": "Edge smoothness.",
+            "minimum": 1,
+            "maximum": 15
+          }
+        },
+        "required": [
+          "brushSize",
+          "definition",
+          "smoothness"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "fil.unsharp",
+      "description": "Unsharp mask the active layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "radius": {
+            "type": "number",
+            "description": "Radius in pixels.",
+            "minimum": 0.1,
+            "maximum": 250
+          },
+          "amount": {
+            "type": "number",
+            "description": "Amount percent.",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "threshold": {
+            "type": "number",
+            "description": "Threshold levels.",
+            "minimum": 0,
+            "maximum": 255
+          }
+        },
+        "required": [
+          "radius",
+          "amount",
+          "threshold"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.cleanup",
+      "description": "Delete empty layers and auto-name the layer stack.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "deleteEmpty": {
+            "type": "boolean",
+            "description": "Delete empty pixel layers.",
+            "default": true
+          },
+          "autoName": {
+            "type": "boolean",
+            "description": "Rename layers by kind/state.",
+            "default": true
+          },
+          "onlyGeneric": {
+            "type": "boolean",
+            "description": "Rename only generic layer names.",
+            "default": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.editSmartObjectContents",
+      "description": "Layer ▸ Smart Objects ▸ Edit Contents: open the active Smart Object's contents as a new document tab. A Smart Object whose source is a Photoshop document (placed from a PSD/PSB, or embedded in an opened PSD/PSB) opens with its own layers; any other opens as its rendered pixels. Edit that tab, then call layer.updateSmartObjectContents.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.updateSmartObjectContents",
+      "description": "Layer ▸ Smart Objects ▸ Update Edited Contents: send the active contents tab back into the Smart Object it was opened from. The Smart Object re-renders through its smart filters, and every instance of it updates.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.vectorMaskFromPath",
+      "description": "Layer ▸ Vector Mask ▸ Current Path: clip the active layer to the Pen tool's current work path. Omit `op` to replace the mask outright (default); pass an op to fold the path into any existing vector mask instead.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "number",
+            "description": "Path operation folded into an existing vector mask: 0 Combine, 1 Subtract Front, 2 Intersect, 3 Exclude Overlapping. Omit to replace the mask."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "lens.apply",
+      "description": "Apply calibrated lens correction to the active layer as one undoable filter; Smart Objects retain an editable filter. Missing calibration fails without changing pixels.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "Explicit catalog id; empty selects Automatic from this photo's metadata.",
+            "default": ""
+          },
+          "distortionAmount": {
+            "type": "number",
+            "description": "Profile distortion strength, percent.",
+            "minimum": 0,
+            "maximum": 200,
+            "default": 100
+          },
+          "vignettingAmount": {
+            "type": "number",
+            "description": "Profile vignetting strength, percent.",
+            "minimum": 0,
+            "maximum": 200,
+            "default": 100
+          },
+          "focalLengthMm": {
+            "type": "number",
+            "description": "Optional physical focal-length override."
+          },
+          "aperture": {
+            "type": "number",
+            "description": "Optional f-number override."
+          },
+          "cropFactor": {
+            "type": "number",
+            "description": "Optional sensor crop-factor override."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "lens.profiles",
+      "description": "Inspect the offline lens catalog and automatic/manual lookup for the active Camera Raw session or document. Missing matches include an actionable explanation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Filter catalog names; empty returns the first 100 entries and the total count.",
+            "default": ""
+          },
+          "profileId": {
+            "type": "string",
+            "description": "Explicit catalog id; empty selects Automatic.",
+            "default": ""
+          },
+          "focalLengthMm": {
+            "type": "number",
+            "description": "Optional physical focal-length override."
+          },
+          "aperture": {
+            "type": "number",
+            "description": "Optional f-number override."
+          },
+          "cropFactor": {
+            "type": "number",
+            "description": "Optional sensor crop-factor override."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.aiDenoise",
+      "description": "Start an AI Denoise pass (DRUNet, tiled) over the document. Long-running: poll ml.jobStatus.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.generateBackground",
+      "description": "Start a Generate Background pass: keep the subject, synthesize a new backdrop from the prompt. Long-running: poll ml.jobStatus.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "Description of the new background scene."
+          },
+          "steps": {
+            "type": "number",
+            "description": "Diffusion steps.",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 8
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.generateImage",
+      "description": "Start a text-to-image generation, opening the result as a new document. Long-running: poll ml.jobStatus.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "Description of the image to generate."
+          },
+          "steps": {
+            "type": "number",
+            "description": "Diffusion steps.",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 12
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.generativeExpand",
+      "description": "Generative Expand: grow the canvas and synthesize the new border from surrounding content. Requires a licensed local MI-GAN model.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "newWidth": {
+            "type": "number",
+            "description": "New canvas width in pixels."
+          },
+          "newHeight": {
+            "type": "number",
+            "description": "New canvas height in pixels."
+          },
+          "offsetX": {
+            "type": "number",
+            "description": "Left offset of the original image in the new canvas.",
+            "default": 0
+          },
+          "offsetY": {
+            "type": "number",
+            "description": "Top offset of the original image in the new canvas.",
+            "default": 0
+          }
+        },
+        "required": [
+          "newWidth",
+          "newHeight"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.generativeFill",
+      "description": "Prompt-free Generative Fill of the current selection. Requires an active selection and a licensed local MI-GAN model.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.generativeFillPrompt",
+      "description": "Start a prompted Generative Fill of the current selection (blended latent diffusion). Long-running: poll ml.jobStatus.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "What to paint into the selection."
+          },
+          "steps": {
+            "type": "number",
+            "description": "Diffusion steps.",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 8
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.jobCancel",
+      "description": "Cancel a running long-lived ML job started through MCP. Poll ml.jobStatus until it reports cancelled.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "number",
+            "description": "Job id returned by the tool that started the job."
+          }
+        },
+        "required": [
+          "jobId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.jobStatus",
+      "description": "Poll a long-running ML job started by a diffusion or denoise tool.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "number",
+            "description": "Job id returned by the tool that started the job."
+          }
+        },
+        "required": [
+          "jobId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.models",
+      "description": "Report on-device ML weight availability per feature: which model files are present and whether each feature is ready.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.removeBackground",
+      "description": "Isolate the main subject onto a new transparent layer (U²-Net alpha matte).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.selectSubject",
+      "description": "Select the main subject via U²-Net and load it as the active selection.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.skinSmoothing",
+      "description": "Skin Smoothing (Featured Neural Filter): soften skin texture while keeping eyes, lips and hair detail. Skin-tone chroma gate, restricted to detected faces when the face-landmark model is installed.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "blur": {
+            "type": "number",
+            "description": "Blur strength.",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 50
+          },
+          "smoothness": {
+            "type": "number",
+            "description": "Texture smoothness.",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 50
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.styleTransfer",
+      "description": "Apply a neural style-transfer network to the active document, stamping the result on a new layer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "style": {
+            "type": "string",
+            "enum": [
+              "candy",
+              "mosaic",
+              "rain-princess",
+              "udnie",
+              "pointilism"
+            ],
+            "description": "Style network to apply."
+          }
+        },
+        "required": [
+          "style"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ml.superResolution",
+      "description": "Upscale the document 3× with the ESPCN super-resolution network, opening the result as a new document.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "print.oneCopy",
+      "description": "File ▸ Print One Copy: print the document with the saved File ▸ Print… settings, without the Print dialog. The OS print dialog still opens.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "print.setSettings",
+      "description": "File ▸ Print… settings, which Print One Copy (print.oneCopy) prints with: media and orientation, position, scale and Color Management. Omitted options keep their saved value; invalid ones are refused and nothing is saved. Returns the resulting layout.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "media": {
+            "type": "string",
+            "enum": [
+              "letter",
+              "legal",
+              "tabloid",
+              "a3",
+              "a4",
+              "a5",
+              "4x6",
+              "5x7",
+              "8x10"
+            ],
+            "description": "Media size."
+          },
+          "landscape": {
+            "type": "boolean",
+            "description": "Landscape page orientation."
+          },
+          "center": {
+            "type": "boolean",
+            "description": "Center the image on the media; false places it at top/left."
+          },
+          "top": {
+            "type": "number",
+            "description": "Inches from the page's top edge to the image, when not centered."
+          },
+          "left": {
+            "type": "number",
+            "description": "Inches from the page's left edge to the image, when not centered."
+          },
+          "scaleToFit": {
+            "type": "boolean",
+            "description": "Scale to Fit Media; false prints at scale."
+          },
+          "scale": {
+            "type": "number",
+            "description": "Percent of the document's print size, its pixels at its ppi.",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "colorHandling": {
+            "type": "string",
+            "enum": [
+              "photoshop",
+              "printer"
+            ],
+            "description": "photoshop converts through the printer profile before spooling; printer sends the document's own tagged pixels."
+          },
+          "printerProfile": {
+            "type": "string",
+            "enum": [
+              "working-cmyk",
+              "loaded"
+            ],
+            "description": "The bundled working CMYK press profile, or the one last loaded in the Print dialog."
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "perceptual",
+              "relative-colorimetric",
+              "saturation",
+              "absolute-colorimetric"
+            ],
+            "description": "Rendering intent of the printer-profile conversion."
+          },
+          "blackPointCompensation": {
+            "type": "boolean",
+            "description": "Black Point Compensation for the printer-profile conversion."
+          },
+          "matchPrintColors": {
+            "type": "boolean",
+            "description": "Soft-proof the Print dialog preview through the printer profile."
+          },
+          "showPaperWhite": {
+            "type": "boolean",
+            "description": "Simulate the paper white in the Match Print Colors preview."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "script.run",
+      "description": "Run JavaScript in the sandboxed scripting console — the whole recorded command surface as `vision.*` ops plus `await vision.read.*` queries, with the console's op budget and timeouts. Use `vision.log(…)` to return values.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "JavaScript source to execute against the `vision` scripting API.",
+            "maxLength": 1048576
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "shortcuts.deleteSet",
+      "description": "Delete a saved set; deleting the active, unmodified set restores Monet Defaults.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Saved set name; Monet Defaults cannot be deleted."
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "shortcuts.exportSet",
+      "description": "Export a shortcut set as portable .monetkeys JSON. Omit name to export current shortcuts, including workspace overrides.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Saved set name, Monet Defaults, or empty for current shortcuts.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "shortcuts.importSet",
+      "description": "Import and activate a validated Monet .monetkeys JSON file, preserving other saved sets.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "json": {
+            "type": "string",
+            "description": "Contents of an exported .monetkeys file."
+          },
+          "replace": {
+            "type": "boolean",
+            "description": "Explicitly replace an existing set with the imported name.",
+            "default": false
+          }
+        },
+        "required": [
+          "json"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "shortcuts.listSets",
+      "description": "List Monet Defaults, saved shortcut sets, and the current effective overrides.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "shortcuts.saveSet",
+      "description": "Save current shortcuts as a named set. Monet Defaults cannot be overwritten.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name for the saved set (1–80 characters)."
+          },
+          "replace": {
+            "type": "boolean",
+            "description": "Explicitly replace an existing set with this name.",
+            "default": false
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "shortcuts.selectSet",
+      "description": "Activate a saved shortcut set or Monet Defaults and persist its bindings.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Saved set name, or Monet Defaults."
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "view.collapseDock",
+      "description": "Collapse a dock to panel icons or restore its expanded panels. Saved workspace layouts retain this setting.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "side": {
+            "type": "string",
+            "enum": [
+              "left",
+              "right",
+              "top",
+              "bottom"
+            ],
+            "description": "Workspace dock edge."
+          },
+          "collapsed": {
+            "type": "boolean",
+            "description": "True for the icon rail; false for expanded panels."
+          }
+        },
+        "required": [
+          "side",
+          "collapsed"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "view.floatWindows",
+      "description": "Window ▸ Arrange: float documents out of the tab bar into their own windows, cascade those windows, or consolidate every document back into tabs. Desktop app only. Returns the floated document ids.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "float",
+              "floatAll",
+              "cascade",
+              "consolidate"
+            ],
+            "description": "float: the active document; floatAll: every open document; cascade: float every document and line the windows up diagonally; consolidate: all back into tabs."
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "view.scope",
+      "description": "Summarize a scope's live density grid as JSON stats (dimensions + occupancy), without returning the raw grid.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "vectorscope",
+              "waveform",
+              "waveform-rgb"
+            ],
+            "description": "Which scope to sample: vectorscope, waveform, or waveform-rgb (default vectorscope).",
+            "default": "vectorscope"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "view.setPanelOptions",
+      "description": "Change a panel's thumbnail size or the Swatches grid/list view, using the same persisted options as its flyout menu.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "panel": {
+            "type": "string",
+            "enum": [
+              "layers",
+              "channels",
+              "swatches"
+            ],
+            "description": "Panel whose view to configure."
+          },
+          "thumbnailSize": {
+            "type": "number",
+            "description": "Thumbnail size: Layers 24/40/64, Channels 26/40/64, Swatches 16/24/40 pixels."
+          },
+          "swatchView": {
+            "type": "string",
+            "enum": [
+              "grid",
+              "list"
+            ],
+            "description": "Swatches preset view; ignored for other panels, and kept as it is when omitted."
+          }
+        },
+        "required": [
+          "panel",
+          "thumbnailSize"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "view.setProof",
+      "description": "Set a proof setup mode and enable Proof Colors.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "description": "Proof mode id such as cmyk, acescg, aces2065, hdr-pq, or hdr-hlg."
+          },
+          "bpc": {
+            "type": "boolean",
+            "description": "Black Point Compensation for the CMYK proof LUT (default on, matching Photoshop).",
+            "default": true
+          }
+        },
+        "required": [
+          "mode"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "view.setScope",
+      "description": "Set the Histogram panel scope mode.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "histogram",
+              "vectorscope",
+              "waveform",
+              "waveform-rgb",
+              "waveform-parade"
+            ],
+            "description": "Scope mode: histogram, vectorscope, waveform, waveform-rgb, or waveform-parade."
+          }
+        },
+        "required": [
+          "mode"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "xform.crop",
+      "description": "Crop the document to a rectangle.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "Left edge in pixels."
+          },
+          "y": {
+            "type": "number",
+            "description": "Top edge in pixels."
+          },
+          "width": {
+            "type": "number",
+            "description": "Crop width in pixels.",
+            "minimum": 1,
+            "maximum": 16384
+          },
+          "height": {
+            "type": "number",
+            "description": "Crop height in pixels.",
+            "minimum": 1,
+            "maximum": 16384
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "xform.flipHorizontal",
+      "description": "Flip the canvas horizontally.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "xform.flipVertical",
+      "description": "Flip the canvas vertically.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "xform.resizeImage",
+      "description": "Resize the whole image (resamples all layers).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "width": {
+            "type": "number",
+            "description": "New width in pixels.",
+            "minimum": 1,
+            "maximum": 16384
+          },
+          "height": {
+            "type": "number",
+            "description": "New height in pixels.",
+            "minimum": 1,
+            "maximum": 16384
+          }
+        },
+        "required": [
+          "width",
+          "height"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "xform.rotate180",
+      "description": "Rotate the canvas 180 degrees.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "xform.rotate90",
+      "description": "Rotate the canvas 90 degrees.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "clockwise": {
+            "type": "boolean",
+            "description": "Rotate clockwise when true, counter-clockwise when false.",
+            "default": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ]
+}

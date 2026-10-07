@@ -1,0 +1,70 @@
+{
+  "name": "@monet-ui/monet-core",
+  "version": "0.1.0",
+  "description": "Monet — framework-free liquid-glass design tokens & stylesheet",
+  "license": "MIT",
+  "author": "Monet / monet-ui",
+  "type": "module",
+  "//": "dist/ is built fresh by the prepublishOnly script, so `npm publish` from a clean checkout always ships a current build. sideEffects lists the css so bundlers never tree-shake the stylesheets.",
+  "sideEffects": [
+    "*.css"
+  ],
+  "files": [
+    "dist",
+    "index.css",
+    "styles.css",
+    "tokens.css",
+    "tauri.css",
+    "controls.css",
+    "overlays.css",
+    "canvas.css",
+    "creative.css"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./index.css": "./index.css",
+    "./styles.css": "./styles.css",
+    "./tokens.css": "./tokens.css",
+    "./tauri.css": "./tauri.css",
+    "./controls.css": "./controls.css",
+    "./overlays.css": "./overlays.css",
+    "./canvas.css": "./canvas.css",
+    "./creative.css": "./creative.css"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "prepare": "pnpm run build",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": [
+    "tauri",
+    "design-system",
+    "liquid-glass",
+    "react",
+    "panels",
+    "dockable"
+  ],
+  "homepage": "https://github.com/monetone/monet/tree/main/packages/monet-ui/packages/monet-core#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monetone/monet.git",
+    "directory": "packages/monet-ui/packages/monet-core"
+  },
+  "bugs": {
+    "url": "https://github.com/monetone/monet/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3"
+  }
+}

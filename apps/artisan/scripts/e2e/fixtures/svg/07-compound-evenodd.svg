@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 300">
+  <!-- evenodd ring (outer minus inner) + a single path with 3 disjoint subpaths -->
+  <path fill-rule="evenodd" fill="#e0573a"
+        d="M160 35 A 95 95 0 1 0 160 225 A 95 95 0 1 0 160 35 Z
+           M160 90 A 40 40 0 1 1 160 170 A 40 40 0 1 1 160 90 Z"/>
+  <path fill="#4a9eff" d="M30 255 h 60 v 38 h -60 Z M130 255 h 60 v 38 h -60 Z M230 255 h 60 v 38 h -60 Z"/>
+</svg>

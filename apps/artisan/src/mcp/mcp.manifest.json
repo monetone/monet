@@ -1,0 +1,350 @@
+{
+  "app": "artisan",
+  "version": "0.1.0",
+  "tools": [
+    {
+      "name": "align.apply",
+      "description": "Align or distribute the selected objects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "One of: left, center-h, right, top, middle-v, bottom, dist-h, dist-v, dist-center-h, dist-center-v, dist-left, dist-right, dist-top, dist-bottom."
+          },
+          "relativeTo": {
+            "type": "string",
+            "enum": [
+              "selection",
+              "artboard"
+            ],
+            "description": "Align relative to the selection bounds or the active artboard.",
+            "default": "selection"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "arrange.bringForward",
+      "description": "Bring the selection forward one step.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "arrange.bringToFront",
+      "description": "Bring the selection to the front of its stack.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "arrange.sendBackward",
+      "description": "Send the selection backward one step.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "arrange.sendToBack",
+      "description": "Send the selection to the back of its stack.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "doc.open",
+      "description": "Open a document from disk, replacing the current one — the same loader File ▸ Open uses (.mart and any Monet container, .svg/.svgz, .ai/.eps/.ps, .pdf, .cdr). Native desktop only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute path of the file to open."
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "edit.redo",
+      "description": "Redo the last undone change.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "edit.undo",
+      "description": "Undo the last change.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.add",
+      "description": "Add a new empty layer above the active one and make it active.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.delete",
+      "description": "Delete the active layer and its items (never the last remaining layer).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.duplicate",
+      "description": "Duplicate the active layer (and its items) above it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "layer.flatten",
+      "description": "Flatten all layers into the active one, preserving stacking order.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "object.delete",
+      "description": "Delete the selected objects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "object.duplicate",
+      "description": "Duplicate the selected objects in place.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "object.expand",
+      "description": "Expand the selection — convert live shapes to paths and outline strokes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "object.group",
+      "description": "Group the selected objects (needs 2 or more).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "object.ungroup",
+      "description": "Ungroup the selected groups.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "path.offset",
+      "description": "Create an offset copy of each selected object.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "distance": {
+            "type": "number",
+            "description": "Offset distance in points; negative insets.",
+            "minimum": -1000,
+            "maximum": 1000,
+            "default": 10
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "path.outlineStroke",
+      "description": "Outline the strokes of the selection into filled paths.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "path.reverse",
+      "description": "Reverse the direction of each selected path.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "path.roundCorners",
+      "description": "Round the sharp corners of each selected object into circular fillets.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "radius": {
+            "type": "number",
+            "description": "Corner radius in points.",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 10
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "path.simplify",
+      "description": "Reduce the anchor count of each selected path while keeping its shape.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tolerance": {
+            "type": "number",
+            "description": "Simplification tolerance in points; higher removes more.",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 2
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "pathfinder.apply",
+      "description": "Combine the selected objects (2 or more) with a Pathfinder operation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "description": "One of: unite, minus-front, intersect, exclude, minus-back, divide, trim, merge, crop, outline."
+          }
+        },
+        "required": [
+          "op"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "select.all",
+      "description": "Select every selectable object in the document.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "select.inverse",
+      "description": "Invert the selection — select every selectable object that isn't selected.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "select.none",
+      "description": "Deselect everything.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transform.reflectHorizontal",
+      "description": "Reflect (mirror) the selection horizontally about its centre.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transform.reflectVertical",
+      "description": "Reflect (mirror) the selection vertically about its centre.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transform.rotate90Ccw",
+      "description": "Rotate the selection 90 degrees counter-clockwise around its centre.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transform.rotate90Cw",
+      "description": "Rotate the selection 90 degrees clockwise around its centre.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transparency.blendMode",
+      "description": "Set the blend mode on the selection.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "description": "One of: normal, multiply, screen, overlay, darken, lighten, color-dodge, color-burn, hard-light, soft-light, difference, exclusion, hue, saturation, color, luminosity."
+          }
+        },
+        "required": [
+          "mode"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

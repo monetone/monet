@@ -1,0 +1,28 @@
+{
+  "about": "Droplet descriptors (#469). src-tauri/src/droplet.rs is_droplet_text and src/state/batchIo.ts parseDroplet must both accept every entry of droplets and reject every entry of notDroplets.",
+  "droplets": [
+    "{\"actionName\":\"Invert\",\"format\":\"png\",\"template\":\"{name}_{serial}\",\"stopOnError\":false}",
+    "{\n  \"actionId\": 3,\n  \"actionName\": \"Invert\",\n  \"format\": \"png\",\n  \"template\": \"{name}_{serial}\",\n  \"stopOnError\": false\n}",
+    "{\"actionId\":7,\"format\":\"jpeg\",\"template\":\"\",\"stopOnError\":true}",
+    "{\"actionId\":3,\"format\":\"tiff\",\"template\":\"\",\"destDir\":\"/out\",\"stopOnError\":true,\"extra\":1}",
+    "﻿{\"actionName\":\"Invert\",\"format\":\"png\",\"template\":\"x\",\"stopOnError\":false}",
+    "{\"actionId\":3.0,\"format\":\"png\",\"template\":\"x\",\"stopOnError\":false}",
+    "{\"actionName\":null,\"actionId\":4,\"format\":\"tiff\",\"template\":\"x\",\"stopOnError\":false}"
+  ],
+  "notDroplets": [
+    "",
+    "not json",
+    "[]",
+    "null",
+    "3",
+    "{\"name\":\"x\",\"version\":\"1.0.0\",\"template\":\"t\",\"format\":\"png\"}",
+    "{\"format\":\"png\",\"template\":\"{name}\",\"stopOnError\":false}",
+    "{\"actionName\":\"A\",\"format\":\"gif\",\"template\":\"x\",\"stopOnError\":false}",
+    "{\"actionName\":\"A\",\"format\":\"png\",\"stopOnError\":false}",
+    "{\"actionName\":\"A\",\"format\":\"png\",\"template\":\"x\"}",
+    "{\"actionName\":\"A\",\"format\":\"png\",\"template\":\"x\",\"stopOnError\":\"false\"}",
+    "{\"actionId\":\"3\",\"format\":\"png\",\"template\":\"x\",\"stopOnError\":false}",
+    "{\"actionId\":3.5,\"format\":\"png\",\"template\":\"x\",\"stopOnError\":false}",
+    "﻿﻿{\"actionName\":\"Invert\",\"format\":\"png\",\"template\":\"x\",\"stopOnError\":false}"
+  ]
+}

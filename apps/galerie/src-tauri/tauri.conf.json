@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Monet Galerie",
+  "version": "0.1.0",
+  "identifier": "dev.monet.galerie",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1426",
+    "beforeDevCommand": "pnpm vite --port 1426 --strictPort",
+    "beforeBuildCommand": "pnpm engine:build:release && pnpm build"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "macOSPrivateApi": true,
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "macOS": {
+      "bundleName": "Galerie"
+    },
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "mgal"
+        ],
+        "name": "Monet Galerie Catalog",
+        "description": "Monet Galerie Catalog",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "mvis",
+          "mart",
+          "mcin",
+          "mjou",
+          "mani",
+          "mryt"
+        ],
+        "name": "Monet Document",
+        "description": "Monet document from another app",
+        "role": "Viewer"
+      }
+    ]
+  }
+}

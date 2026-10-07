@@ -1,0 +1,11 @@
+packages:
+  - "packages/*"
+  - "examples/*"
+
+allowBuilds:
+  esbuild: true
+  leveldown: set this to true or false
+
+# esbuild (used by Vite + tsup) ships a native binary via a postinstall script.
+onlyBuiltDependencies:
+  - esbuild

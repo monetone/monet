@@ -1,0 +1,1078 @@
+{
+ "measuredOn": "20 September 2026",
+ "capabilities": [
+  {
+   "id": "universal-monet-document",
+   "label": "Universal .monet document",
+   "blurb": "One document format every app can open"
+  },
+  {
+   "id": "rust-wasm-engine",
+   "label": "Rust/WASM engine",
+   "blurb": "Pixel and geometry work compiled to WebAssembly"
+  },
+  {
+   "id": "native-desktop-shell",
+   "label": "Native desktop shell",
+   "blurb": "A Tauri 2 window, not a browser tab"
+  },
+  {
+   "id": "undo-redo-history",
+   "label": "Undo and history",
+   "blurb": "A real undo stack over the document model"
+  },
+  {
+   "id": "mcp-live-control",
+   "label": "MCP agent control",
+   "blurb": "A generated surface for driving the running app"
+  },
+  {
+   "id": "unit-tests",
+   "label": "Unit tests",
+   "blurb": "Vitest over the model, store and commands"
+  },
+  {
+   "id": "e2e-tests",
+   "label": "End-to-end tests",
+   "blurb": "Driving the built app, not just its functions"
+  },
+  {
+   "id": "export-output",
+   "label": "Export and output",
+   "blurb": "Getting finished work back out of the app"
+  },
+  {
+   "id": "cross-app-interop",
+   "label": "Cross-app interop",
+   "blurb": "Handing a document to a sibling app"
+  },
+  {
+   "id": "realtime-collaboration",
+   "label": "Real-time collaboration",
+   "blurb": "More than one person in one document"
+  }
+ ],
+ "suite": {
+  "headline": "One app is close to its commercial peer, four are broadly built with disclosed gaps, and two are early prototypes; across the suite there are about 208,400 lines of application source and 13,050 automated test cases.",
+  "blurb": "Monet is seven desktop creative applications \u2014 image editing, vector illustration, photo cataloguing, audio, video, motion graphics and 2D game authoring \u2014 built as a single monorepo. Every one of them is a Tauri 2 and React app sharing one UI design system, a merged Rust/WebAssembly render engine, a universal document format, and a generated automation surface that lets an agent drive the running app.",
+  "totalTestCases": 13050,
+  "totalLinesOfCode": 208383,
+  "sharedFoundations": [
+   {
+    "name": "Monet UI design system",
+    "detail": "packages/monet-ui provides the shared React chrome, panels, dialogs and native window styling, with one accent colour per app (raster, vector, motion, audio) so the seven apps look like one suite."
+   },
+   {
+    "name": "Rust/WASM render engine",
+    "detail": "packages/engine is a single merged crate with raster, vector and camera-raw pipelines compiled to WebAssembly; Vision and Galerie run on it fully, Artisan uses it for an opt-in raster path, and Cinema keeps its own compositing crate."
+   },
+   {
+    "name": "Universal .monet document format",
+    "detail": "One container format with per-app extensions (.monetgfx, .mvision, .mgal, .mart, .mjou). Any app can open another app's file, and payloads it does not understand are written back out unchanged, so a round trip never destroys a sibling app's work."
+   },
+   {
+    "name": "Generated MCP surface",
+    "detail": "Each app tags commands with @mcp and generates a tool manifest served by a native Tauri plugin on its own port, so an external agent can drive the running application \u2014 from 15 verbs in Galerie to 118 in Rythme."
+   },
+   {
+    "name": "Tauri 2 desktop shell",
+    "detail": "Every app ships as a native desktop window rather than a browser tab, with file-type associations, scoped filesystem capabilities, a fixed content-security policy and a per-app dev port checked by a shared test."
+   }
+  ]
+ },
+ "apps": [
+  {
+   "key": "vision",
+   "name": "Monet Vision",
+   "tagline": "Raster image editor",
+   "description": "Monet Vision is a desktop editor for pixel images, covering layers, masks, selections, painting, adjustments, filters, text and vector shapes. It renders through the shared Rust/WebAssembly engine, reads and writes formats from PNG to PSD, and can be driven from outside the app over MCP.",
+   "peer": "Adobe Photoshop",
+   "accent": "raster",
+   "maturity": "beta",
+   "maturityLabel": "Wide coverage, not yet released",
+   "areas": [
+    {
+     "name": "Adjustments & filters",
+     "implemented": 96,
+     "tested": 85,
+     "detail": "Levels, curves, hue/saturation, colour balance, channel mixer, selective colour, shadows/highlights plus roughly 60 filter-gallery, blur, sharpen, noise and stylize filters with live preview."
+    },
+    {
+     "name": "Layers & masks",
+     "implemented": 95,
+     "tested": 85,
+     "detail": "Layers, groups, clipping, layer and vector masks, 27 blend modes plus group pass-through, fill and adjustment layers, smart objects, layer effects, layer comps and labels."
+    },
+    {
+     "name": "Painting & retouch",
+     "implemented": 95,
+     "tested": 82,
+     "detail": "Pressure-aware brushes with tips, presets and smoothing, eraser, clone stamp, healing, dodge/burn, bucket fill, gradients, patterns and history brush."
+    },
+    {
+     "name": "Selection & transform",
+     "implemented": 95,
+     "tested": 86,
+     "detail": "Marquee, lasso, magic wand, quick and object select, colour range, select-and-mask, feathering, crop and perspective crop, free transform, warp and liquify meshes and straighten."
+    },
+    {
+     "name": "File I/O & export",
+     "implemented": 93,
+     "tested": 88,
+     "detail": "PNG, JPEG, WebP, BMP, TIFF, GIF, AVIF, PDF, SVG and PSD import/export, native HEIC decode, layered .mvision projects, .monetgfx containers, slices, batch processing and web-export estimates."
+    },
+    {
+     "name": "Automation & MCP",
+     "implemented": 93,
+     "tested": 83,
+     "detail": "90 @mcp-wrapped commands with a generated 90-tool manifest and an mcp:check gate, Actions record and play with action sets, a sandboxed Worker scripting console, droplets, a presets manager and keyboard shortcuts."
+    },
+    {
+     "name": "Text & vector",
+     "implemented": 89,
+     "tested": 84,
+     "detail": "Editable text layers with shaping, glyph panel, optical kerning, hanging punctuation, type-on-path and warp, plus vector shapes, pen paths, path operations and vector masks rasterized by the engine."
+    },
+    {
+     "name": "Camera Raw & colour",
+     "implemented": 91,
+     "tested": 85,
+     "detail": "Camera Raw workspace with presets, sidecars and an 8-slot filmstrip, DNG handling, ICC profile import, soft proofing with black-point compensation, ICC-CMYK PSD export through the bundled ISOcoated_v2_300_eci press profile, and histogram/vectorscope/waveform scopes."
+    },
+    {
+     "name": "Desktop shell",
+     "implemented": 87,
+     "tested": 78,
+     "detail": "Tauri 2 shell with a macOS menu bar, window chrome, screen modes, workspace presets and tabs, atomic saves, scoped filesystem capabilities, C2PA signing, printing and auto-recover."
+    },
+    {
+     "name": "On-device ML",
+     "implemented": 68,
+     "tested": 72,
+     "detail": "onnxruntime-web wiring for style transfer, subject selection, MI-GAN/LaMa inpainting, super-resolution, denoise, sky replacement and Stable Diffusion 1.5 with a model registry and licence/integrity gates."
+    }
+   ],
+   "capabilities": [
+    {
+     "id": "universal-monet-document",
+     "level": "full",
+     "note": "Reads and writes .monetgfx via @monet-ui/monet-format"
+    },
+    {
+     "id": "rust-wasm-engine",
+     "level": "full",
+     "note": "Uses shared packages/engine via wasm-bindgen"
+    },
+    {
+     "id": "native-desktop-shell",
+     "level": "full",
+     "note": "Tauri 2 with native plugins and scoped capabilities"
+    },
+    {
+     "id": "undo-redo-history",
+     "level": "full",
+     "note": "Engine-backed history with panel and snapshots"
+    },
+    {
+     "id": "mcp-live-control",
+     "level": "full",
+     "note": "90 @mcp wrappers, 90-tool generated manifest"
+    },
+    {
+     "id": "unit-tests",
+     "level": "full",
+     "note": "484 vitest files, 5,367 cases"
+    },
+    {
+     "id": "e2e-tests",
+     "level": "full",
+     "note": "356 Playwright specs, plus a native WKWebView harness"
+    },
+    {
+     "id": "export-output",
+     "level": "full",
+     "note": "PNG through PSD, PDF, SVG, ICC-CMYK, batch export"
+    },
+    {
+     "id": "cross-app-interop",
+     "level": "full",
+     "note": "Shared .monetgfx container import and export"
+    },
+    {
+     "id": "realtime-collaboration",
+     "level": "partial",
+     "note": "Stroke op-log only; no structure or selection sync"
+    }
+   ],
+   "stats": {
+    "sourceFiles": 296,
+    "testFiles": 484,
+    "linesOfCode": 88456,
+    "testCases": 6982
+   },
+   "notableGaps": [
+    "Neural Filters run on the UI thread, so a long job freezes the window",
+    "Collaboration syncs brush strokes only, with no late-join snapshot",
+    "No video layers"
+   ],
+   "implementedOverall": 90,
+   "testedOverall": 83,
+   "icon": true,
+   "testsPassing": 5367,
+   "testsFailing": 0,
+   "shot": true,
+   "shotAlt": "Monet Vision with an image open: tool rail, options bar, canvas, and the Color, Layers and Histogram panels",
+   "shotCaption": "An image open across the layer stack, with the colour and histogram panels live"
+  },
+  {
+   "key": "artisan",
+   "name": "Monet Artisan",
+   "tagline": "Vector illustration studio",
+   "description": "Monet Artisan is a desktop editor for vector artwork, where drawings are made of paths, shapes and text instead of pixels. It ships 75 tools, 28 panels and boolean path operations, and opens or saves SVG, PDF, Illustrator, CorelDRAW and Monet container files.",
+   "peer": "Adobe Illustrator",
+   "accent": "vector",
+   "maturity": "beta",
+   "maturityLabel": "Broad Illustrator coverage, real gaps remain",
+   "areas": [
+    {
+     "name": "Document engine & store",
+     "implemented": 90,
+     "tested": 88,
+     "detail": "Pure-TypeScript geometry (vector, matrix, bezier, bounding box, path, offset), the item/layer/artboard document model with query and factories, and an Immer-backed observable store with transactions, labelled snapshot undo/redo capped at 250 entries and selection state."
+    },
+    {
+     "name": "Tools & canvas",
+     "implemented": 85,
+     "tested": 80,
+     "detail": "75 registered tools covering selection, direct and group select, lasso, magic wand, pen and anchor editing, pencil, paintbrush, blob brush, width, puppet warp, reshape, 7 liquify, 6 symbolism and 7 graph tools, shapes, transforms, shape builder, eraser, knife, scissors, gradient, mesh, perspective grid, live paint, artboard, slice, dimension and view tools."
+    },
+    {
+     "name": "Layers & artboards",
+     "implemented": 85,
+     "tested": 85,
+     "detail": "Layer tree with lock, hide and template layers, collect-into-layer, release-to-layers, hide/lock-above, multi-artboard create/duplicate/delete, guides and rulers, slices, symbols, links, variables and actions."
+    },
+    {
+     "name": "Shell, menus & panels",
+     "implemented": 85,
+     "tested": 72,
+     "detail": "Tauri 2 native-vibrancy window with Monet chrome, 28 docked panels, a 222-entry menu bar, 165 undo-wrapped commands, a keyboard shortcut registry with its own panel, tool rail flyouts and an options bar."
+    },
+    {
+     "name": "Path ops & pathfinder",
+     "implemented": 80,
+     "tested": 90,
+     "detail": "All ten Pathfinder shape modes and effects plus offset path, outline stroke, simplify, join, average, round corners, compound paths, blends and the distort family (warp, roughen, tweak, zigzag, twist, pucker/bloat, scribble, free distort, liquify)."
+    },
+    {
+     "name": "Rendering",
+     "implemented": 78,
+     "tested": 75,
+     "detail": "React SVG renderer for artboards, items, paints, patterns, stroke alignment, caps and joins, blend modes, effect filters, outline mode, selection and tool overlays, guides and rulers, with an alternate Rust/WASM raster surface behind an opt-in flag."
+    },
+    {
+     "name": "Type & typography",
+     "implemented": 68,
+     "tested": 82,
+     "detail": "Point, area and on-path type with inline editing, font switching, character, paragraph and type-style panels, case and smart-punctuation transforms, text decoration and caps, and lossless SVG/.artisan text round-trip."
+    },
+    {
+     "name": "Color & appearance",
+     "implemented": 65,
+     "tested": 85,
+     "detail": "Solid, gradient and pattern paints, linear and radial gradients only, a quad-grid mesh approximation, swatches with ASE/ACO/ACT import, a colour harmony guide, edit-colors operations limited to invert, grayscale, saturate and desaturate, thin graphic-style and effect wrappers, an ordered appearance stack, opacity masks, blend modes and five live effect types."
+    },
+    {
+     "name": "File I/O & export",
+     "implemented": 62,
+     "tested": 76,
+     "detail": "Imports .artisan JSON, the .monet container family, SVG/SVGZ, PDF, AI/EPS/PS and CDR through a magic-byte dispatcher with structured fidelity reports."
+    },
+    {
+     "name": "MCP & collaboration",
+     "implemented": 52,
+     "tested": 10,
+     "detail": "31 generated @mcp verbs served by the Tauri monet_mcp plugin on port 48212 against 165 total commands, plus opt-in Yjs collaboration that binds the store and renders live cursors."
+    }
+   ],
+   "capabilities": [
+    {
+     "id": "universal-monet-document",
+     "level": "full",
+     "note": "Reads and writes .monet containers, couriers foreign entries"
+    },
+    {
+     "id": "rust-wasm-engine",
+     "level": "partial",
+     "note": "Vector crate wired, raster renderer opt-in"
+    },
+    {
+     "id": "native-desktop-shell",
+     "level": "full",
+     "note": "Tauri 2 window, dialog, fs and MCP plugins"
+    },
+    {
+     "id": "undo-redo-history",
+     "level": "full",
+     "note": "Labelled snapshot stack, 250 entries, Immer"
+    },
+    {
+     "id": "mcp-live-control",
+     "level": "partial",
+     "note": "31 verbs generated out of 173 commands"
+    },
+    {
+     "id": "unit-tests",
+     "level": "full",
+     "note": "418 files, 2,155 cases, all passing"
+    },
+    {
+     "id": "e2e-tests",
+     "level": "full",
+     "note": "316 headless-Chrome specs plus QA harnesses"
+    },
+    {
+     "id": "export-output",
+     "level": "partial",
+     "note": "SVG, PNG, .mart, ASE; PDF and TIFF unimplemented"
+    },
+    {
+     "id": "cross-app-interop",
+     "level": "full",
+     "note": "Container round-trip preserves sibling app entries"
+    },
+    {
+     "id": "realtime-collaboration",
+     "level": "partial",
+     "note": "Yjs binding and cursors, flag-gated, unit-tested"
+    }
+   ],
+   "stats": {
+    "sourceFiles": 207,
+    "testFiles": 418,
+    "linesOfCode": 32864,
+    "testCases": 2155
+   },
+   "notableGaps": [
+    "Pathfinder, Offset Path, Shape Builder and Knife flatten curves to polygons",
+    "No Type to Create Outlines and no Recolor Artwork",
+    "PDF, JPEG, WebP and TIFF export unimplemented",
+    "PDF/AI import skips clipping, text and images; CDR fills defaulted",
+    "Rust/WASM renderer is opt-in only; SVG is the default path"
+   ],
+   "implementedOverall": 75,
+   "testedOverall": 74,
+   "icon": true,
+   "testsPassing": 2155,
+   "testsFailing": 0,
+   "shot": true,
+   "shotAlt": "Monet Artisan with vector artwork on the artboard, rulers, tool rail and the Properties, Colour and Layers panels",
+   "shotCaption": "Vector artwork on the artboard, with appearance and layers alongside"
+  },
+  {
+   "key": "galerie",
+   "name": "Monet Galerie",
+   "tagline": "Photo catalog and RAW develop",
+   "description": "Monet Galerie is a desktop application for organising a photo library and editing raw camera files without changing the originals. It keeps its catalog in SQLite, renders edits through the shared Rust/WebAssembly engine, and delivers results through export, print, web gallery, slideshow and book modules.",
+   "peer": "Adobe Lightroom Classic",
+   "accent": "raster",
+   "maturity": "beta",
+   "maturityLabel": "Most modules built, gaps remain",
+   "areas": [
+    {
+     "name": "Export & publish",
+     "implemented": 88,
+     "tested": 85,
+     "detail": "Export dialog with presets, JPEG, PNG, TIFF8, PSD, 16-bit TIFF, linear DNG and original formats, watermarks, output sharpening, filename templates, metadata scoping and location removal, C2PA content credentials, post-export actions, publish services and an Edit-in-Vision round trip."
+    },
+    {
+     "name": "Library & catalog",
+     "implemented": 85,
+     "tested": 80,
+     "detail": "Import with presets and previews, folder tree and sync, watched folders and auto-import, collections and smart collections, stacking, virtual copies, ratings, flags and labels, grid, loupe, compare and survey views, filmstrip, painter and filter bar."
+    },
+    {
+     "name": "RAW & render engine",
+     "implemented": 85,
+     "tested": 72,
+     "detail": "Native RAW decode to scene-linear 16-bit RGBA, the shared Rust/WASM Camera-Raw develop ABI, ICC colour management, draft and full render tiers, a develop worker and scheduler, and DNG and linear-DNG output."
+    },
+    {
+     "name": "Metadata & keywords",
+     "implemented": 85,
+     "tested": 85,
+     "detail": "IPTC and EXIF metadata panel with batch edit, metadata presets, keyword list, sets, entry and file import/export, XMP sidecar read/write with auto-write, capture-time editing and geotagging."
+    },
+    {
+     "name": "Catalog storage & shell",
+     "implemented": 85,
+     "tested": 70,
+     "detail": "Tauri 2 native backend of about 23,000 lines of Rust with a versioned SQLite catalog at schema v16, atomic publish, backup policy, catalog merge, the .mgal universal container, previews and a secondary display window."
+    },
+    {
+     "name": "Develop module",
+     "implemented": 82,
+     "tested": 75,
+     "detail": "Basic, Tone Curve, Color Mixer, Color Grading, Detail, Optics, Transform, Effects, Calibration, Profile and Point Color panels plus masks, heal and dust spots, red-eye, crop and straighten, targeted adjustment, before/after, reference view, presets, snapshots, history, copy/paste and auto sync."
+    },
+    {
+     "name": "Print, Web, Slideshow, Book",
+     "implemented": 72,
+     "tested": 80,
+     "detail": "Print module with templates, pagination and page decoration, web gallery generation, slideshow with styles, templates and export, and a book layout module short of the full peer feature set."
+    },
+    {
+     "name": "MCP live control",
+     "implemented": 40,
+     "tested": 0,
+     "detail": "15 @mcp-tagged verbs covering library filter, module, import, selection and summary, photo rating, flag, label and make-master, develop sync, auto-sync and match-total-exposures, and keyword import/export, with a generated manifest and 15 matching handlers."
+    },
+    {
+     "name": "Map & geolocation",
+     "implemented": 25,
+     "tested": 75,
+     "detail": "GPS coordinates on photos, a geotag dialog and location handling on export, but no Map module at all \u2014 no map view, tracklog import or reverse geocoding."
+    }
+   ],
+   "capabilities": [
+    {
+     "id": "universal-monet-document",
+     "level": "partial",
+     "note": ".mgal container via the monet-format app registry"
+    },
+    {
+     "id": "rust-wasm-engine",
+     "level": "full",
+     "note": "packages/engine via @engine, camera_raw_develop"
+    },
+    {
+     "id": "native-desktop-shell",
+     "level": "full",
+     "note": "Tauri 2, about 23k lines of Rust"
+    },
+    {
+     "id": "undo-redo-history",
+     "level": "full",
+     "note": "Library undo stacks plus develop history and snapshots"
+    },
+    {
+     "id": "mcp-live-control",
+     "level": "partial",
+     "note": "15 verbs, generated manifest, no tests"
+    },
+    {
+     "id": "unit-tests",
+     "level": "partial",
+     "note": "1,353 cases across 165 files, all passing"
+    },
+    {
+     "id": "e2e-tests",
+     "level": "partial",
+     "note": "Node proof scripts only, no UI e2e"
+    },
+    {
+     "id": "export-output",
+     "level": "full",
+     "note": "Export, print, web gallery, slideshow, book"
+    },
+    {
+     "id": "cross-app-interop",
+     "level": "full",
+     "note": "Edit-in-Vision round trip, shared XMP sidecars"
+    },
+    {
+     "id": "realtime-collaboration",
+     "level": "none",
+     "note": "monet-collab exists but is not wired in"
+    }
+   ],
+   "stats": {
+    "sourceFiles": 144,
+    "testFiles": 165,
+    "linesOfCode": 35208,
+    "testCases": 1353
+   },
+   "notableGaps": [
+    "No Map module: no map view, tracklogs or reverse geocoding",
+    "No HDR or panorama photo merge",
+    "No tethered capture and no face recognition",
+    "MCP surface has no tests"
+   ],
+   "implementedOverall": 72,
+   "testedOverall": 69,
+   "icon": true,
+   "testsPassing": 1353,
+   "testsFailing": 0,
+   "shot": true,
+   "shotAlt": "Monet Galerie showing a twelve-photo catalog in the Library grid, with the collections panel, filmstrip and a live RGB histogram",
+   "shotCaption": "A catalog in the Library grid \u2014 filmstrip below, live histogram right"
+  },
+  {
+   "key": "rythme",
+   "name": "Monet Rythme",
+   "tagline": "Multitrack audio workstation",
+   "description": "Monet Rythme is a desktop workstation for recording, arranging and repairing audio across multiple tracks. Its processing, analysis and file-format code is framework-free TypeScript covering roughly fifty effects plus noise, hum and click removal, and it exports WAV and AIFF.",
+   "peer": "Adobe Audition",
+   "accent": "audio",
+   "maturity": "beta",
+   "maturityLabel": "Broad audio coverage, rough edges",
+   "areas": [
+    {
+     "name": "MCP control",
+     "implemented": 90,
+     "tested": 58,
+     "detail": "118 generated MCP tools covering analysis, clip and range edits, effects, markers, export, panels and preferences, served natively by the monet-mcp Tauri plugin."
+    },
+    {
+     "name": "Effects & DSP",
+     "implemented": 88,
+     "tested": 92,
+     "detail": "About 50 processors: amplify and normalize, biquad plus parametric, graphic, FFT, scientific and notch EQ, compressor, multiband, limiter, true peak, gate, delay, echo and analog delay, four reverbs, modulation, distortion, waveshaper, time stretch and pitch shift, and sidechain duck, compress and gate."
+    },
+    {
+     "name": "Multitrack editing",
+     "implemented": 85,
+     "tested": 88,
+     "detail": "Clip move, trim, split and razor, ripple delete, insert silence, range cut/copy/paste, mix paste, crossfade, merge, clip groups, snapping, markers, per-clip gain and fades."
+    },
+    {
+     "name": "Restoration",
+     "implemented": 85,
+     "tested": 90,
+     "detail": "Spectral noise reduction with a captured print, hiss reduction, adaptive noise reduction, DeHummer, DeClicker, DeClipper, DeReverb, automatic phase correction and delete silence."
+    },
+    {
+     "name": "Analysis & metering",
+     "implemented": 85,
+     "tested": 88,
+     "detail": "FFT spectrum with peak hold, peak and RMS levels, BS.1770 loudness with LRA and true peak, loudness time series, amplitude statistics and histogram, phase analysis, vectorscope, spectrogram, YIN pitch detection and beat/tempo detection."
+    },
+    {
+     "name": "UI & commands",
+     "implemented": 80,
+     "tested": 28,
+     "detail": "Audition-shaped 266-entry menu bar, dockable panels for files, effects rack, markers, properties, analyze, mixer and history, timeline and waveform-editor canvases, tool rail, transport bar, workspace layouts and keyboard shortcut presets."
+    },
+    {
+     "name": "File IO & formats",
+     "implemented": 72,
+     "tested": 85,
+     "detail": "WAV at 8, 16, 24 and 32 bit plus float and AIFF/AIFC codecs with cue and MARK marker chunks, .monet container sessions, marker CSV round-trip, Premiere EDL and XML, and batch export."
+    },
+    {
+     "name": "Plugins & hosting",
+     "implemented": 20,
+     "tested": 60,
+     "detail": "VST3, VST2 and AudioUnit path inventory and a validation model only \u2014 plugin-inventory.ts declares canProcess false and hostStatus inventoryOnly, so no plug-in is ever loaded or processed."
+    },
+    {
+     "name": "Playback & recording",
+     "implemented": 58,
+     "tested": 50,
+     "detail": "Web Audio transport with per-track gain, pan, mute and solo, master fader, looping and playhead, input recording, device enumeration, output sink selection and control-surface mapping."
+    },
+    {
+     "name": "Collaboration",
+     "implemented": 35,
+     "tested": 0,
+     "detail": "The timeline structure syncs through monet-collab with PCM stripped to descriptors, so unknown buffers resolve to silence because the audio blob side-channel is unbuilt."
+    }
+   ],
+   "capabilities": [
+    {
+     "id": "universal-monet-document",
+     "level": "full",
+     "note": "readContainer and writeContainer in engine/io/project.ts"
+    },
+    {
+     "id": "rust-wasm-engine",
+     "level": "partial",
+     "note": "monet-format WASM only; the DSP is TypeScript"
+    },
+    {
+     "id": "native-desktop-shell",
+     "level": "full",
+     "note": "Tauri 2, monet-ui crate, audio accent"
+    },
+    {
+     "id": "undo-redo-history",
+     "level": "full",
+     "note": "Store undo/redo stacks with drag coalescing"
+    },
+    {
+     "id": "mcp-live-control",
+     "level": "full",
+     "note": "118 tools, generated manifest, native plugin"
+    },
+    {
+     "id": "unit-tests",
+     "level": "full",
+     "note": "148 files, 1,468 cases, all passing"
+    },
+    {
+     "id": "e2e-tests",
+     "level": "partial",
+     "note": "274 of 321 checks run; the harness exits 1 on macOS"
+    },
+    {
+     "id": "export-output",
+     "level": "full",
+     "note": "WAV and AIFF mixdown, range, batch, EDL and XML"
+    },
+    {
+     "id": "cross-app-interop",
+     "level": "full",
+     "note": ".monet container plus Premiere EDL and XML"
+    },
+    {
+     "id": "realtime-collaboration",
+     "level": "partial",
+     "note": "Structure syncs; PCM rides the content-addressed blob channel"
+    }
+   ],
+   "stats": {
+    "sourceFiles": 160,
+    "testFiles": 148,
+    "linesOfCode": 33048,
+    "testCases": 1468
+   },
+   "notableGaps": [
+    "The e2e harness fails on macOS: the in-window menu bar renders only on Windows, so 47 of 321 checks never run",
+    "Effect racks and automation play back from an offline pre-render, not a live graph",
+    "No VST or AU plug-in hosting, only path inventory",
+    "No compressed-format encoding; export is WAV and AIFF only",
+    "No React component tests: the audio UI is covered only through its model"
+   ],
+   "implementedOverall": 70,
+   "testedOverall": 64,
+   "icon": true,
+   "testsPassing": 1468,
+   "testsFailing": 0,
+   "shot": true,
+   "shotAlt": "Monet Rythme showing a five-track session with waveform clips, markers and the mixer",
+   "shotCaption": "A five-track session \u2014 clips, waveforms, markers and the mixer"
+  },
+  {
+   "key": "jouer",
+   "name": "Monet Jouer",
+   "tagline": "2D game and animation editor",
+   "description": "Monet Jouer is a desktop editor for 2D scenes and animations whose centre canvas is a live Phaser 4 game, so edits, physics and keyframes play back in the real engine. Projects save as Monet containers and export as standalone Phaser code that runs in a browser.",
+   "peer": "Unity 2D",
+   "accent": "game",
+   "maturity": "beta",
+   "maturityLabel": "Core loop complete, large peer-scope gaps",
+   "areas": [
+    {
+     "name": "Multi-engine preview",
+     "implemented": 80,
+     "tested": 70,
+     "detail": "Install extra Phaser builds from bundled files, local UMD bundles or on-demand jsDelivr downloads cached in IndexedDB, then run the whole project in any of them using that engine's own tween and animation systems."
+    },
+    {
+     "name": "Phaser code export",
+     "implemented": 70,
+     "tested": 90,
+     "detail": "Deterministic generation of Phaser 4 code covering scene classes, chained tweens, sprite animations, transitions and physics bodies, emitted as standalone CDN-pinned HTML or a .js module with a live code preview panel."
+    },
+    {
+     "name": "Scene transitions",
+     "implemented": 70,
+     "tested": 60,
+     "detail": "Fade, slide, wipe and zoom transitions between scenes, triggered manually or on pointer-down, key press or timer, authored in a panel and emitted into the exported game."
+    },
+    {
+     "name": "Live viewport editing",
+     "implemented": 65,
+     "tested": 50,
+     "detail": "A real Phaser game canvas with select, move, scale, rotate, marquee and place tools, grid plus position, rotation and scale snapping, pivot handling, lock, frame-selected and move-to-view."
+    },
+    {
+     "name": "Documents, MCP & collab",
+     "implemented": 65,
+     "tested": 45,
+     "detail": "Universal Monet container save and open as .mjou that couriers foreign entries back out untouched, a defensive schema-checked parser, clone-on-write undo/redo, 22 MCP verbs with a generated manifest, and opt-in Yjs collaboration."
+    },
+    {
+     "name": "Scene & object model",
+     "implemented": 55,
+     "tested": 85,
+     "detail": "Multi-scene projects with sprite, image, text, shape and container objects, a nestable hierarchy with reparenting, search, sort and collapse, tags, sorting layers, selection sets and isolate mode."
+    },
+    {
+     "name": "Animation timeline",
+     "implemented": 55,
+     "tested": 85,
+     "detail": "Per-object keyframe tracks on ten numeric properties, 18 easing curves, a scrubbable playhead with live playback, autokey and record, track mute/solo/lock, keyframe copy and frame stepping."
+    },
+    {
+     "name": "Assets & sprite animations",
+     "implemented": 45,
+     "tested": 70,
+     "detail": "Image, spritesheet and audio assets embedded as data URLs, drag-and-drop import, spritesheet frame animations played in the editor, filter mode, pixel-art mode, sliced and tiled sprites and flipping."
+    },
+    {
+     "name": "Physics & camera",
+     "implemented": 45,
+     "tested": 85,
+     "detail": "Arcade physics bodies (dynamic, static, kinematic) with velocity, acceleration, angular acceleration, gravity and bounce, collider size and offset, physics debug draw, per-scene gravity, and a game camera with follow, offset, smoothing, dead zone, bounds, zoom, scroll and roll."
+    },
+    {
+     "name": "Audio",
+     "implemented": 40,
+     "tested": 80,
+     "detail": "Per-object audio sources with clip, volume, loop, mute, pitch and pan plus a project master volume applied in the exported game."
+    }
+   ],
+   "capabilities": [
+    {
+     "id": "universal-monet-document",
+     "level": "full",
+     "note": "Reads and writes the container, preserves foreign entries"
+    },
+    {
+     "id": "rust-wasm-engine",
+     "level": "na",
+     "note": "Runs on Phaser 4 \u2014 a Rust engine is not a goal"
+    },
+    {
+     "id": "native-desktop-shell",
+     "level": "full",
+     "note": "Tauri 2 shell, Monet chrome, shipped CSP"
+    },
+    {
+     "id": "undo-redo-history",
+     "level": "full",
+     "note": "Clone-on-write stacks in state/store.ts"
+    },
+    {
+     "id": "mcp-live-control",
+     "level": "full",
+     "note": "22 @mcp verbs, generated manifest, check script"
+    },
+    {
+     "id": "unit-tests",
+     "level": "full",
+     "note": "25 vitest files, 440 cases"
+    },
+    {
+     "id": "e2e-tests",
+     "level": "full",
+     "note": "88 Playwright specs, browser plus CSP desktop"
+    },
+    {
+     "id": "export-output",
+     "level": "full",
+     "note": "Standalone Phaser HTML and .js module"
+    },
+    {
+     "id": "cross-app-interop",
+     "level": "full",
+     "note": "Opens any Monet container, couriers unknown roles"
+    },
+    {
+     "id": "realtime-collaboration",
+     "level": "partial",
+     "note": "Opt-in Yjs store sync, no presence UI, untested"
+    }
+   ],
+   "stats": {
+    "sourceFiles": 59,
+    "testFiles": 25,
+    "linesOfCode": 10253,
+    "testCases": 917
+   },
+   "notableGaps": [
+    "No scripting or component system; object kinds are a fixed enum",
+    "No tilemaps, particles, prefabs or 2D lights",
+    "Animation is property tracks only: no state machine, blend trees or events",
+    "No test drives the canvas pointer path, so the editor gizmos are uncovered",
+    "src/mcp and src/collab have no test coverage"
+   ],
+   "implementedOverall": 59,
+   "testedOverall": 72,
+   "icon": true,
+   "testsPassing": 440,
+   "testsFailing": 0,
+   "shot": true,
+   "shotAlt": "Monet Jouer showing a scene of shapes and text in the live Phaser viewport, with hierarchy, inspector and keyframe timeline",
+   "shotCaption": "A live Phaser scene, with the hierarchy, inspector and keyframe timeline"
+  },
+  {
+   "key": "cinema",
+   "name": "Monet Cinema",
+   "tagline": "Non-linear video editor",
+   "description": "Monet Cinema is a desktop video editor for importing clips, cutting them on a multi-track timeline and grading them. Frame compositing runs in a Rust/WebAssembly engine that the program monitor draws directly, and finished sequences export as an MP4 file or an EDL edit list.",
+   "peer": "Adobe Premiere Pro",
+   "accent": "motion",
+   "maturity": "alpha",
+   "maturityLabel": "Core loop works",
+   "areas": [
+    {
+     "name": "Project I/O & delivery",
+     "implemented": 65,
+     "tested": 65,
+     "detail": "Universal .monet container save and open with a foreign-payload courier, legacy .cinema and .json projects, CMX3600 EDL export, MP4 export through WebCodecs VideoEncoder and mp4-muxer with baked AAC audio, and PNG frame export."
+    },
+    {
+     "name": "Compositing engine",
+     "implemented": 60,
+     "tested": 35,
+     "detail": "Rust/WASM layer stack with affine transform, opacity, 14 blend modes, crop, wipe and iris progress, per-layer grade, 3D LUT upload, scopes and thumbnails."
+    },
+    {
+     "name": "Shell & automation",
+     "implemented": 60,
+     "tested": 25,
+     "detail": "Tauri 2 Monet window with motion accent, dockable workspace, tool rail, transport bar, six docked panels, menu bar, Premiere-style shortcuts, 24 generated MCP tools and a dev-only window bridge."
+    },
+    {
+     "name": "Timeline editing",
+     "implemented": 55,
+     "tested": 75,
+     "detail": "Multi-track video and audio, place, insert and overwrite, razor, ripple delete, drag-move across tracks, trim handles, snapping, duplicate, nudge, speed, slip and linked A/V in the edit operations."
+    },
+    {
+     "name": "Media & bin",
+     "implemented": 55,
+     "tested": 45,
+     "detail": "File and drag import under both Tauri and the browser, dimension and duration probing, poster thumbnails, waveform peaks, media relink, colour mattes and title placeholder clips."
+    },
+    {
+     "name": "Playback & monitors",
+     "implemented": 50,
+     "tested": 15,
+     "detail": "Request-animation-frame transport at sequence frame rate, J/K/L shuttle, loop, preview quality, a frame cache, the program-monitor blit and a source monitor with in and out points."
+    },
+    {
+     "name": "Color & scopes",
+     "implemented": 45,
+     "tested": 45,
+     "detail": "Primary grading panel with exposure, contrast, highlights, shadows, whites, blacks, temperature, tint, saturation, vibrance, hue and gamma/lift/gain, .cube and .3dl LUT import with intensity, and histogram, waveform and vectorscope displays."
+    },
+    {
+     "name": "Audio",
+     "implemented": 45,
+     "tested": 20,
+     "detail": "A Web Audio mix graph taking per-clip gain and fades into per-track gain with mute and solo, an offline render used by export, mixer strips and waveform peaks."
+    }
+   ],
+   "capabilities": [
+    {
+     "id": "universal-monet-document",
+     "level": "full",
+     "note": "Reads and writes .monet, carries foreign payloads"
+    },
+    {
+     "id": "rust-wasm-engine",
+     "level": "full",
+     "note": "Own crate at apps/cinema/engine, built with wasm-pack"
+    },
+    {
+     "id": "native-desktop-shell",
+     "level": "full",
+     "note": "Tauri 2 window with motion accent"
+    },
+    {
+     "id": "undo-redo-history",
+     "level": "full",
+     "note": "Clone-on-write mutations, atomicity verified in e2e"
+    },
+    {
+     "id": "mcp-live-control",
+     "level": "full",
+     "note": "24 @mcp tools, generated manifest, Tauri plugin"
+    },
+    {
+     "id": "unit-tests",
+     "level": "full",
+     "note": "12 files, 117 vitest cases passing"
+    },
+    {
+     "id": "e2e-tests",
+     "level": "full",
+     "note": "11 Playwright specs, 37 cases passing"
+    },
+    {
+     "id": "export-output",
+     "level": "full",
+     "note": "MP4 with audio, PNG frame, EDL"
+    },
+    {
+     "id": "cross-app-interop",
+     "level": "full",
+     "note": "Opens sibling containers, decodes Rythme audio"
+    },
+    {
+     "id": "realtime-collaboration",
+     "level": "partial",
+     "note": "Whole-document Yjs binding, opt-in and untested"
+    }
+   ],
+   "stats": {
+    "sourceFiles": 54,
+    "testFiles": 12,
+    "linesOfCode": 5855,
+    "testCases": 154
+   },
+   "notableGaps": [
+    "Only the razor tool has timeline drag behaviour; select, ripple, slip, slide, pen, hand and zoom are inert",
+    "No keyframe animation: the Keyframe type exists but nothing evaluates it",
+    "Effects browser adds blur, mosaic and ultra-key entries the compositor never renders",
+    "Title clips place but rasterize nothing; video decode is canvas capture, not WebCodecs",
+    "The Rust engine tests are run by no script or CI workflow"
+   ],
+   "implementedOverall": 54,
+   "testedOverall": 41,
+   "icon": true,
+   "testsPassing": 117,
+   "testsFailing": 0,
+   "shot": true,
+   "shotAlt": "Monet Cinema with clips on the timeline, the program monitor and the scopes panel",
+   "shotCaption": "Clips cut onto the timeline, with the program monitor and scopes reading signal"
+  },
+  {
+   "key": "anime",
+   "name": "Monet Anime",
+   "tagline": "Motion graphics compositing studio",
+   "description": "Monet Anime is a desktop editor for animated motion graphics, where layers are stacked in a composition and their position, scale, rotation and opacity change over time on a timeline. Preview happens in the browser layout engine, and the only output today is the saved project file, since nothing renders frames or video.",
+   "peer": "Adobe After Effects",
+   "accent": "motion",
+   "maturity": "alpha",
+   "maturityLabel": "Core loop, large gaps",
+   "areas": [
+    {
+     "name": "Document I/O & interop",
+     "implemented": 85,
+     "tested": 65,
+     "detail": "Saves and opens the shared .monet container, dispatches by manifest across all seven Monet extensions, resaves byte-identically, carries other apps' payloads through untouched, imports images as embedded data URLs and accepts drag-and-drop."
+    },
+    {
+     "name": "Undo & state",
+     "implemented": 75,
+     "tested": 0,
+     "detail": "Clone-on-write undo/redo stack capped at 200 entries, drag coalescing by key, a dirty flag, file-path tracking and React binding through useSyncExternalStore."
+    },
+    {
+     "name": "Playback & transport",
+     "implemented": 65,
+     "tested": 0,
+     "detail": "Wall-clock request-animation-frame player with play, pause and loop, scrubbing with resync, frame stepping at composition frame rate, go-to-start and go-to-end and keyboard transport."
+    },
+    {
+     "name": "MCP automation",
+     "implemented": 55,
+     "tested": 0,
+     "detail": "19 @mcp verbs covering document open, layer add and delete, transform set, stopwatch and keyframing, effect add, composition settings and transport, with a generated manifest and a Tauri-side MCP server on port 48216."
+    },
+    {
+     "name": "Workspace shell",
+     "implemented": 40,
+     "tested": 0,
+     "detail": "Dockable workspace with Layers, Effect Controls and Timeline panels, File, Edit and Layer menus, a status bar, an options bar and keyboard shortcuts."
+    },
+    {
+     "name": "Keyframe animation",
+     "implemented": 35,
+     "tested": 0,
+     "detail": "Per-property tracks on the eight transform values, 18 easing curves, a stopwatch toggle, key-all-transform and timeline keyframe lanes with drag retiming."
+    },
+    {
+     "name": "Compositing viewport",
+     "implemented": 30,
+     "tested": 0,
+     "detail": "Layers are composited as CSS-transformed DOM elements at the playhead with opacity, blend modes and filter effects, plus click-to-select and drag-to-move, in a 168-line viewport."
+    },
+    {
+     "name": "Compositions & layers",
+     "implemented": 30,
+     "tested": 20,
+     "detail": "Five layer kinds (solid, shape, text, image, null) with visibility, lock, blend mode, in and out points and reordering inside a single active composition."
+    },
+    {
+     "name": "Effects",
+     "implemented": 8,
+     "tested": 0,
+     "detail": "Five parametric effects \u2014 Gaussian blur, glow, drop shadow, brightness and tint \u2014 added per layer with an enable toggle and scrubbable numeric parameters, mapped onto CSS filters."
+    },
+    {
+     "name": "Render output",
+     "implemented": 5,
+     "tested": 0,
+     "detail": "There is no rendered output: the only way work leaves the app is the saved .monet project document. No frame, image-sequence or video encoder exists anywhere in the app, and a render queue is listed as not yet built."
+    }
+   ],
+   "capabilities": [
+    {
+     "id": "universal-monet-document",
+     "level": "full",
+     "note": "Reads and writes .monet with byte-identical resave"
+    },
+    {
+     "id": "rust-wasm-engine",
+     "level": "none",
+     "note": "No engine reference; CSS-only compositing"
+    },
+    {
+     "id": "native-desktop-shell",
+     "level": "full",
+     "note": "Tauri 2 window, motion accent, file associations"
+    },
+    {
+     "id": "undo-redo-history",
+     "level": "full",
+     "note": "Clone-on-write stack, coalescing, 200-entry cap"
+    },
+    {
+     "id": "mcp-live-control",
+     "level": "full",
+     "note": "19 @mcp verbs, generated manifest, Tauri server"
+    },
+    {
+     "id": "unit-tests",
+     "level": "partial",
+     "note": "21 cases, all in src/io"
+    },
+    {
+     "id": "e2e-tests",
+     "level": "none",
+     "note": "No e2e suite or scripts directory"
+    },
+    {
+     "id": "export-output",
+     "level": "none",
+     "note": "No exporter; only the project file is written"
+    },
+    {
+     "id": "cross-app-interop",
+     "level": "full",
+     "note": "Opens all seven extensions; courier is tested"
+    },
+    {
+     "id": "realtime-collaboration",
+     "level": "none",
+     "note": "No collaboration dependency, unlike five siblings"
+    }
+   ],
+   "stats": {
+    "sourceFiles": 25,
+    "testFiles": 3,
+    "linesOfCode": 2699,
+    "testCases": 21
+   },
+   "notableGaps": [
+    "No render queue and no video or frame export",
+    "No masks, track mattes, parenting or pre-compositions",
+    "Tests cover file I/O only; store, sampler, effects and MCP are untested",
+    "No UI to create, switch or configure compositions"
+   ],
+   "implementedOverall": 43,
+   "testedOverall": 9,
+   "icon": true,
+   "testsPassing": 21,
+   "testsFailing": 0,
+   "shot": true,
+   "shotAlt": "Monet Anime showing a composition with a title and badge layer on the keyframe timeline",
+   "shotCaption": "A composition playing back over its keyframe timeline"
+  }
+ ]
+}

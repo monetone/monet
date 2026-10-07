@@ -1,0 +1,37 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capability for the Monet Galerie window",
+  "windows": [
+    "main",
+    "secondary"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "atomicsave:default",
+    "c2pa:default",
+    "catalog:default",
+    "raw-decode:default",
+    "develop-job:default",
+    "secondary:default",
+    "dialog:default",
+    "fs:read-all",
+    "fs:write-all",
+    "fs:allow-watch",
+    "fs:allow-unwatch",
+    {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "**" }],
+      "deny": [
+        { "path": "$HOME/.ssh/**" },
+        { "path": "$HOME/.aws/**" },
+        { "path": "$HOME/.gnupg/**" },
+        { "path": "$HOME/.config/**" },
+        { "path": "$HOME/.docker/**" },
+        { "path": "$HOME/.kube/**" },
+        { "path": "$HOME/Library/Keychains/**" }
+      ]
+    }
+  ]
+}

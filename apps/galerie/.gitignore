@@ -1,0 +1,9 @@
+node_modules/
+dist/
+engine/pkg/
+engine/target/
+src-tauri/target/
+src-tauri/gen/
+test-assets/online/
+*.log
+.DS_Store

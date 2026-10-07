@@ -1,0 +1,360 @@
+/* Monet Vision — app-specific tweaks on top of @monet-ui/monet-core. */
+.monet-app-pill .glyph {
+  background: center / cover no-repeat url("../src-tauri/icons/32x32.png");
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+#root {
+  overflow: hidden;
+}
+.mv-adj-tile:hover {
+  background: var(--glass-1) !important;
+  color: var(--text-1) !important;
+}
+
+/* The monet-ui <ContextMenu> wrapper around the Layers list must fill the
+   panel so the list keeps its 1fr height. */
+.mv-layer-ctx {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.mv-panel-menu-row { display: flex; justify-content: flex-end; margin-bottom: 4px; flex-shrink: 0; }
+.mv-panel-menu {
+  width: 22px; height: 22px; padding: 0; flex-shrink: 0;
+  border-radius: 4px; border: 1px solid var(--stroke-2, rgba(255,255,255,0.12));
+  background: var(--surface-2, rgba(255,255,255,0.05)); color: var(--text-2);
+  cursor: pointer; font-size: 11px;
+}
+.mv-panel-menu:focus-visible { outline: 2px solid var(--accent-raster); outline-offset: 2px; }
+[data-mv-layers-panel] .monet-layer { height: calc(var(--mv-layer-thumbnail-size) + 12px); }
+[data-mv-layers-panel] .monet-cv-layer-thumb {
+  width: var(--mv-layer-thumbnail-size); height: var(--mv-layer-thumbnail-size);
+  flex-basis: var(--mv-layer-thumbnail-size);
+}
+
+/* Glassier popover menus (context menu + menu-bar dropdowns) to match the
+   liquid-glass panel chrome: a frostier backdrop, a top-down sheen, and a
+   brighter glass edge than the base popover. */
+.monet-menu-popover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.015) 62%),
+    var(--glass-2);
+  backdrop-filter: blur(46px) saturate(195%);
+  -webkit-backdrop-filter: blur(46px) saturate(195%);
+  box-shadow:
+    0 26px 60px -12px rgba(0, 0, 0, 0.62),
+    0 6px 16px -4px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 var(--hi-top),
+    inset 0 0 0 0.5px var(--stroke-strong);
+}
+
+/* The <Select>/<Autocomplete> dropdown (.monet-listbox) is portalled into
+   #monet-overlay-root (fixed, above everything), so its backdrop-filter
+   composites against the page — but the translucent --glass-2 base still lets
+   busy content behind it (artwork, the toolbar under the Font menu) bleed
+   through. Float an OPAQUE liquid-glass surface under it so it stays readable
+   everywhere, keeping a top-down sheen for depth. */
+.monet-listbox {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.012) 60%),
+    rgba(16, 21, 32, 0.94);
+  backdrop-filter: blur(46px) saturate(195%);
+  -webkit-backdrop-filter: blur(46px) saturate(195%);
+}
+
+/* ── Type options bar — Photoshop-style compact controls ───────────
+   Flat icon/toggle buttons, a thin font combo, a size field, alignment
+   glyphs and a colour swatch, packed into one row like Photoshop's type
+   options bar. The .group separators (from monet-core) give the cluster
+   dividers; these just style the controls inside. */
+.mv-tt-tlabel { display: inline-flex; align-items: center; color: var(--text-3); }
+.mv-tt-text { font-size: 12px; }
+.mv-tt-font { display: inline-block; width: 140px; }
+.mv-tt-style { display: inline-block; width: 104px; }
+.mv-tt-kern { display: inline-block; width: 86px; }
+.mv-tt-aa { display: inline-block; width: 96px; }
+
+.mv-tt-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 24px; padding: 0;
+  border: 0.5px solid transparent; border-radius: 5px;
+  background: transparent; color: var(--text-2);
+  font-size: 12.5px; line-height: 1; cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.mv-tt-btn:hover { background: var(--glass-2); color: var(--text-1); border-color: var(--stroke-soft); }
+.mv-tt-btn:active { background: var(--glass-3); }
+.mv-tt-btn.is-on {
+  background: var(--accent-raster); color: #08121c; border-color: transparent;
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.35);
+}
+.mv-tt-btn:focus-visible { outline: 2px solid var(--accent-raster); outline-offset: 1px; }
+
+.mv-tt-color {
+  width: 26px; height: 24px; padding: 0; cursor: pointer;
+  border: 0.5px solid var(--stroke-medium); border-radius: 5px; background: none;
+}
+.mv-tt-color::-webkit-color-swatch-wrapper { padding: 2px; }
+.mv-tt-color::-webkit-color-swatch { border: none; border-radius: 3px; }
+
+/* ── document browser (File ▸ Document Browser…) ──────────────── */
+.mv-docbrowser {
+  border: 1px dashed transparent; border-radius: 10px; margin: -4px;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.mv-docbrowser.is-dragging {
+  border-color: var(--accent-raster);
+  background: color-mix(in srgb, var(--accent-raster) 8%, transparent);
+}
+.mv-docbrowser-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px; padding: 4px; max-height: 56vh; overflow-y: auto;
+}
+.mv-doccard {
+  position: relative; display: flex; flex-direction: column; gap: 8px;
+  padding: 8px; text-align: left; cursor: pointer;
+  background: var(--glass-1); border: 0.5px solid var(--stroke-soft); border-radius: 9px;
+  color: var(--text-1); font: inherit;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+}
+.mv-doccard:hover { background: var(--glass-2); border-color: var(--stroke-medium); }
+.mv-doccard:active { transform: translateY(0.5px); }
+.mv-doccard.is-active { border-color: var(--accent-raster); box-shadow: 0 0 0 1px var(--accent-raster) inset; }
+.mv-doccard:focus-visible { outline: 2px solid var(--accent-raster); outline-offset: 1px; }
+.mv-doccard-thumb {
+  display: flex; align-items: center; justify-content: center;
+  height: 96px; border-radius: 6px; overflow: hidden;
+  background: var(--glass-3);
+  background-image:
+    linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%),
+    linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%);
+  background-size: 14px 14px; background-position: 0 0, 7px 7px;
+}
+.mv-doccard-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.mv-doccard-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mv-doccard-name {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--text-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mv-doccard-dot { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-raster); }
+.mv-doccard-dims { font-size: 10.5px; color: var(--text-3); font-family: var(--font-mono, monospace); }
+.mv-doccard-close {
+  position: absolute; top: 6px; right: 6px;
+  display: flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 5px;
+  color: var(--text-2); background: var(--glass-2); opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.mv-doccard:hover .mv-doccard-close { opacity: 1; }
+.mv-doccard-close:hover { background: var(--glass-3); color: var(--text-1); }
+.mv-docbrowser-hint { margin-top: 10px; text-align: center; font-size: 11px; color: var(--text-3); }
+
+/* ── full-window file drop affordance ────────────────────────── */
+.mv-dropzone {
+  position: fixed; inset: 0; z-index: 9000; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--accent-raster) 10%, rgba(0,0,0,0.28));
+  border: 2px dashed var(--accent-raster); border-radius: 12px;
+}
+.mv-dropzone-card {
+  padding: 14px 22px; border-radius: 10px;
+  background: var(--glass-3); color: var(--text-1);
+  font-size: 13px; font-weight: 500;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+
+/* ── Web: full-bleed app, no OS imitation ────────────────────────────────────
+   In the browser we use the "win" platform only so the File/Edit/Image/… menu
+   shows in-window. These
+   rules strip the bits of the Windows title row that imitate an OS window — the
+   app icon/label and the fake minimize/maximize/close buttons — leaving just the
+   menu, and guarantee the app fills the page. All scoped to [data-mv-web] (set by
+   main.tsx only in the browser) so the native desktop builds are never touched. */
+html[data-mv-web] .monet-window {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+  border: 0;
+}
+/* Strip the OS-window imitation; keep the in-window menu bar + document tabs. */
+html[data-mv-web] .monet-win-appicon,
+html[data-mv-web] .monet-win-applabel,
+html[data-mv-web] .monet-winctrls {
+  display: none !important;
+}
+
+/* View ▸ Screen Mode ▸ Full Screen: hide all chrome (panels, tool rail + options
+   bar, menu bar, status bar), leaving just the canvas. Standard + Full Screen With
+   Menu Bar keep the chrome (set by App.tsx's screenMode effect on the root). */
+html[data-mv-screen-mode="full"] .monet-dock,
+html[data-mv-screen-mode="full"] .monet-titlebar,
+html[data-mv-screen-mode="full"] .monet-documentbar,
+html[data-mv-screen-mode="full"] .monet-tabstrip-win,
+html[data-mv-screen-mode="full"] .monet-toolbar,
+html[data-mv-screen-mode="full"] .monet-tb-lanes,
+html[data-mv-screen-mode="full"] .monet-tb-strip,
+html[data-mv-screen-mode="full"] .monet-iconrail,
+html[data-mv-screen-mode="full"] .monet-float,
+html[data-mv-screen-mode="full"] .monet-menubar,
+html[data-mv-screen-mode="full"] .monet-statusbar,
+html[data-mv-screen-mode="full"] .monet-split,
+html[data-mv-screen-mode="full"] .mv-taskbar {
+  display: none !important;
+}
+
+/* Preferences ▸ Workspace ▸ Large Tabs off (#482): Photoshop's smaller
+   document tabs. App.tsx sets the attribute; :root specificity keeps it above
+   the design system's own :root metric. */
+:root[data-mv-small-tabs] { --monet-h-tabstrip-win: 30px; }
+:root[data-mv-small-tabs] .monet-doctab { height: 28px; font-size: 12px; gap: 6px; padding: 0 12px 0 10px; }
+:root[data-mv-small-tabs] .monet-doctab.is-win { height: 100%; padding: 0 8px; }
+
+/* Photoshop uses a neutral 50% gray workspace with the menu bar and black in
+   chrome-free Full Screen; Standard keeps Vision's normal checkerboard. */
+html[data-mv-screen-mode="fullMenu"] .mv-canvas-viewport { background: #808080 !important; }
+html[data-mv-screen-mode="full"] .mv-canvas-viewport { background: #000 !important; }
+
+/* ── Home start screen (#476) ─────────────────────────────────────────
+   Rendered in the canvas slot while no document is open (cold launch, or the
+   last tab closed — set by App.tsx on the root). Like Photoshop, the panels,
+   tool rail, options bar and status bar hide; the title bar + menus stay so
+   File ▸ New / Open still work. */
+html[data-mv-home] .monet-dock,
+html[data-mv-home] .monet-float,
+html[data-mv-home] .monet-split,
+html[data-mv-home] .monet-toolbar,
+html[data-mv-home] .monet-tb-lanes,
+html[data-mv-home] .monet-tb-strip,
+html[data-mv-home] .monet-iconrail,
+html[data-mv-home] .monet-statusbar,
+html[data-mv-home] .mv-taskbar {
+  display: none !important;
+}
+.mv-home {
+  flex: 1; min-height: 0; overflow: auto;
+  color: var(--text-1);
+}
+.mv-home-inner {
+  max-width: 960px; margin: 0 auto; padding: 48px 40px;
+  display: grid; gap: 28px;
+}
+.mv-home-title { margin: 0; font-size: 22px; font-weight: 600; }
+.mv-home-heading { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-2); }
+.mv-home-actions { display: flex; gap: 14px; }
+.mv-home-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  width: 180px; padding: 16px; border-radius: 12px;
+  border: 0.5px solid var(--stroke-soft); background: var(--glass-2);
+  color: var(--text-1); font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+}
+.mv-home-card:hover { background: var(--glass-3); }
+.mv-home-card-new { background: var(--accent-raster); color: #fff; border-color: transparent; }
+.mv-home-card-new:hover { background: color-mix(in srgb, var(--accent-raster) 85%, #fff); }
+.mv-home-card-icon { font-size: 22px; line-height: 1; }
+.mv-home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 16px; }
+.mv-home-recent {
+  display: grid; gap: 6px; padding: 0; border: 0; background: none;
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.mv-home-thumb {
+  display: flex; align-items: center; justify-content: center;
+  aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden;
+  background: var(--glass-1); border: 0.5px solid var(--stroke-soft);
+}
+.mv-home-recent:hover .mv-home-thumb { border-color: var(--accent-raster); }
+.mv-home-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.mv-home-thumb-ext { font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase; }
+.mv-home-name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mv-home-date { font-size: 11px; color: var(--text-3); }
+.mv-home-empty { margin: 0; font-size: 12px; color: var(--text-3); }
+
+/* ── Contextual Task Bar — floating on-canvas action bar ─────────────
+   A Photoshop-style bar that surfaces the most relevant next actions for the
+   current context. It sits over the (unfiltered) canvas, so its own
+   backdrop-filter composites cleanly against the artwork (a bar nested inside
+   an already-filtered surface would not: nested backdrop filters don't stack).
+   The base is the opaque dark overlay tint, not --glass-2: over a light
+   document a white-only glass base turned the whole bar white (the same fix as
+   .monet-listbox above). */
+.mv-taskbar {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 7px;
+  border-radius: 11px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.015) 62%),
+    rgba(16, 21, 32, 0.9);
+  backdrop-filter: blur(46px) saturate(195%);
+  -webkit-backdrop-filter: blur(46px) saturate(195%);
+  box-shadow:
+    0 20px 48px -12px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 var(--hi-top),
+    inset 0 0 0 0.5px var(--stroke-strong);
+  /* Nothing between it and .monet-body creates a stacking context, so this
+     competes with dock chrome: stay above the canvas rulers (6) but under
+     floating toolbars (9), floating panels (10) and collapsed-dock flyouts (11). */
+  z-index: 7;
+  max-width: calc(100% - 32px);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.mv-taskbar-btn {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-1);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mv-taskbar-btn:hover { background: var(--glass-1); }
+.mv-taskbar-primary { background: var(--accent-raster); color: #fff; }
+.mv-taskbar-primary:hover { background: var(--accent-raster); filter: brightness(1.1); }
+.mv-taskbar-sep { width: 1px; align-self: stretch; margin: 3px; background: var(--stroke-strong); }
+.mv-taskbar-close { color: var(--text-3); font-size: 15px; line-height: 1; padding: 4px 9px; }
+
+/* ── Native <input type="number"> theming ─────────────────────────────────
+   monet-core styles the NumberField *component* (which renders type=text), so
+   bare number inputs showed the OS spin buttons + amber focus ring. Theme them
+   to match and drop the OS spinner (Arrow keys still step). NumberField is
+   type=text, so this rule never touches it. Inputs that set their own inline
+   background keep it; the spinner-hide + focus fix — the parts that actually
+   looked wrong — apply regardless. */
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+  box-sizing: border-box;
+  height: 22px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 6px;
+  background-color: var(--glass-1);
+  color: var(--text-1);
+  font: inherit;
+  font-size: 11px;
+  box-shadow: inset 0 0.5px 0 var(--hi-top), inset 0 0 0 0.5px var(--stroke-soft);
+  transition: background-color 0.14s ease, box-shadow 0.14s ease;
+}
+input[type="number"]:hover:not(:disabled) { background-color: var(--glass-2); }
+input[type="number"]:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0.5px 0 var(--hi-top), inset 0 0 0 1px var(--accent-raster);
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }

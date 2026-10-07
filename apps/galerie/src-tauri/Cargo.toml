@@ -1,0 +1,136 @@
+[package]
+name = "monet_galerie"
+description = "Monet Galerie — a liquid-glass photo catalog & non-destructive RAW develop studio (Lightroom Classic-class)."
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+# Two [[bin]] targets are declared below, so a bare `cargo run` — which is what
+# `tauri dev` shells out to — cannot pick one and fails with exit 101. The proof
+# binary is feature-gated and never the one you want to launch. The app binary
+# is `Galerie` so macOS shows that name for an unpackaged dev process.
+default-run = "Galerie"
+
+[[bin]]
+name = "Galerie"
+path = "src/main.rs"
+
+[[bin]]
+name = "colorchecker_proof"
+path = "src/bin/colorchecker_proof.rs"
+required-features = ["colorchecker-proof"]
+
+[features]
+default = []
+colorchecker-proof = ["dep:rawloader"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# `macos-private-api` is required for Monet's transparent + native-vibrancy
+# window on macOS.
+tauri = { version = "2", features = ["macos-private-api"] }
+
+# The Monet Tauri integration crate, consumed from the shared monet-ui package
+# in this monorepo (packages/monet-ui/crates/monet-ui).
+monet-ui = { path = "../../../packages/monet-ui/crates/monet-ui" }
+
+# Local MCP server bridge — exposes Galerie's @mcp commands to MCP clients over
+# http://127.0.0.1:48217/mcp (token in the app config dir's mcp.json).
+monet-mcp = { path = "../../../packages/monet-ui/crates/monet-mcp" }
+
+# Native OS file/save/message dialogs — the first thing Galerie needs (photo
+# import). Registered via `monet_ui::dialog_plugin()` in main.rs and matched by
+# the `@tauri-apps/plugin-dialog` JS package.
+tauri-plugin-dialog = "2"
+
+# OS Trash for "Delete from Disk" (Lightroom's destructive delete moves source
+# files to the system Trash, never a hard unlink).
+trash = "5"
+
+# Read/write files to disk (import photos, catalog persistence).
+tauri-plugin-fs = "2"
+
+# The catalog is a SQLite database (`.galcat`). `bundled` compiles SQLite from
+# source so there's no system-library dependency across dev machines / CI.
+# Galerie keeps its own rusqlite for the photo-domain queries; the generic
+# plumbing (open + pragmas, migrations, maintenance, digests) lives in monet-db.
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# The shared database library every Monet app interfaces through (design doc
+# 11). The default `container` feature is ON now that Galerie has grown `.mgal`
+# open/save — `.galcat` stays a live database with no container around it, and
+# the container lifecycle (extract → work → snapshot back) is the `.mgal` half.
+monet-db = { path = "../../../packages/monet-ui/crates/monet-db" }
+
+# The container primitive itself (design doc 11): the manifest Galerie has to
+# read to answer "what is in this file, and what of it do I understand?", and
+# the `ContainerApp` stamp `monet-db`'s snapshot writes. Same crate monet-db
+# links — one implementation, seven consumers.
+monet-format = { path = "../../../packages/monet-ui/crates/monet-format" }
+
+# (De)serialize the catalog command payloads (import records, photo rows,
+# pagination cursors) across the Tauri IPC boundary.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+
+# Signed, embedded C2PA Content Credentials (Export ▸ Content Credentials).
+# Identical to apps/vision/src-tauri/Cargo.toml's dependency: pure-Rust crypto
+# (rust_native_crypto: p256 ES256) — no OpenSSL C linking, which keeps the
+# thin-LTO / panic=abort release profile happy. `http_ureq` adds a sync,
+# rustls-based HTTP client so an opt-in RFC-3161 timestamp authority URL
+# actually countersigns during Builder::sign; with no TSA URL set (the
+# default) signing stays fully local, no egress.
+c2pa = { version = "0.89", default-features = false, features = ["rust_native_crypto", "http_ureq"] }
+monet-photo-core = { path = "../../../packages/engine/crates/monet-photo-core" }
+rawloader = { version = "=0.37.1", optional = true }
+tiff = "=0.11.3"
+moxcms = "=0.8.1"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# macOS owns camera-RAW decode. Core Image tracks the OS camera/format support
+# matrix (including CR3) and renders through the camera profile into a linear,
+# high-bit-depth interchange without bundling a second decoder or copyleft code.
+objc2 = "0.6.4"
+objc2-core-foundation = "0.3.2"
+objc2-core-graphics = { version = "0.3.2", default-features = false, features = ["std", "CGColorSpace"] }
+objc2-core-image = { version = "0.3.2", default-features = false, features = [
+  "std",
+  "CIContext",
+  "CIFilter",
+  "CIImage",
+  "CIRAWFilter",
+  "objc2-core-foundation",
+  "objc2-core-graphics",
+  "objc2-image-io",
+] }
+objc2-foundation = { version = "0.3.2", default-features = false, features = [
+  "std",
+  "NSArray",
+  "NSData",
+  "NSDictionary",
+  "NSObject",
+  "NSProcessInfo",
+  "NSString",
+  "NSURL",
+] }
+objc2-image-io = { version = "0.3.2", default-features = false, features = ["std"] }
+
+# A slimmer release profile for the bundled app.
+[profile.release]
+codegen-units = 1
+# Thin (not fat) LTO: fat LTO miscompiles window-vibrancy's NSVisualEffectView
+# Objective-C class registration ("symbol multiply defined" / bitcode load
+# failure) on macOS — tauri pulls window-vibrancy 0.6 while monet-ui pulls 0.7.
+# Thin LTO keeps the size/perf win without that collision.
+lto = "thin"
+opt-level = "s"
+panic = "abort"
+strip = true
+
+# Standalone crate — detached from the shared monet-ui Cargo workspace.
+[workspace]
+
+[dev-dependencies]
+rcgen = "0.13"

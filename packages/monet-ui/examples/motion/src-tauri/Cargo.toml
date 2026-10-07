@@ -1,0 +1,19 @@
+[package]
+name = "monet-example-motion"
+description = "Monet example · Motion"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "monet_example_motion"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { workspace = true }
+
+[dependencies]
+tauri = { workspace = true, features = ["macos-private-api"] }
+tauri-plugin-dialog = { workspace = true }
+monet-ui = { workspace = true }

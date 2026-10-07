@@ -1,0 +1,221 @@
+{
+  "app": "galerie",
+  "version": "0.1.0",
+  "tools": [
+    {
+      "name": "develop.matchTotalExposures",
+      "description": "Match Total Exposures — set each selected photo's Exposure so its rendered\nbrightness matches the active photo.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "develop.setAutoSync",
+      "description": "Auto Sync — while on, mirror every develop edit to the active photo onto\nthe rest of the selection as you make it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "on": {
+            "type": "boolean",
+            "description": "True to enable Auto Sync, false to disable."
+          }
+        },
+        "required": [
+          "on"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "develop.sync",
+      "description": "Sync Settings — push the active photo's develop recipe to the rest of the\ncurrent selection.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Panels to push (e.g. basic, tone, color); omit to push the whole recipe."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "keywords.export",
+      "description": "Export Keywords — write the whole vocabulary as a tab-indented keyword file.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute destination path (.txt)."
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "keywords.import",
+      "description": "Import Keywords — merge a tab-indented keyword file into the catalog\nvocabulary. Existing names are reused, so a re-import is a no-op.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute path to a tab-indented keyword list (.txt)."
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "library.import",
+      "description": "Import a photo file into the catalog by absolute path.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute file path to import."
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "library.selectNext",
+      "description": "Make the next photo in the grid active (for sequential culling).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "library.selectPrevious",
+      "description": "Make the previous photo in the grid active.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "library.setFilter",
+      "description": "Set the Library rating filter (show only photos rated at least minRating).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "minRating": {
+            "type": "number",
+            "description": "Minimum star rating 0–5 (0 shows all)."
+          }
+        },
+        "required": [
+          "minRating"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "library.setModule",
+      "description": "Switch the active module.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string",
+            "description": "Module to show."
+          }
+        },
+        "required": [
+          "module"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "library.summary",
+      "description": "Summarize the current Library state (counts + active photo).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "photo.flag",
+      "description": "Set the pick/reject flag of the active photo.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "flag": {
+            "type": "number",
+            "description": "Flag value: 1 pick, 0 none, -1 reject."
+          }
+        },
+        "required": [
+          "flag"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "photo.label",
+      "description": "Set the color label of the active photo.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "description": "Color label (red, yellow, green, blue, purple), or empty to clear."
+          }
+        },
+        "required": [
+          "color"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "photo.makeMasterPhoto",
+      "description": "Make Master Photo — promote the active virtual copy to master, demoting the\ncurrent master to a copy.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "photo.rate",
+      "description": "Set the star rating of the active photo.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "number",
+            "description": "Star rating 0–5."
+          }
+        },
+        "required": [
+          "rating"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+/* ─────────────────────────────────────────────────────────────
+   Monet — Tauri bare-window glass layer
+   ─────────────────────────────────────────────────────────────
+   Real Tauri windows ARE the OS window: there is no fake desktop,
+   wallpaper or dock behind the chrome. The host applies a native vibrancy
+   material (macOS NSVisualEffectView · Windows acrylic/mica) behind the
+   transparent webview. Apps may use Monet's custom frame or native OS
+   decorations; these rules support both.
+
+   Apply by adding `data-monet-tauri` to <html> (the Rust init script
+   sets it before page load; React's <MonetProvider> also sets it) and
+   the `monet-window--bare` modifier to the window shell.
+*/
+
+html[data-monet-tauri],
+html[data-monet-tauri] body,
+html[data-monet-tauri] #root {
+  margin: 0;
+  height: 100%;
+  /* transparent so the native vibrancy material shows through */
+  background: transparent;
+  overflow: hidden;
+}
+
+/* Native app chrome behaves like app chrome, not selectable web-page text. */
+html[data-monet-tauri] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+html[data-monet-tauri] :is(input, textarea, pre, [contenteditable]:not([contenteditable="false"])) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* The bare window fills the whole webview; the OS frame (rounded,
+   shadowed) is supplied natively. Its own background is translucent
+   so the vibrancy bleeds through the dark chrome. */
+.monet-window--bare,
+.monet-window--native-frame {
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(120% 80% at 20% 0%, rgba(40, 50, 80, 0.36), transparent 60%),
+    radial-gradient(100% 80% at 90% 100%, rgba(80, 30, 60, 0.24), transparent 60%),
+    linear-gradient(180deg, rgba(19, 23, 34, 0.74), rgba(11, 14, 20, 0.80));
+}
+.monet-window--bare {
+  border-radius: var(--radius-window);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.10);
+}
+.monet-window--native-frame {
+  border-radius: 0;
+  box-shadow: none;
+}
+.monet-window--bare.monet-window--win { border-radius: 9px; }
+
+/* When the host could not apply vibrancy (e.g. Linux, or an opaque
+   fallback), opt back into a solid window background so the chrome
+   stays legible. The React layer sets data-monet-solid in that case. */
+html[data-monet-solid] .monet-window--bare,
+html[data-monet-solid] .monet-window--native-frame {
+  background:
+    radial-gradient(120% 80% at 20% 0%, rgba(40, 50, 80, 0.45), transparent 60%),
+    radial-gradient(100% 80% at 90% 100%, rgba(80, 30, 60, 0.30), transparent 60%),
+    linear-gradient(180deg, var(--desktop-1), var(--desktop-0));
+}
+
+/* ─── interactive window controls ─── */
+/* macOS traffic lights become real buttons wired to window commands. */
+.monet-window--bare .monet-traffic > i { cursor: default; transition: filter 0.12s, opacity 0.12s; }
+.monet-window--bare .monet-traffic:hover > i { filter: brightness(1.08); }
+.monet-window--bare .monet-traffic > i:active { filter: brightness(0.9); }
+
+/* A glyph that fades in on hover, macOS-style, over each light. */
+.monet-traffic > i { position: relative; display: flex; align-items: center; justify-content: center; }
+.monet-traffic > i > svg { opacity: 0; transition: opacity 0.12s; color: rgba(0, 0, 0, 0.55); }
+.monet-window--bare .monet-traffic:hover > i > svg { opacity: 1; }
+
+/* Windows controls already carry hover states in styles.css; just make
+   the pointer explicit on a real window. */
+.monet-window--bare .monet-winctrl { cursor: default; }
+
+/* Drag region: the host marks draggable chrome with data-tauri-drag-region.
+   Children that must stay interactive opt out with data-tauri-drag-region="false".
+   No layout CSS is required, but make the intent visible to the cursor. */
+[data-tauri-drag-region] { cursor: default; }

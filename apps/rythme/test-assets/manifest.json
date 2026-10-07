@@ -1,0 +1,62 @@
+[
+  {
+    "name": "tone-440-mono-16.wav",
+    "bytes": 96044,
+    "freq": 440,
+    "ch": 1,
+    "sr": 48000
+  },
+  {
+    "name": "tone-440-stereo-16.wav",
+    "bytes": 192044,
+    "freq": 440,
+    "ch": 2,
+    "sr": 48000
+  },
+  {
+    "name": "tone-1k-24.wav",
+    "bytes": 72044,
+    "freq": 1000,
+    "ch": 1,
+    "sr": 48000
+  },
+  {
+    "name": "tone-1k-32f.wav",
+    "bytes": 96044,
+    "freq": 1000,
+    "ch": 1,
+    "sr": 48000
+  },
+  {
+    "name": "tone-220-44100-16.wav",
+    "bytes": 44144,
+    "freq": 220,
+    "ch": 1,
+    "sr": 44100
+  },
+  {
+    "name": "sweep-100-8k-16.wav",
+    "bytes": 96044,
+    "ch": 1,
+    "sr": 48000
+  },
+  {
+    "name": "noise-16.wav",
+    "bytes": 48044,
+    "ch": 1,
+    "sr": 48000
+  },
+  {
+    "name": "dtmf-5-16.wav",
+    "bytes": 4844,
+    "ch": 1,
+    "sr": 8000
+  },
+  {
+    "name": "tone-extrachunks-16.wav",
+    "bytes": 48072,
+    "freq": 440,
+    "ch": 1,
+    "sr": 48000
+  }
+]

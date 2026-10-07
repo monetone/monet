@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.vite/
+
+# Rust / Cargo
+target/
+
+# Tauri generated
+src-tauri/gen/
+src-tauri/target/
+
+# OS / editor junk
+.DS_Store
+*.local
+.idea/
+.vscode/

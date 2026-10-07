@@ -1,0 +1,228 @@
+/* Monet Artisan — app-specific styles layered on top of @monet-ui/monet-core.
+ * Monet owns the chrome (windows, docks, panels, rails). These rules style only
+ * the vector editing surface (canvas viewport, rulers, selection handles) and
+ * Artisan-specific panel internals. Keep chrome styling in Monet; keep accent
+ * theming via the --accent CSS variable. */
+
+.monet-app-pill .glyph {
+  background: center / cover no-repeat url("../src-tauri/icons/32x32.png");
+}
+
+:root {
+  --artisan-canvas-bg: #2b2b2f;
+  --artisan-artboard-bg: #ffffff;
+  --artisan-ruler-bg: rgba(20, 20, 24, 0.6);
+  --artisan-ruler-fg: rgba(255, 255, 255, 0.45);
+  --artisan-ruler-size: 20px;
+  --artisan-handle: var(--accent-vector, #4a9eff);
+  --artisan-handle-size: 7px;
+}
+
+/* ── Editing viewport (rulers + canvas grid) ─────────────────── */
+.artisan-viewport {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: var(--artisan-ruler-size) 1fr;
+  grid-template-rows: var(--artisan-ruler-size) 1fr;
+  background: var(--artisan-canvas-bg);
+}
+.artisan-viewport.no-rulers {
+  grid-template-columns: 0 1fr;
+  grid-template-rows: 0 1fr;
+}
+.artisan-corner {
+  grid-area: 1 / 1;
+  background: var(--artisan-ruler-bg);
+  border-right: 0.5px solid var(--stroke-soft);
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+.artisan-ruler-top {
+  grid-area: 1 / 2;
+  background: var(--artisan-ruler-bg);
+  border-bottom: 0.5px solid var(--stroke-soft);
+  overflow: hidden;
+}
+.artisan-ruler-left {
+  grid-area: 2 / 1;
+  background: var(--artisan-ruler-bg);
+  border-right: 0.5px solid var(--stroke-soft);
+  overflow: hidden;
+}
+.artisan-canvas-cell {
+  grid-area: 2 / 2;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+.artisan-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+/* View ▸ Show Transparency Grid — checkerboard behind the (transparent) canvas. */
+.artisan-transparency-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, #c8c8c8 25%, transparent 25%),
+    linear-gradient(-45deg, #c8c8c8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #c8c8c8 75%),
+    linear-gradient(-45deg, transparent 75%, #c8c8c8 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+.artisan-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.artisan-html-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.artisan-text-edit {
+  position: absolute;
+  pointer-events: auto;
+  background: transparent;
+  border: none;
+  outline: 1px dashed var(--accent-vector, #4a9eff);
+  padding: 0;
+  margin: 0;
+  resize: none;
+  white-space: pre;
+  overflow: hidden;
+  min-width: 24px;
+  min-height: 1em;
+  transform-origin: left top;
+}
+
+/* ── Panel controls ──────────────────────────────────────────── */
+.artisan-num {
+  width: 56px;
+  background: var(--glass-0);
+  border: 0.5px solid var(--stroke-soft);
+  border-radius: 4px;
+  color: var(--text-1);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  padding: 3px 6px;
+  outline: none;
+}
+.artisan-num:focus {
+  border-color: var(--accent-vector, #4a9eff);
+}
+.artisan-num:disabled {
+  opacity: 0.4;
+}
+.artisan-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 10px;
+}
+.artisan-field-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.artisan-field-row .lbl {
+  width: 14px;
+  color: var(--text-3);
+  font-size: 11px;
+}
+.artisan-swatch-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 0.5px solid var(--stroke-medium);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  padding: 0;
+}
+.artisan-swatch-btn.is-active {
+  outline: 1.5px solid var(--accent-vector, #4a9eff);
+  outline-offset: 1px;
+}
+.artisan-seg {
+  display: inline-flex;
+  gap: 2px;
+}
+.artisan-seg-btn {
+  flex: 1;
+  min-width: 22px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 0.5px solid var(--stroke-medium);
+  background: var(--glass-0);
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.artisan-seg-btn:hover {
+  color: var(--text-1);
+}
+.artisan-seg-btn.is-active {
+  background: var(--accent-vector, #4a9eff);
+  border-color: var(--accent-vector, #4a9eff);
+  color: #fff;
+}
+.artisan-seg-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+/* The closed Font family control previews the active font (its root carries it),
+   so a missing font shows in its fallback. */
+.monet-select-trigger[data-character-font],
+.monet-select-trigger[data-type-font] {
+  font-family: inherit;
+}
+.is-missing-font .monet-select-trigger {
+  box-shadow: inset 0 0 0 0.5px #e85aa0;
+  background: rgba(232, 90, 160, 0.12);
+}
+.artisan-font-missing {
+  color: #e85aa0;
+  font-size: 12px;
+  margin-left: 4px;
+}
+.artisan-swatch-cell {
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: 3px;
+  border: 0.5px solid var(--stroke-soft);
+  cursor: pointer;
+  padding: 0;
+}
+.artisan-color-input {
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  border: 0.5px solid var(--stroke-soft);
+  border-radius: 4px;
+  background: var(--glass-0);
+  cursor: pointer;
+}
+.artisan-layers .monet-layer .meta {
+  cursor: pointer;
+}
+
+/* ── Tool-rail flyout: Monet's .monet-flyout surface + items; Artisan adds only
+   the shortcut hint (dimmed on the accent pill of the active tool, like
+   .monet-menu-shortcut). ── */
+.artisan-flyout-key {
+  margin-left: 12px;
+  color: var(--text-3);
+  font-size: 11px;
+}
+.monet-flyout-item.is-active .artisan-flyout-key {
+  color: inherit;
+  opacity: 0.7;
+}

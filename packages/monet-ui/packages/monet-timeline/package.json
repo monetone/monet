@@ -1,0 +1,48 @@
+{
+  "name": "@monet-ui/monet-timeline",
+  "version": "0.1.0",
+  "description": "Monet — framework-free non-linear timeline engine: generic track/clip model, editing operations (split/ripple/trim/slip/slide/roll), an observable clone-on-write store, and frame/timecode math. Shared across the Monet NLE apps (Cinema video, Rythme audio).",
+  "license": "MIT",
+  "author": "Monet / monet-ui",
+  "type": "module",
+  "//": "Framework-agnostic: NO React/DOM imports, so it runs in node/workers too. Unit-agnostic: time values are plain numbers (frames for video, seconds for audio) — the host app chooses. dist/ is built fresh by prepare/prepublishOnly.",
+  "sideEffects": false,
+  "files": ["dist"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "prepare": "pnpm run build",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": ["timeline", "nle", "video", "audio", "editing", "monet"],
+  "homepage": "https://github.com/monetone/monet/tree/main/packages/monet-ui/packages/monet-timeline#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monetone/monet.git",
+    "directory": "packages/monet-ui/packages/monet-timeline"
+  },
+  "bugs": {
+    "url": "https://github.com/monetone/monet/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.8"
+  }
+}

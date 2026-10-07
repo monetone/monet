@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Monet Rythme",
+  "version": "0.1.0",
+  "identifier": "dev.monet.rythme",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1424",
+    "beforeDevCommand": "pnpm vite --port 1424 --strictPort",
+    "beforeBuildCommand": "pnpm vite build"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "macOSPrivateApi": true,
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "macOS": {
+      "bundleName": "Rythme"
+    },
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "mryt"
+        ],
+        "name": "Monet Rythme Session",
+        "description": "Monet Rythme Session",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "mvis",
+          "mart",
+          "mgal",
+          "mcin",
+          "mjou",
+          "mani"
+        ],
+        "name": "Monet Document",
+        "description": "Monet document from another app",
+        "role": "Viewer"
+      }
+    ]
+  }
+}

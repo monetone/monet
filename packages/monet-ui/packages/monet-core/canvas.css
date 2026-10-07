@@ -1,0 +1,561 @@
+/* ─────────────────────────────────────────────────────────────
+   Monet — DesignCanvas
+   ─────────────────────────────────────────────────────────────
+   A Figma-ish infinite design canvas: a warm-gray "paper" surface (light by
+   intent, distinct from the dark glass chrome) hosting reorderable artboards
+   grouped into editable sections, with a fullscreen focus overlay.
+
+   Behaviour + accessibility live in @monet-ui/monet-react (canvas.tsx +
+   canvas-items.tsx + canvas-focus.tsx + canvas-export.ts). This file is
+   visuals only, classed under the "monet-dc-" prefix so it can't collide with
+   the hosted design's own styles. It reuses shared tokens (--accent,
+   --radius-*, --font-ui) and defines canvas-local paper tones that hosts can
+   override on .monet-dc-viewport.
+*/
+
+.monet-dc-viewport {
+  /* Canvas-local palette — the paper surface is light by design, so it does
+     not draw from the dark glass tokens. Override these on the viewport to
+     re-theme the canvas without touching the rest of the system. */
+  --dc-bg: #f0eee9;
+  --dc-grid: rgba(0, 0, 0, 0.06);
+  --dc-label: rgba(60, 50, 40, 0.7);
+  --dc-title: rgba(40, 30, 20, 0.85);
+  --dc-subtitle: rgba(60, 50, 40, 0.6);
+  --dc-card-bg: #fff;
+  --dc-postit-bg: #fef4a8;
+  --dc-postit-text: #5a4a2a;
+  --dc-accent: var(--accent, #c96442);
+
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  background: var(--dc-bg);
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif);
+}
+
+.monet-dc-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  width: max-content;
+  min-width: 100%;
+  min-height: 100%;
+  padding: 60px 0 80px;
+}
+
+/* Decorative warm-gray grid; aria-hidden in the markup. The inset reaches far
+   beyond the viewport so the grid covers an effectively-infinite world. */
+.monet-dc-grid {
+  position: absolute;
+  inset: -6000px;
+  z-index: -1;
+  pointer-events: none;
+  background-size: 120px 120px;
+  background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M120 0H0v120' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='1'/%3E%3C/svg%3E");
+}
+
+/* ─── inline-editable label / title ─── */
+.monet-dc-editable {
+  cursor: text;
+  outline: none;
+  white-space: nowrap;
+  border-radius: 3px;
+  padding: 0 2px;
+  margin: 0 -2px;
+}
+.monet-dc-editable:focus,
+.monet-dc-editable:focus-visible {
+  background: #fff;
+  box-shadow: 0 0 0 1.5px var(--dc-accent);
+}
+
+/* ─── section ─── */
+.monet-dc-section {
+  position: relative;
+}
+.monet-dc-subtitle {
+  font-size: 16px;
+  color: var(--dc-subtitle);
+}
+.monet-dc-row {
+  display: flex;
+  align-items: flex-start;
+  width: max-content;
+}
+
+/* ─── artboard slot + drag state ─── */
+.monet-dc-slot {
+  transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.monet-dc-slot.monet-dc-dragging {
+  transition: none;
+  z-index: 10;
+  pointer-events: none;
+}
+.monet-dc-slot.monet-dc-dragging .monet-dc-card {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25), 0 0 0 2px var(--dc-accent);
+  transform: scale(1.02);
+}
+
+/* ─── artboard card ─── */
+/* isolation:isolate contains the artboard content's z-indexes so a z-indexed
+   child (sticky navbar etc.) can't paint over .monet-dc-header. */
+.monet-dc-card {
+  isolation: isolate;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  background: var(--dc-card-bg);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.monet-dc-card * {
+  scrollbar-width: none;
+}
+.monet-dc-card *::-webkit-scrollbar {
+  display: none;
+}
+.monet-dc-placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #bbb;
+  font-size: 13px;
+}
+
+/* ─── per-artboard header (grip + label · actions) ─── */
+/* Single flex row above the card. When the artboard's on-screen width is too
+   narrow for both, the label yields (ellipsis, then hidden via the container
+   query) and the buttons stay on the row. */
+.monet-dc-header {
+  position: absolute;
+  bottom: 100%;
+  left: -4px;
+  margin-bottom: calc(4px * var(--dc-inv-zoom, 1));
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  container-type: inline-size;
+  color: var(--dc-label);
+  /* Chrome counter-scales against the viewport zoom so it stays a constant
+     on-screen size. --dc-inv-zoom is set by DCViewport on every transform
+     update and inherits to all descendants. The header uses transform:scale
+     (out-of-flow) with its world-space width set to card-width / inv-zoom so
+     that after counter-scaling its on-screen width exactly matches the card's —
+     that's what lets the container query + text-overflow behave against the
+     card's visible edge at every zoom level. */
+  width: calc((100% + 4px) / var(--dc-inv-zoom, 1));
+  transform: scale(var(--dc-inv-zoom, 1));
+  transform-origin: bottom left;
+}
+.monet-dc-labelrow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.monet-dc-grip {
+  flex: 0 0 auto;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  padding: 5px 4px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  transition: background 0.12s, opacity 0.12s;
+}
+.monet-dc-grip:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+.monet-dc-grip:active {
+  cursor: grabbing;
+}
+.monet-dc-grip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--dc-accent);
+}
+.monet-dc-grip[aria-pressed="true"] {
+  background: color-mix(in oklch, var(--dc-accent) 22%, transparent);
+  box-shadow: 0 0 0 2px var(--dc-accent);
+}
+.monet-dc-labeltext {
+  flex: 1 1 auto;
+  min-width: 0;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 3px 6px;
+  display: flex;
+  align-items: center;
+  transition: background 0.12s;
+  overflow: hidden;
+}
+.monet-dc-labeltext:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+.monet-dc-labeltext .monet-dc-editable {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--dc-label);
+  line-height: 1;
+}
+.monet-dc-labeltext .monet-dc-editable:focus,
+.monet-dc-labeltext .monet-dc-editable:focus-visible {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Below ~4ch of label room: hide the label entirely, and drop the grip to
+   hover/focus-only so a narrow header is clean until the card is moused. */
+@container (max-width: 110px) {
+  .monet-dc-labeltext {
+    display: none;
+  }
+  .monet-dc-grip {
+    opacity: 0;
+  }
+  .monet-dc-slot:hover .monet-dc-grip,
+  .monet-dc-grip:focus-visible,
+  .monet-dc-grip[aria-pressed="true"] {
+    opacity: 1;
+  }
+}
+
+.monet-dc-btns {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.monet-dc-slot:hover .monet-dc-btns,
+.monet-dc-btns:has([aria-expanded="true"]),
+.monet-dc-btns:focus-within {
+  opacity: 1;
+}
+.monet-dc-expand,
+.monet-dc-kebab {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  background: transparent;
+  color: var(--dc-label);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  transition: background 0.12s, color 0.12s;
+}
+.monet-dc-expand:hover,
+.monet-dc-kebab:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #2a251f;
+}
+.monet-dc-expand:focus-visible,
+.monet-dc-kebab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--dc-accent);
+  color: #2a251f;
+}
+
+/* ─── artboard ⋯ menu ─── */
+/* Portalled into the overlay root (placed + z-indexed by canvas-items.tsx), so
+   it is outside .monet-dc-viewport: its palette is declared here — override
+   these on .monet-dc-menu. */
+.monet-dc-menu {
+  --dc-menu-bg: #fff;
+  --dc-menu-text: #29261b;
+  --dc-accent: var(--accent, #c96442);
+  position: fixed;
+  background: var(--dc-menu-bg);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: 4px;
+  min-width: 160px;
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif);
+}
+.monet-dc-menu button {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--dc-menu-text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+  white-space: nowrap;
+}
+.monet-dc-menu button:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+.monet-dc-menu button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--dc-accent);
+}
+.monet-dc-menu hr {
+  border: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  margin: 4px 2px;
+}
+.monet-dc-menu .monet-dc-danger {
+  color: var(--dc-accent);
+}
+.monet-dc-menu .monet-dc-danger:hover {
+  background: color-mix(in oklch, var(--dc-accent) 12%, transparent);
+}
+
+/* ─── section head ─── */
+/* The section head uses CSS zoom instead of transform so its layout box grows
+   with the counter-scale, pushing the card row down — otherwise the
+   constant-screen-size title would overflow into the (shrinking) world-space
+   gap and overlap the artboard headers at low zoom. */
+.monet-dc-sectionhead {
+  zoom: var(--dc-inv-zoom, 1);
+  padding-bottom: 36px;
+  color: var(--dc-title);
+}
+.monet-dc-sectionhead .monet-dc-editable {
+  color: var(--dc-title);
+}
+
+/* ─── post-it ─── */
+.monet-dc-postit {
+  position: absolute;
+  z-index: 5;
+  background: var(--dc-postit-bg);
+  padding: 14px 16px;
+  font-family: "Comic Sans MS", "Marker Felt", "Segoe Print", cursive;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--dc-postit-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Focus overlay — one artboard fullscreen over a dimmed backdrop
+   ───────────────────────────────────────────────────────────── */
+.monet-dc-focus {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(24, 20, 16, 0.6);
+  /* Dimmed but never blurred — the focused artboard sits sharp over the rest
+     of the canvas; overlays must not blur the main window behind them. */
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif);
+  color: #fff;
+}
+
+.monet-dc-focus-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 72px;
+  display: flex;
+  align-items: flex-start;
+  padding: 16px 20px 0;
+  gap: 16px;
+}
+.monet-dc-focus-sectionbtn {
+  border: none;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  text-align: left;
+  font-family: inherit;
+}
+.monet-dc-focus-sectionbtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+.monet-dc-focus-sectiontitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.monet-dc-focus-sectionsub {
+  display: block;
+  font-size: 13px;
+  opacity: 0.6;
+  font-weight: 400;
+  margin-top: 2px;
+}
+.monet-dc-focus-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: #2a251f;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  padding: 4px;
+  min-width: 200px;
+  z-index: 10;
+}
+.monet-dc-focus-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: inherit;
+}
+.monet-dc-focus-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.monet-dc-focus-option:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+.monet-dc-focus-option[data-current] {
+  background: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+}
+.monet-dc-focus-close {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.12s;
+}
+.monet-dc-focus-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.monet-dc-focus-close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+.monet-dc-focus-stage {
+  position: absolute;
+  top: 64px;
+  bottom: 56px;
+  left: 100px;
+  right: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.monet-dc-focus-cardwrap {
+  position: relative;
+}
+.monet-dc-focus-card {
+  transform-origin: top left;
+  background: #fff;
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.4);
+}
+.monet-dc-focus-placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #bbb;
+}
+.monet-dc-focus-caption {
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0.85;
+  text-align: center;
+}
+.monet-dc-focus-index {
+  opacity: 0.5;
+  margin-left: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.monet-dc-focus-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.monet-dc-focus-arrow[data-dir="left"] {
+  left: 28px;
+}
+.monet-dc-focus-arrow[data-dir="right"] {
+  right: 28px;
+}
+.monet-dc-focus-arrow:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.monet-dc-focus-arrow:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+.monet-dc-focus-dots {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+.monet-dc-focus-dot {
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.3);
+}
+.monet-dc-focus-dot[data-active] {
+  background: #fff;
+}
+.monet-dc-focus-dot:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7);
+}

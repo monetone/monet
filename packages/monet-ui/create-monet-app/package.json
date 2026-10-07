@@ -1,0 +1,41 @@
+{
+  "name": "create-monet-app",
+  "version": "0.1.0",
+  "description": "Scaffold a new Monet liquid-glass desktop app for Tauri 2 (React + Rust).",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "create-monet-app": "./index.mjs"
+  },
+  "files": [
+    "index.mjs",
+    "template",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "tauri",
+    "design-system",
+    "liquid-glass",
+    "react",
+    "panels",
+    "dockable",
+    "create-app",
+    "scaffold"
+  ],
+  "author": "Monet / monet-ui",
+  "homepage": "https://github.com/monetone/monet/tree/main/packages/monet-ui/create-monet-app#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monetone/monet.git",
+    "directory": "packages/monet-ui/create-monet-app"
+  },
+  "bugs": {
+    "url": "https://github.com/monetone/monet/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

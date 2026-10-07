@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- relative commands m/l/c/s/q/t/a + multiple subpaths and Z in one d -->
+  <path fill="#4a9eff" d="M40 60 l 80 0 l 0 60 l -80 0 z m 120 0 l 80 0 l 0 60 l -80 0 z"/>
+  <path fill="none" stroke="#e0573a" stroke-width="4" d="M40 185 c 30 -50 90 -50 120 0 s 90 50 120 0"/>
+  <path fill="none" stroke="#3ac06a" stroke-width="4" d="M40 255 q 60 -45 120 0 t 120 0"/>
+  <path fill="#a855f7" d="M320 80 a 34 34 0 1 0 0.01 0 z"/>
+</svg>

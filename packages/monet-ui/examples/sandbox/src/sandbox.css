@@ -1,0 +1,280 @@
+/* ─────────────────────────────────────────────────────────────
+   Monet — Sandbox shell
+   A thin control bar above a full-bleed dockable workspace.
+   ───────────────────────────────────────────────────────────── */
+
+.sbx-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--desktop-0);
+  font-family: var(--font-ui);
+  color: var(--text-1);
+}
+
+/* In a real (bare) Tauri window the webview is transparent so the native
+   vibrancy + the rounded window frame show through. The solid desktop fill
+   above is only for the browser os-mode preview; drop it here, otherwise it
+   paints an opaque square behind the full-bleed .monet-window--bare and
+   squares off its rounded corners. */
+html[data-monet-tauri] .sbx-root { background: transparent; }
+
+/* ─── top control bar ─── */
+.sbx-bar {
+  flex: 0 0 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  background: rgba(10, 13, 20, 0.72);
+  backdrop-filter: var(--blur-strong);
+  -webkit-backdrop-filter: var(--blur-strong);
+  border-bottom: 0.5px solid var(--stroke-medium);
+  position: relative;
+  z-index: 20;
+}
+
+.sbx-brand { display: flex; align-items: center; gap: 11px; flex: 0 0 auto; }
+.sbx-brand-glyph {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  position: relative;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,0.5), transparent 55%),
+    conic-gradient(from 210deg, var(--accent-raster), var(--accent-vector), var(--accent-motion), var(--accent-audio), var(--accent-raster));
+  box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.5), 0 3px 9px rgba(0,0,0,0.4);
+}
+.sbx-brand-glyph::after {
+  content: ""; position: absolute; inset: 8px; border-radius: 50%;
+  background: rgba(10, 13, 20, 0.72); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.18);
+}
+.sbx-brand-name { font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em; }
+.sbx-brand-tag {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-3); margin-left: 2px;
+  padding: 2px 7px; border-radius: var(--radius-pill);
+  background: var(--glass-1); box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+
+/* ─── segmented preset control ─── */
+.sbx-seg {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--glass-0);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+.sbx-seg button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: background 0.12s, color 0.12s;
+}
+.sbx-seg button:hover { color: var(--text-1); }
+.sbx-seg button.is-active {
+  background: var(--glass-2);
+  color: var(--text-1);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), 0 1px 3px rgba(0,0,0,0.3);
+}
+.sbx-seg button .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor; opacity: 0.5;
+}
+.sbx-seg button.is-active .dot { opacity: 1; box-shadow: 0 0 8px currentColor; }
+
+/* ─── accent swatch row (now lives in the Configuration panel) ─── */
+.sbx-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--glass-0);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+.sbx-swatch {
+  appearance: none;
+  border: none;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  background: var(--sw);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.sbx-swatch:hover { transform: scale(1.16); }
+.sbx-swatch.is-active {
+  box-shadow:
+    0 0 0 1.5px var(--desktop-0),
+    0 0 0 3px var(--sw),
+    0 0 10px -1px var(--sw);
+}
+.sbx-swatch.is-auto {
+  background:
+    conic-gradient(from 210deg,
+      var(--accent-raster), var(--accent-vector),
+      var(--accent-motion), var(--accent-audio), var(--accent-raster));
+}
+
+.sbx-spring { flex: 1; }
+
+.sbx-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-3);
+  flex: 0 0 auto;
+}
+.sbx-hint kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--glass-1);
+  color: var(--text-2);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+
+.sbx-btn {
+  appearance: none;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: var(--radius-control);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-1);
+  background: var(--glass-1);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), inset 0 0 0 0.5px var(--stroke-soft);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.sbx-btn:hover { background: var(--glass-2); }
+.sbx-btn svg { color: var(--text-2); }
+
+.sbx-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--radius-control);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  text-decoration: none;
+  transition: background 0.12s, color 0.12s;
+}
+.sbx-link:hover { background: var(--glass-1); color: var(--text-1); }
+
+.sbx-sep { width: 0.5px; height: 24px; background: var(--stroke-medium); flex: 0 0 auto; }
+
+/* ─── Tauri: fixed bottom-center floating control cluster ───
+   Reuses .sbx-seg / .sbx-swatch styling, but floats over the
+   bare workspace instead of sitting in a top bar. */
+.sbx-cluster {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(10, 13, 20, 0.78);
+  backdrop-filter: var(--blur-strong);
+  -webkit-backdrop-filter: var(--blur-strong);
+  box-shadow:
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px var(--stroke-medium),
+    0 12px 32px rgba(0, 0, 0, 0.5);
+}
+.sbx-cluster .sbx-sep { height: 22px; }
+
+/* ─── stage holding the workspace ─── */
+.sbx-stage {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+/* toast that fades after a preset switch */
+.sbx-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 84px;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  background: rgba(10, 13, 20, 0.86);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), inset 0 0 0 0.5px var(--stroke-medium), 0 12px 32px rgba(0,0,0,0.5);
+  font-size: 12px;
+  color: var(--text-1);
+  z-index: 30;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  opacity: 0;
+  animation: sbx-toast 2.2s ease forwards;
+}
+.sbx-toast .dot { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+@keyframes sbx-toast {
+  0% { opacity: 0; transform: translate(-50%, 8px); }
+  14% { opacity: 1; transform: translate(-50%, 0); }
+  80% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -4px); }
+}
+
+@media (max-width: 880px) {
+  .sbx-hint { display: none; }
+  .sbx-seg button { padding: 6px 10px; }
+}
+
+/* ─── Configuration panel ───
+   Reuses the existing .sbx-swatches / .sbx-swatch rules above for the
+   accent row, and .monet-section-label / .monet-row (monet-core) for
+   headings + control rows. Only panel padding + vertical rhythm + hint
+   are new. */
+.sbx-config {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sbx-config .monet-section-label:first-child {
+  margin-top: 0;
+}
+.sbx-config .sbx-swatches {
+  align-self: flex-start;
+}
+.sbx-config-hint {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-3);
+  margin-top: 2px;
+}

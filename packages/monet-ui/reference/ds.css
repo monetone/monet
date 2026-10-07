@@ -1,0 +1,473 @@
+/* ─────────────────────────────────────────────────────────────
+   Aperture — Design System reference page layout
+   ─────────────────────────────────────────────────────────────
+   Editorial spec layout that lives inside Aperture's own glass
+   aesthetic. Reuses the tokens from styles.css; only adds the
+   documentation scaffolding (nav rail, section grid, spec cards).
+*/
+
+.dsx-app {
+  display: flex;
+  min-height: 100vh;
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  background:
+    radial-gradient(110% 60% at 80% -10%, rgba(60, 80, 130, 0.22), transparent 60%),
+    radial-gradient(90% 60% at 0% 110%, rgba(90, 40, 80, 0.18), transparent 60%),
+    linear-gradient(180deg, #0d1119, var(--desktop-0));
+}
+
+/* ─── left nav rail ─── */
+.dsx-nav {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  width: 248px;
+  flex: 0 0 248px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 18px 22px 26px;
+  box-sizing: border-box;
+  border-right: 0.5px solid var(--stroke-soft);
+  background: rgba(255, 255, 255, 0.018);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  z-index: 5;
+}
+.dsx-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 4px;
+}
+.dsx-brand-glyph {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  flex: 0 0 auto;
+  position: relative;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,0.5), transparent 55%),
+    conic-gradient(from 210deg,
+      var(--accent-raster), var(--accent-vector),
+      var(--accent-motion), var(--accent-audio), var(--accent-raster));
+  box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.5), 0 4px 12px rgba(0,0,0,0.4);
+}
+.dsx-brand-glyph::after {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: rgba(10, 13, 20, 0.72);
+  box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.18);
+}
+.dsx-brand-name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.dsx-brand-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dsx-navgroup {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.dsx-navgroup-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 0 0 7px 8px;
+}
+.dsx-navlink {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 10px;
+  border-radius: var(--radius-control);
+  font-size: 12.5px;
+  color: var(--text-2);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.dsx-navlink:hover { background: var(--glass-1); color: var(--text-1); }
+.dsx-navlink.is-active {
+  background: var(--glass-2);
+  color: var(--text-1);
+  box-shadow: inset 0 0.5px 0 var(--hi-top);
+}
+.dsx-navlink .num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  width: 16px;
+}
+.dsx-navlink.is-active .num { color: var(--accent-raster); }
+
+.dsx-nav-foot {
+  margin-top: auto;
+  padding-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dsx-page-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  border-radius: var(--radius-control);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--text-1);
+  background: var(--glass-1);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), inset 0 0 0 0.5px var(--stroke-soft);
+  transition: background 0.12s;
+}
+.dsx-page-link:hover { background: var(--glass-2); }
+.dsx-page-link .arrow { margin-left: auto; color: var(--text-3); }
+.dsx-page-link.is-primary {
+  background: color-mix(in oklch, var(--accent-raster) 22%, transparent);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), inset 0 0 0 0.5px color-mix(in oklch, var(--accent-raster) 45%, transparent);
+}
+
+/* ─── main column ─── */
+.dsx-main {
+  flex: 1;
+  min-width: 0;
+  padding: 0 0 120px;
+}
+.dsx-wrap { max-width: 1080px; padding: 0 56px; margin: 0 auto; }
+
+/* ─── hero ─── */
+.dsx-hero {
+  padding: 92px 0 56px;
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+.dsx-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent-raster);
+  margin-bottom: 20px;
+}
+.dsx-hero h1 {
+  font-family: var(--font-display);
+  font-size: 58px;
+  line-height: 1.02;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin: 0 0 22px;
+  max-width: 16ch;
+  text-wrap: balance;
+}
+.dsx-hero p {
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--text-2);
+  max-width: 60ch;
+  margin: 0;
+  text-wrap: pretty;
+}
+.dsx-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 36px;
+}
+.dsx-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 20px 13px;
+  border-radius: var(--radius-panel);
+  background: var(--glass-1);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), inset 0 0 0 0.5px var(--stroke-soft);
+  min-width: 116px;
+}
+.dsx-stat .k {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.dsx-stat .l {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ─── section ─── */
+.dsx-section { padding: 64px 0 8px; scroll-margin-top: 24px; }
+.dsx-section-head { margin-bottom: 30px; }
+.dsx-section-head .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.dsx-section-head .eyebrow::before {
+  content: "";
+  width: 22px; height: 1px;
+  background: var(--accent-raster);
+}
+.dsx-section-head h2 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+}
+.dsx-section-head p {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+  max-width: 66ch;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.dsx-subhead {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 38px 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+.dsx-subhead::after {
+  content: "";
+  flex: 1;
+  height: 0.5px;
+  background: var(--stroke-soft);
+}
+
+/* ─── grids ─── */
+.dsx-grid { display: grid; gap: 14px; }
+.dsx-grid--4 { grid-template-columns: repeat(4, 1fr); }
+.dsx-grid--3 { grid-template-columns: repeat(3, 1fr); }
+.dsx-grid--2 { grid-template-columns: repeat(2, 1fr); }
+.dsx-grid--auto { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); }
+
+/* ─── swatch / token cards ─── */
+.dsx-swatch {
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+  background: var(--glass-1);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+.dsx-swatch .chip {
+  height: 78px;
+  position: relative;
+  display: block;
+}
+.dsx-swatch .meta {
+  padding: 11px 13px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-top: 0.5px solid var(--stroke-soft);
+}
+.dsx-swatch .name { font-size: 12px; font-weight: 600; color: var(--text-1); }
+.dsx-swatch .val {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-3);
+  letter-spacing: 0.01em;
+}
+.dsx-swatch .note { font-family: var(--font-ui); font-size: 11px; color: var(--text-2); }
+
+/* a checker / texture so translucent chips read as glass */
+.dsx-glass-bed {
+  background-image:
+    radial-gradient(circle at 28% 30%, oklch(0.62 0.13 250) 0, transparent 42%),
+    radial-gradient(circle at 78% 70%, oklch(0.60 0.15 350) 0, transparent 42%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 9px, rgba(255,255,255,0.01) 9px 18px);
+  background-color: #11141d;
+}
+
+/* ─── live component demo stage ─── */
+.dsx-demo {
+  border-radius: var(--radius-panel);
+  background:
+    radial-gradient(120% 90% at 15% 0%, rgba(40, 50, 80, 0.4), transparent 60%),
+    radial-gradient(100% 80% at 95% 100%, rgba(80, 30, 60, 0.28), transparent 60%),
+    linear-gradient(180deg, var(--desktop-1), var(--desktop-0));
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft), 0 18px 48px -16px rgba(0,0,0,0.6);
+  padding: 26px;
+  position: relative;
+  overflow: hidden;
+}
+.dsx-demo--flush { padding: 0; }
+.dsx-demo-label {
+  position: absolute;
+  top: 12px; right: 14px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  z-index: 2;
+}
+
+/* a contained mini window frame for chrome demos */
+.dsx-frame {
+  border-radius: var(--radius-window);
+  overflow: hidden;
+  box-shadow: var(--shadow-window);
+  background: linear-gradient(180deg, var(--desktop-1), var(--desktop-0));
+}
+
+/* ─── spec card (component + caption) ─── */
+.dsx-card {
+  border-radius: var(--radius-panel);
+  background: var(--glass-1);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+  overflow: hidden;
+}
+.dsx-card-stage {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  background:
+    repeating-conic-gradient(rgba(255,255,255,0.015) 0% 25%, transparent 0% 50%) 50% / 14px 14px;
+}
+.dsx-card-cap {
+  padding: 12px 15px 13px;
+  border-top: 0.5px solid var(--stroke-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dsx-card-cap .name { font-size: 12.5px; font-weight: 600; }
+.dsx-card-cap .desc { font-size: 11.5px; color: var(--text-2); line-height: 1.5; }
+.dsx-card-cap code,
+.dsx-mono {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-3);
+  letter-spacing: 0.01em;
+}
+
+/* ─── spec table ─── */
+.dsx-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+  background: var(--glass-1);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+.dsx-table th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-weight: 500;
+  padding: 11px 16px;
+  border-bottom: 0.5px solid var(--stroke-medium);
+}
+.dsx-table td {
+  padding: 11px 16px;
+  font-size: 12.5px;
+  color: var(--text-1);
+  border-bottom: 0.5px solid var(--stroke-soft);
+  vertical-align: middle;
+}
+.dsx-table tr:last-child td { border-bottom: none; }
+.dsx-table td.mono { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); }
+.dsx-table .demo-cell { width: 96px; }
+
+/* a small rounded sample box for radii / sizing demos */
+.dsx-radius-demo {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.dsx-radius-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.dsx-radius-box .box {
+  background: var(--glass-2);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), inset 0 0 0 0.5px var(--stroke-medium);
+}
+.dsx-radius-box .lbl { font-family: var(--font-mono); font-size: 10px; color: var(--text-3); }
+
+/* misc helpers */
+.dsx-type-row {
+  display: flex;
+  align-items: baseline;
+  gap: 22px;
+  padding: 18px 0;
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+.dsx-type-row:last-child { border-bottom: none; }
+.dsx-type-row .spec {
+  flex: 0 0 150px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-3);
+  line-height: 1.6;
+}
+.dsx-type-row .sample { flex: 1; min-width: 0; }
+
+.dsx-callout {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  padding: 22px 24px;
+  border-radius: var(--radius-panel);
+  background: color-mix(in oklch, var(--accent-raster) 10%, var(--glass-1));
+  box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--accent-raster) 28%, transparent);
+}
+.dsx-callout .body { flex: 1; }
+.dsx-callout h4 { margin: 0 0 6px; font-size: 14px; font-weight: 650; }
+.dsx-callout p { margin: 0; font-size: 12.5px; color: var(--text-2); line-height: 1.55; }
+.dsx-callout a {
+  flex: 0 0 auto;
+  text-decoration: none;
+  color: var(--text-1);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-raster);
+  color: #0b0e14;
+  box-shadow: 0 6px 16px -4px color-mix(in oklch, var(--accent-raster) 60%, transparent);
+}
+
+/* responsive */
+@media (max-width: 960px) {
+  .dsx-nav { display: none; }
+  .dsx-wrap { padding: 0 28px; }
+  .dsx-grid--4 { grid-template-columns: repeat(2, 1fr); }
+  .dsx-grid--3 { grid-template-columns: repeat(2, 1fr); }
+  .dsx-hero h1 { font-size: 42px; }
+}

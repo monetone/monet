@@ -1,0 +1,48 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capability for the Monet Vision window",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:menu:default",
+    "core:menu:allow-set-as-app-menu",
+    "core:window:allow-start-dragging",
+    "core:window:allow-destroy",
+    "float:allow-open",
+    "float:allow-close",
+    "float:allow-cascade",
+    "float:allow-frame",
+    "dialog:default",
+    "drag:default",
+    "opener:default",
+    "droplet:default",
+    "atomicsave:default",
+    "c2pa:default",
+    "heic:default",
+    "models:default",
+    "fs:read-all",
+    "fs:write-all",
+    {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "**" }],
+      "deny": [
+        { "path": "$HOME/.ssh/**" },
+        { "path": "$HOME/.aws/**" },
+        { "path": "$HOME/.gnupg/**" },
+        { "path": "$HOME/.config/**" },
+        { "path": "$HOME/.docker/**" },
+        { "path": "$HOME/.kube/**" },
+        { "path": "$HOME/Library/Keychains/**" },
+        { "path": "$HOME/Library/LaunchAgents/**" },
+        { "path": "$HOME/.netrc" },
+        { "path": "$HOME/.profile" },
+        { "path": "$HOME/.bashrc" },
+        { "path": "$HOME/.bash_profile" },
+        { "path": "$HOME/.zshenv" },
+        { "path": "$HOME/.zshrc" },
+        { "path": "$HOME/.zprofile" }
+      ]
+    }
+  ]
+}

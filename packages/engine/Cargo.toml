@@ -1,0 +1,71 @@
+[package]
+name = "monet-render-engine"
+description = "Monet — unified raster (Vision) + vector (Artisan) Rust/WASM rendering engine. One cdylib, one linear memory: the Vision compositor (raster/) and the Artisan rasterizer (vector/) merged so vector layers rasterize on demand into the raster layer stack. See docs/merged-engine-and-format.md."
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[lib]
+name = "monet_render_engine"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# Default ships Vision's full import surface so the lifted raster code compiles
+# and runs unchanged. Build Artisan with `--no-default-features` to drop the
+# ~8 MB of codecs it never uses, once the cfg-gating in raster/ lands (see
+# docs/merged-engine-and-format.md §10.1). This is only viable under build-wiring
+# Option A (per-app pkg/), which the migration plan adopts.
+default = ["vision-import"]
+codecs-image = ["dep:image", "dep:openjpeg2-pure-rs"]
+codecs-psd = ["dep:psd"]
+codecs-raw = ["dep:rawloader"]
+color-management = ["dep:moxcms"]
+vision-import = ["codecs-image", "codecs-psd", "codecs-raw", "color-management"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+console_error_panic_hook = "0.1"
+
+# Vector subsystem (lifted from Monet Artisan).
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+sha2 = "0.10"
+tiny-skia = "0.11"
+i_overlay = "2"
+ttf-parser = "0.25.1"
+rustybuzz = "0.20.1"
+unicode-bidi = "0.3"
+
+# Raster import codecs (lifted from Monet Vision) — optional, gated per app.
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "bmp", "tiff", "gif", "hdr", "exr"], optional = true }
+# JPEG 2000 open + Save As (#466). Pure-Rust OpenJPEG (BSD-2-Clause); the
+# `openjp2` port links libc malloc/strcmp/getenv and cannot build for wasm32.
+openjpeg2-pure-rs = { version = "0.1.1", optional = true }
+psd = { version = "0.3", optional = true }
+rawloader = { version = "0.37", optional = true }
+moxcms = { version = "0.8.1", default-features = false, features = ["lut"], optional = true }
+
+# Layered PSD/PSB/XCF import → neutral document IR, and the unified format's
+# raster half. Pure Rust (no wasm-bindgen); the engine runs its own bindgen.
+monet-format = { path = "../monet-ui/crates/monet-format" }
+
+[dev-dependencies]
+sha2 = "0.10"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+# wasm-pack's bundled wasm-opt is too old to validate the non-trapping float→int
+# ops rustc emits (same constraint monet-format documents). Skip the optimizer
+# rather than pin a newer wasm-opt; the merge is about correctness first.
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+# Detach from any parent Cargo workspace: built standalone via wasm-pack, exactly
+# like the three current engine crates.
+[workspace]
+resolver = "2"
+members = [".", "crates/monet-photo-core"]
+default-members = ["."]

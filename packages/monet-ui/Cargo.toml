@@ -1,0 +1,39 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/monet-ui",
+    "crates/monet-format",
+    "crates/monet-mcp",
+    "crates/monet-db",
+    "examples/*/src-tauri",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Monet / monet-ui"]
+repository = "https://github.com/monetone/monet"
+
+[workspace.dependencies]
+tauri = { version = "2", features = [] }
+tauri-build = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+window-vibrancy = "0.7"
+monet-ui = { path = "crates/monet-ui" }
+monet-mcp = { path = "crates/monet-mcp" }
+monet-db = { path = "crates/monet-db" }
+
+# Keep debug builds reasonably fast for the example apps.
+[profile.dev]
+incremental = true
+
+# A slimmer release profile for the bundled example apps.
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

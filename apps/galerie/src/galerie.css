@@ -1,0 +1,1822 @@
+/* Monet Galerie — app-local styles. Chrome + tokens come from
+   @monet-ui/monet-core; this file only holds Galerie-specific bits. */
+
+.monet-app-pill .glyph {
+  background: center / cover no-repeat url("../src-tauri/icons/32x32.png");
+}
+
+.galerie-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  color: var(--text-3);
+  font: 13px var(--font-ui, system-ui);
+  user-select: none;
+}
+
+/* ── Library grid ─────────────────────────────────────────────── */
+.gal-grid-scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--surface-0, #1a1a1c);
+}
+.gal-grid {
+  display: grid;
+  justify-content: center;
+  align-content: start;
+}
+.gal-cell {
+  display: flex;
+  flex-direction: column;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--surface-1, #232326);
+  border: 2px solid transparent;
+  user-select: none;
+}
+.gal-cell.is-selected {
+  border-color: color-mix(in srgb, var(--accent-raster) 55%, transparent);
+  background: color-mix(in srgb, var(--accent-raster) 12%, var(--surface-1, #232326));
+}
+.gal-cell.is-active {
+  border-color: var(--accent-raster);
+}
+.gal-cell-thumb {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0d0d0f;
+}
+.gal-cell-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.gal-cell-spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--text-3);
+  border-top-color: transparent;
+  animation: gal-spin 0.8s linear infinite;
+  opacity: 0.5;
+}
+@keyframes gal-spin {
+  to { transform: rotate(360deg); }
+}
+.gal-cell-vc {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  font-size: 12px;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+  user-select: none;
+}
+.gal-cell-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 7px;
+  font: 10px var(--font-ui, system-ui);
+  color: var(--text-2);
+  background: var(--surface-2, #2b2b2f);
+}
+.gal-cell-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-3);
+}
+.gal-stars { color: #f5d90a; letter-spacing: -1px; }
+.gal-flag.is-pick { color: #46a758; }
+.gal-flag.is-reject { color: #e5484d; }
+.gal-label {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.gal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  color: var(--text-3);
+  user-select: none;
+}
+.gal-empty-title { font: 500 15px var(--font-ui, system-ui); color: var(--text-2); }
+.gal-empty-sub { font: 12px var(--font-ui, system-ui); }
+.gal-empty-err { margin-top: 8px; font: 11px var(--font-ui, system-ui); color: #e5484d; opacity: 0.8; }
+
+/* ── Filmstrip ────────────────────────────────────────────────── */
+/* ContextMenu wrapper sizing — keeps the strip's height:100% chain intact. */
+.gal-ctx-fill {
+  width: 100%;
+  height: 100%;
+}
+.gal-filmstrip {
+  display: flex;
+  gap: 6px;
+  height: 100%;
+  padding: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  align-items: stretch;
+  background: var(--surface-0, #161618);
+}
+.gal-film-cell {
+  position: relative;
+  flex: none;
+  aspect-ratio: 3 / 2;
+  height: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0d0d0f;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.gal-film-cell.is-active { border-color: var(--accent-raster); }
+.gal-film-cell img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.gal-film-badges {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 5px;
+  font: 9px var(--font-ui, system-ui);
+  line-height: 1;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0));
+  pointer-events: none;
+}
+.gal-film-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-3);
+  font: 12px var(--font-ui, system-ui);
+}
+
+/* ── Filter bar ───────────────────────────────────────────────── */
+.gal-filter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: 11px var(--font-ui, system-ui);
+  color: var(--text-2);
+  /* The toolbar strip already wraps its own flex items and grows taller
+     (monet-core/styles.css: `.monet-tb-strip--h .monet-toolbar--h > .monet-toolbar-body`
+     is flex-wrap:wrap with height:auto). That mechanism can only break BETWEEN
+     items, though, and this bar is a single item holding ~20 controls — so with
+     nowrap it stayed one 1481px-wide row inside a 1440px window and its right-hand
+     controls landed on top of the right dock's tab strip. Wrapping internally, and
+     allowing it to shrink below intrinsic width, lets it use the row the strip
+     already provides. */
+  flex-wrap: wrap;
+  row-gap: 6px;
+  min-width: 0;
+}
+.gal-filter-label { color: var(--text-3); margin-right: 2px; }
+.gal-filter-btn {
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  font: 11px var(--font-ui, system-ui);
+}
+.gal-filter-btn.is-sel {
+  background: color-mix(in srgb, var(--accent-raster) 22%, transparent);
+  color: var(--text-1, #fff);
+  border-color: color-mix(in srgb, var(--accent-raster) 45%, transparent);
+}
+/* The metadata browser's inline multi-select list (not a dropdown), on the
+   Monet control surface. */
+.gal-filter-sort {
+  padding: 2px 6px;
+  border-radius: var(--radius-control);
+  border: none;
+  background: var(--glass-1);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), inset 0 0 0 0.5px var(--stroke-soft);
+  color: var(--text-1);
+  font: 11px var(--font-ui, system-ui);
+  cursor: pointer;
+}
+.gal-filter-thumbs {
+  width: 84px;
+  flex: none;
+  cursor: pointer;
+}
+.gal-filter-count { margin-left: 10px; color: var(--text-3); }
+.gal-filter-sep {
+  width: 1px;
+  height: 14px;
+  margin: 0 6px;
+  background: var(--border-1, #333);
+}
+.gal-filter-flag {
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 1;
+}
+.gal-filter-flag.is-pick { color: #46a758; }
+.gal-filter-flag.is-reject { color: #e5484d; }
+.gal-filter-flag.is-sel {
+  background: color-mix(in srgb, var(--accent-raster) 22%, transparent);
+  border-color: color-mix(in srgb, var(--accent-raster) 45%, transparent);
+}
+.gal-filter-swatch {
+  width: 12px;
+  height: 12px;
+  margin: 0 2px;
+  border-radius: 3px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.gal-filter-swatch.is-sel { border-color: var(--text-1, #fff); }
+
+/* ── Loupe ────────────────────────────────────────────────────── */
+.gal-loupe {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-0, #0d0d0f);
+  overflow: hidden;
+}
+.gal-loupe-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  user-select: none;
+  cursor: zoom-in;
+  touch-action: none;
+}
+.gal-loupe.is-zoomed .gal-loupe-img { cursor: grab; }
+.gal-loupe.is-zoomed .gal-loupe-img:active { cursor: grabbing; }
+.gal-loupe-caption {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: color-mix(in srgb, #000 55%, transparent);
+  color: var(--text-2);
+  font: 11px var(--font-ui, system-ui);
+  white-space: nowrap;
+  user-select: none;
+}
+.gal-info {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  margin: 0;
+  max-width: 40%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: color-mix(in srgb, #000 60%, transparent);
+  color: var(--text-1, #fff);
+  font: 11px var(--font-ui, system-ui);
+  user-select: none;
+  pointer-events: none;
+}
+.gal-info-row {
+  display: flex;
+  gap: 10px;
+  line-height: 1.5;
+}
+.gal-info-k {
+  flex: none;
+  width: 74px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  align-self: center;
+}
+.gal-info-v {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Compare / Survey ─────────────────────────────────────────── */
+.gal-compare {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 2px;
+  background: var(--surface-0, #0d0d0f);
+}
+.gal-compare-pane {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+.gal-compare-pane:first-child { border-color: color-mix(in srgb, var(--accent-raster) 60%, transparent); }
+.gal-compare-img { max-width: 100%; max-height: 100%; object-fit: contain; user-select: none; }
+.gal-compare-empty { color: var(--text-3); font: 12px var(--font-ui, system-ui); cursor: default; }
+.gal-compare-tag {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, #000 55%, transparent);
+  color: var(--text-2);
+  font: 11px var(--font-ui, system-ui);
+  white-space: nowrap;
+  user-select: none;
+}
+.gal-compare-swap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border, #3a3a3f);
+  background: color-mix(in srgb, #000 60%, transparent);
+  color: var(--text-1, #eee);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gal-compare-swap:hover:not(:disabled) { background: color-mix(in srgb, var(--accent-raster) 45%, #000); }
+.gal-compare-swap:disabled { opacity: 0.4; cursor: default; }
+
+.gal-survey {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  background: var(--surface-0, #0d0d0f);
+  overflow: auto;
+}
+.gal-survey-cell {
+  flex: 1 1 220px;
+  max-width: 32%;
+  height: 46%;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+.gal-survey-cell.is-active { border-color: var(--accent-raster); }
+.gal-survey-img { max-width: 100%; max-height: 100%; object-fit: contain; user-select: none; }
+.gal-survey-cull {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--surface-0, #0d0d0f) 65%, transparent);
+  color: var(--text-1, #eaeaea);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.gal-survey-cell:hover .gal-survey-cull,
+.gal-survey-cull:focus-visible { opacity: 1; }
+
+/* ── Develop ──────────────────────────────────────────────────── */
+.gal-develop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+.gal-dev-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-0, #0d0d0f);
+  overflow: hidden;
+  padding: 16px;
+}
+.gal-dev-canvas-wrap {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+.gal-dev-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+
+/* Mask overlay: normalized 0..1 geometry drawn over the image; only handles
+   capture pointer events so the rest of the canvas stays inert. */
+.gal-mask-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.gal-mask-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.gal-mask-line,
+.gal-mask-ellipse {
+  stroke: #fff;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.9;
+}
+.gal-mask-line { fill: none; }
+.gal-mask-ellipse { fill: rgba(255, 255, 255, 0.06); }
+.gal-mask-handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #111;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  pointer-events: all;
+  cursor: grab;
+  touch-action: none;
+}
+.gal-mask-handle:active {
+  cursor: grabbing;
+}
+
+/* Masking panel */
+.gal-mask-add {
+  display: flex;
+  gap: 4px;
+}
+.gal-mask-empty {
+  font: 11px var(--font-ui, system-ui);
+  color: var(--text-3);
+  padding: 6px 0;
+}
+.gal-mask-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+.gal-mask-row.is-sel {
+  background: var(--surface-2, #2a2a2e);
+}
+.gal-mask-name {
+  text-align: left;
+  font: 11px var(--font-ui, system-ui);
+  color: var(--text-1, #fff);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Reorder arrows at the list ends: present but inert. */
+.gal-mask-act:disabled { opacity: .35; cursor: default; }
+.gal-mask-del {
+  font: 14px var(--font-ui, system-ui);
+  color: var(--text-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  line-height: 1;
+}
+.gal-mask-del:hover {
+  color: var(--danger, #e5484d);
+}
+.gal-mask-edit {
+  margin-top: 8px;
+  border-top: 1px solid var(--border-1, #333);
+  padding-top: 8px;
+}
+.gal-mask-inv {
+  justify-self: start;
+}
+.gal-mask-comp {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+.gal-mask-comp.is-sel {
+  background: var(--surface-2, #2a2a2e);
+}
+.gal-mask-comp-name {
+  text-align: left;
+  font: 11px var(--font-ui, system-ui);
+  color: var(--text-1, #fff);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gal-mask-comp-base {
+  font: 10px var(--font-ui, system-ui);
+  color: var(--text-3);
+}
+.gal-mask-comp-inv {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font: 10px var(--font-ui, system-ui);
+  color: var(--text-3);
+}
+.gal-mask-comp-del {
+  font: 14px var(--font-ui, system-ui);
+  color: var(--text-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  line-height: 1;
+}
+.gal-mask-comp-del:hover {
+  color: var(--danger, #e5484d);
+}
+.gal-dev-rail {
+  width: 250px;
+  flex: none;
+  overflow-y: auto;
+  background: var(--surface-1, #1c1c1f);
+  border-left: 1px solid var(--border-1, #000);
+  padding: 10px 12px;
+}
+.gal-dev-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.gal-dev-head-btns {
+  display: flex;
+  gap: 6px;
+}
+.gal-dev-title {
+  font: 600 12px var(--font-ui, system-ui);
+  color: var(--text-1, #fff);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.gal-dev-reset {
+  font: 10px var(--font-ui, system-ui);
+  color: var(--text-3);
+  background: transparent;
+  border: 1px solid var(--border-1, #333);
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.gal-dev-reset:hover { color: var(--text-1, #fff); }
+.gal-dev-section { margin-bottom: 12px; }
+.gal-dev-sec-label {
+  font: 10px var(--font-ui, system-ui);
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 6px 0 4px;
+}
+.gal-dev-row {
+  display: grid;
+  grid-template-columns: 64px 1fr 30px;
+  align-items: center;
+  gap: 8px;
+  height: 22px;
+}
+/* DevRow renders the shared monet-react SliderRow (.monet-row); its label/value
+   columns are styled by monet-core, so no galerie-specific rule is needed. */
+.gal-dev-row-label {
+  font: 11px var(--font-ui, system-ui);
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gal-dev-row-val {
+  font: 11px var(--font-ui, system-ui);
+  color: var(--text-3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.gal-dev-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 22px;
+  cursor: pointer;
+}
+.gal-dev-toggle input { accent-color: var(--accent-raster); }
+.gal-dev-toggle .gal-dev-row-label { flex: 1; }
+.gal-dev-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+.gal-dev-tab {
+  flex: 1;
+  font: 10px var(--font-ui, system-ui);
+  color: var(--text-3);
+  background: var(--surface-1, #1e1e20);
+  border: 1px solid var(--border-1, #333);
+  border-radius: 4px;
+  padding: 3px 0;
+  cursor: pointer;
+}
+.gal-dev-tab.is-active {
+  color: var(--text-1, #fff);
+  border-color: var(--accent-raster);
+}
+.gal-dev-curve {
+  width: 100%;
+  aspect-ratio: 1;
+  display: block;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-1, #333);
+  border-radius: 4px;
+  touch-action: none;
+  cursor: crosshair;
+}
+.gal-curve-bg { fill: var(--surface-0, #161618); }
+.gal-curve-grid { stroke: var(--border-1, #333); stroke-width: 0.4; }
+.gal-curve-identity { stroke: var(--border-1, #333); stroke-width: 0.5; stroke-dasharray: 2 2; }
+.gal-curve-line { stroke: var(--accent-raster); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.gal-curve-pt { fill: var(--accent-raster); stroke: #fff; stroke-width: 0.4; }
+.gal-dev-ba {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font: 10px var(--font-ui, system-ui);
+  color: var(--text-2);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-1, #333);
+  border-radius: 4px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.gal-dev-ba.is-before {
+  color: var(--text-1, #fff);
+  border-color: var(--accent-raster);
+}
+.gal-dev-ba.is-inline { position: static; }
+.gal-dev-crop-btn {
+  position: absolute;
+  top: 10px;
+  right: 64px;
+  font: 10px var(--font-ui, system-ui);
+  color: var(--text-2);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-1, #333);
+  border-radius: 4px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.gal-dev-crop-btn.is-active {
+  color: var(--text-1, #fff);
+  border-color: var(--accent-raster);
+}
+.gal-crop-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.gal-crop-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.gal-crop-rect {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.9;
+}
+.gal-crop-guide {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 0.75;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.5;
+}
+.gal-crop-guide-btn {
+  background: transparent;
+  border: none;
+  padding: 0 6px;
+  color: var(--text-3);
+  font: 11px var(--font-ui, system-ui);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gal-crop-guide-btn:hover { color: var(--text-1, #fff); }
+.gal-crop-guide-btn.is-active {
+  color: var(--text-1, #fff);
+  background: color-mix(in srgb, var(--accent-raster) 30%, transparent);
+  border-radius: 4px;
+}
+.gal-crop-ruler {
+  stroke: var(--accent-raster);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+.gal-crop-ruler-capture {
+  position: absolute;
+  inset: 0;
+  pointer-events: all;
+  cursor: crosshair;
+  touch-action: none;
+}
+.gal-crop-handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  background: #fff;
+  border: 2px solid #111;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  pointer-events: all;
+  cursor: grab;
+  touch-action: none;
+}
+.gal-crop-handle:active {
+  cursor: grabbing;
+}
+.gal-crop-bar {
+  position: absolute;
+  transform: translateY(8px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--border-1, #333);
+  border-radius: 5px;
+  pointer-events: all;
+  font: 10px var(--font-ui, system-ui);
+  color: var(--text-1, #fff);
+  white-space: nowrap;
+}
+.gal-crop-bar label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.gal-crop-straighten .monet-slider {
+  width: 90px;
+  flex: none;
+}
+.gal-crop-bar button:not(.monet-select-trigger) {
+  background: var(--surface-2, #2b2b2f);
+  border: 1px solid var(--border-1, #333);
+  border-radius: 4px;
+  color: var(--text-1, #fff);
+  cursor: pointer;
+  padding: 3px 8px;
+  font: 10px var(--font-ui, system-ui);
+}
+.gal-crop-bar button.is-primary {
+  background: var(--accent-raster);
+  border-color: var(--accent-raster);
+}
+.gal-crop-val {
+  min-width: 32px;
+}
+.gal-snap-empty {
+  font: 11px var(--font-ui, system-ui);
+  color: var(--text-3);
+  padding: 2px 0 4px;
+}
+.gal-snap-amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 8px;
+  font: 11px var(--font-ui, system-ui);
+  color: var(--text-2);
+}
+.gal-snap-amount .monet-slider { flex: 1; min-width: 0; }
+.gal-snap-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.gal-snap-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.gal-snap-name {
+  flex: 1;
+  text-align: left;
+  font: 11px var(--font-ui, system-ui);
+  color: var(--text-2);
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  padding: 3px 6px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gal-snap-name:hover { background: var(--surface-1, #1e1e20); color: var(--text-1, #fff); }
+.gal-snap-del {
+  font: 12px var(--font-ui, system-ui);
+  color: var(--text-3);
+  background: transparent;
+  border: none;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+.gal-snap-del:hover { color: var(--accent-raster); }
+
+/* ── Keywords bar (reused in the Loupe overlay + the Metadata panel) ── */
+.gal-kw {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+/* Loupe-only: dock the bar bottom-left over the image. */
+.gal-kw-dock {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  max-width: 46%;
+}
+.gal-kw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px 2px 8px;
+  border-radius: 12px;
+  background: color-mix(in srgb, #000 55%, transparent);
+  color: var(--text-1, #fff);
+  font: 11px var(--font-ui, system-ui);
+  white-space: nowrap;
+}
+.gal-kw-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.gal-kw-x:hover { color: var(--accent-raster); }
+.gal-kw-input {
+  width: 100px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border-1, #333);
+  background: color-mix(in srgb, #000 45%, transparent);
+  color: var(--text-1, #fff);
+  font: 11px var(--font-ui, system-ui);
+  outline: none;
+}
+.gal-kw-input:focus { border-color: var(--accent-raster); }
+
+/* Keyword Set — quick-apply grid (LR Keywording panel). */
+.gal-kwset {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 4px;
+}
+.gal-kwset-pick { align-self: flex-start; }
+.gal-kwset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.gal-kwset-btn {
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--border-1, #333);
+  background: color-mix(in srgb, #000 45%, transparent);
+  color: var(--text-1, #fff);
+  font: 11px var(--font-ui, system-ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.gal-kwset-btn:hover { border-color: var(--accent-raster); }
+.gal-kwset-btn[data-active] {
+  background: var(--accent-raster);
+  border-color: var(--accent-raster);
+  color: #000;
+}
+.gal-kwset-empty {
+  color: var(--text-2);
+  font: italic 11px var(--font-ui, system-ui);
+  text-shadow: 0 1px 2px #000; /* legible over the image in the Loupe dock */
+}
+
+/* ── Histogram panel (right rail) ─────────────────────────────── */
+.gal-hist {
+  display: block;
+  width: 100%;
+  height: 110px;
+  padding: 6px;
+  background: var(--surface-0, #0d0d0f);
+}
+/* Additive RGB (screen blend) like LR's histogram; luma as a faint outline. */
+.gal-hist-r { fill: #e5484d; mix-blend-mode: screen; }
+.gal-hist-g { fill: #46a758; mix-blend-mode: screen; }
+.gal-hist-b { fill: #3b82f6; mix-blend-mode: screen; }
+.gal-hist-lum { stroke: var(--text-3); stroke-width: 0.6; vector-effect: non-scaling-stroke; opacity: 0.7; }
+.gal-hist-empty {
+  padding: 16px 10px;
+  color: var(--text-3);
+  font: 12px var(--font-ui, system-ui);
+}
+
+/* ── Metadata panel (right rail) ──────────────────────────────── */
+.gal-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+}
+.gal-meta-empty {
+  padding: 10px;
+  color: var(--text-3);
+  font: 12px var(--font-ui, system-ui);
+}
+.gal-meta-view { margin-bottom: 6px; }
+.gal-meta-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.gal-meta-row {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 8px;
+  align-items: baseline;
+}
+.gal-meta-k {
+  color: var(--text-3);
+  text-transform: uppercase;
+  font: 9px var(--font-ui, system-ui);
+  letter-spacing: 0.04em;
+}
+.gal-meta-v {
+  margin: 0;
+  color: var(--text-1, #fff);
+  font: 11px var(--font-ui, system-ui);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gal-meta-sec {
+  margin-top: 4px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  font: 9px var(--font-ui, system-ui);
+  letter-spacing: 0.04em;
+}
+.gal-meta-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.gal-meta-sidecar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+}
+/* Metadata-status resolve row (catalog vs .xmp sidecar diverged). */
+.gal-meta-status {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #e0b34d;
+}
+.gal-meta-save {
+  display: block;
+}
+.gal-meta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gal-meta-field > span {
+  color: var(--text-3);
+  font: 9px var(--font-ui, system-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.gal-meta-field input,
+.gal-meta-field textarea {
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border-1, #333);
+  background: var(--surface-0, #161618);
+  color: var(--text-1, #fff);
+  font: 11px var(--font-ui, system-ui);
+  outline: none;
+  resize: vertical;
+}
+.gal-meta-field input:focus,
+.gal-meta-field textarea:focus { border-color: var(--accent-raster); }
+.gal-meta-preset {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+.gal-meta-preset-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.gal-meta-preset-row button:not(.monet-select-trigger) {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-1, #333);
+  background: var(--surface-2, #2b2b2f);
+  color: var(--text-2);
+  cursor: pointer;
+  font: 11px var(--font-ui, system-ui);
+}
+.gal-meta-preset-row button:not(.monet-select-trigger):hover:not(:disabled) { color: var(--text-1, #fff); border-color: var(--accent-raster); }
+.gal-meta-preset-row button:not(.monet-select-trigger):disabled { opacity: 0.4; cursor: default; }
+
+/* ── Collections panel (Library left rail) ────────────────────── */
+.gal-col-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 4px;
+  font: 12px var(--font-ui, system-ui);
+}
+/* A row is either a single <button> ("All Photos") or a <div> wrapping an
+   open-button + delete-button (collections). Both share layout + active/hover. */
+.gal-col-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  border-radius: 4px;
+}
+.gal-col-row.is-active { background: color-mix(in srgb, var(--accent-raster) 20%, transparent); }
+/* Photo drag hovering this row (drop = add to that collection). */
+.gal-col-row.is-drop { outline: 1px solid var(--accent-raster); outline-offset: -1px; }
+button.gal-col-row {
+  padding: 4px 6px;
+  cursor: pointer;
+  color: var(--text-2);
+  border: none;
+  background: transparent;
+  text-align: left;
+  font: 12px var(--font-ui, system-ui);
+}
+.gal-col-open {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  text-align: left;
+  font: 12px var(--font-ui, system-ui);
+}
+.gal-col-row:hover { background: var(--surface-2, #2b2b2f); }
+.gal-col-icon { flex: none; width: 14px; color: var(--text-3); text-align: center; }
+.gal-col-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gal-col-del {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 2px 6px;
+  opacity: 0;
+  font-size: 13px;
+}
+.gal-col-row:hover .gal-col-del,
+.gal-col-row:focus-within .gal-col-del { opacity: 1; }
+.gal-col-del:hover { color: var(--accent-raster); }
+.gal-col-del:disabled,
+.gal-col-row:hover .gal-col-del:disabled { opacity: 0.25; cursor: default; }
+.gal-col-del:disabled:hover { color: var(--text-3); }
+/* Quick Collection — pinned row, count + target badge. */
+.gal-col-quick .gal-col-icon { color: var(--accent-raster); }
+.gal-col-count {
+  flex: none;
+  margin-left: auto;
+  min-width: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--text-3) 22%, transparent);
+  color: var(--text-2);
+  font: 10px var(--font-ui, system-ui);
+  text-align: center;
+}
+.gal-col-target {
+  flex: none;
+  color: var(--accent-raster);
+  font-weight: 700;
+}
+/* Set-as-Target toggle on normal collection rows. */
+.gal-col-tgt {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 2px 4px;
+  opacity: 0;
+  font-size: 12px;
+}
+.gal-col-row:hover .gal-col-tgt,
+.gal-col-row:focus-within .gal-col-tgt { opacity: 1; }
+.gal-col-tgt.is-on { opacity: 1; color: var(--accent-raster); }
+.gal-col-tgt:hover { color: var(--accent-raster); }
+.gal-col-new {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 0 4px;
+}
+.gal-col-new button,
+.gal-col-actions button,
+.gal-col-addrule {
+  flex: 1;
+  font: 11px var(--font-ui, system-ui);
+  color: var(--text-2);
+  background: var(--surface-2, #2b2b2f);
+  border: 1px solid var(--border-1, #333);
+  border-radius: 4px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.gal-col-new button:hover,
+.gal-col-actions button:hover,
+.gal-col-addrule:hover { color: var(--text-1, #fff); border-color: var(--accent-raster); }
+.gal-col-input {
+  width: 100%;
+  padding: 5px 8px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border-1, #333);
+  background: var(--surface-0, #161618);
+  color: var(--text-1, #fff);
+  font: 12px var(--font-ui, system-ui);
+  outline: none;
+}
+.gal-col-input:focus { border-color: var(--accent-raster); }
+.gal-col-match {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 5px;
+  font: 11px var(--font-ui, system-ui);
+  color: var(--text-3);
+}
+.gal-col-rule {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 4px;
+}
+.gal-col-rule input {
+  min-width: 0;
+  padding: 3px 4px;
+  border-radius: 3px;
+  border: 1px solid var(--border-1, #333);
+  background: var(--surface-0, #161618);
+  color: var(--text-1, #fff);
+  font: 11px var(--font-ui, system-ui);
+}
+.gal-col-rule input { flex: 1.2; }
+.gal-col-rule-x {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 13px;
+}
+.gal-col-rule-x:hover { color: var(--accent-raster); }
+.gal-col-addrule { margin: 2px 0 8px; }
+.gal-col-actions { display: flex; gap: 4px; }
+
+/* Impromptu Slideshow (fullscreen, above every modal). */
+.gal-slideshow {
+  align-items: center;
+  background: #000;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 1100;
+}
+.gal-slideshow-img { max-height: 100%; max-width: 100%; object-fit: contain; }
+.gal-slideshow-hud {
+  bottom: 16px;
+  color: #999;
+  font-size: 12px;
+  position: absolute;
+  right: 20px;
+}
+/* Playback panel: duration / random / repeat / manual. */
+.gal-slideshow-controls {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  bottom: 12px;
+  color: #ccc;
+  display: flex;
+  font-size: 12px;
+  gap: 14px;
+  left: 20px;
+  padding: 8px 12px;
+  position: absolute;
+}
+.gal-slideshow-controls label {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+.gal-slideshow-controls .monet-slider { width: 90px; flex: none; }
+.gal-slideshow-secs {
+  color: #999;
+  min-width: 26px;
+}
+
+/* ── Modal (Export, …) ────────────────────────────────────────── */
+.gal-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+.gal-modal {
+  width: 340px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--surface-1, #1c1c1f);
+  border: 1px solid var(--border-1, #333);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  font: 12px var(--font-ui, system-ui);
+  color: var(--text-1, #fff);
+}
+.gal-modal-title {
+  font: 600 13px var(--font-ui, system-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.gal-modal-row {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.gal-modal-row > span:first-child { color: var(--text-3); }
+.gal-modal-row .monet-slider { width: 100%; flex: 1; min-width: 0; }
+.gal-modal-val {
+  min-width: 26px;
+  text-align: right;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+/* Export dialog body — shared monet-react Dialog + controls. */
+.gal-export-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gal-export-inline {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.gal-export-inline > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.gal-copysettings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gal-copysettings-all {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.gal-modal-x {
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border-1, #333);
+  background: var(--surface-2, #2b2b2f);
+  color: var(--text-1, #fff);
+  cursor: pointer;
+  font: 12px var(--font-ui, system-ui);
+}
+.gal-modal-x:disabled { opacity: 0.5; cursor: default; }
+.gal-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.gal-modal-msg { margin-right: auto; color: var(--text-3); }
+.gal-modal-actions button {
+  padding: 5px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--border-1, #333);
+  background: var(--surface-2, #2b2b2f);
+  color: var(--text-1, #fff);
+  cursor: pointer;
+  font: 12px var(--font-ui, system-ui);
+}
+.gal-modal-actions button.is-primary {
+  background: var(--accent-raster);
+  border-color: var(--accent-raster);
+}
+.gal-modal-actions button:disabled { opacity: 0.5; cursor: default; }
+
+/* Quick Develop (Library right rail) */
+.gal-qd-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+}
+.gal-qd-buttons { display: flex; gap: 2px; margin-left: auto; }
+.gal-qd-buttons button {
+  background: var(--bg-3, #2a2a2a);
+  border: 1px solid var(--border-1, #3a3a3a);
+  border-radius: 3px;
+  color: var(--text-2, #bbb);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  min-width: 22px;
+  padding: 3px 0;
+}
+.gal-qd-buttons button:hover:not(:disabled) { color: var(--text-1, #fff); }
+.gal-qd-buttons button:disabled { opacity: 0.4; cursor: default; }
+.gal-qd-note {
+  color: var(--text-3, #777);
+  font-size: 10px;
+  padding: 6px 10px 8px;
+}
+
+/* Painter tool */
+.gal-painter { display: flex; align-items: center; gap: 4px; margin-left: 16px; }
+.gal-painter-kind {
+  background: var(--bg-3, #2a2a2a);
+  border: 1px solid var(--border-1, #3a3a3a);
+  border-radius: 3px;
+  color: var(--text-2, #bbb);
+  font-size: 11px;
+  padding: 2px 4px;
+}
+.gal-painter-keyword {
+  background: var(--bg-3, #2a2a2a);
+  border: 1px solid var(--border-1, #3a3a3a);
+  border-radius: 3px;
+  color: var(--text-1, #eee);
+  font-size: 11px;
+  padding: 2px 6px;
+  width: 110px;
+}
+.gal-grid-scroll.is-painting .gal-cell { cursor: crosshair; }
+
+/* Solo mode (Develop rail collapse coordinator) */
+.gal-solo .gal-dev-head { cursor: pointer; user-select: none; }
+.gal-solo.is-collapsed .gal-dev-panel > :not(.gal-dev-head) { display: none; }
+.gal-solo.is-collapsed .gal-dev-title { opacity: 0.65; }
+
+/* Reference View (Develop two-up) */
+.gal-dev-ref {
+  align-items: center;
+  display: flex;
+  flex: 1 1 50%;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+  min-width: 0;
+  padding: 12px;
+}
+.gal-dev-ref img { max-width: 100%; max-height: calc(100% - 24px); object-fit: contain; }
+.gal-dev-ref-label {
+  color: var(--text-3, #777);
+  font-size: 11px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gal-dev-ref + .gal-dev-canvas-wrap { flex: 1 1 50%; min-width: 0; }
+
+/* Before/After side-by-side (Y view): the neutral render beside the live canvas. */
+.gal-dev-before {
+  align-items: center;
+  display: flex;
+  flex: 1 1 50%;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+  min-width: 0;
+  padding: 12px;
+}
+.gal-dev-before-canvas {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100% - 24px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+.gal-dev-before ~ .gal-dev-canvas-wrap { flex: 1 1 50%; min-width: 0; }
+.gal-dev-y { right: 122px; }
+
+/* Heal tool overlay (Lightroom spot removal): solid target + dashed source. */
+.gal-heal-overlay {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+}
+.gal-heal-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.gal-heal-link {
+  stroke: #fff;
+  stroke-width: 0.75;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.4;
+}
+.gal-heal-target,
+.gal-heal-source {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.25;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.85;
+}
+.gal-heal-source { stroke-dasharray: 4 3; }
+.gal-heal-spot.is-sel .gal-heal-target,
+.gal-heal-spot.is-sel .gal-heal-source {
+  stroke: var(--accent-raster, #6cf);
+}
+.gal-heal-bar {
+  cursor: default;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+}
+.gal-heal-slider {
+  align-items: center;
+  color: var(--text-2);
+  display: flex;
+  font-size: 11px;
+  gap: 4px;
+}
+.gal-heal-slider .monet-slider { width: 64px; flex: none; }
+.gal-heal-count {
+  color: var(--text-3, #777);
+  font-size: 11px;
+}
+.gal-dev-heal-btn { right: 160px; }
+
+/* Quick/Target Collection cell marker (LR's hover circle, filled for members). */
+.gal-cell-quick {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  opacity: 0;
+  padding: 0;
+}
+.gal-cell:hover .gal-cell-quick { opacity: 1; }
+.gal-cell-quick.is-member {
+  opacity: 1;
+  background: var(--accent-raster, #6cf);
+  border-color: transparent;
+}
+
+/* Compare synced zoom + per-pane culling. */
+.gal-compare-box {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  cursor: zoom-in;
+}
+.gal-compare-box.is-zoomed { cursor: grab; }
+.gal-compare-img.is-zoomed {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  max-height: none;
+  transform-origin: 0 0;
+}
+.gal-compare-cull {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  padding: 4px 0;
+}
+.gal-compare-star {
+  background: transparent;
+  border: none;
+  color: var(--text-3, #777);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 1px;
+}
+.gal-compare-star.is-sel { color: #f5d90a; }
+
+/* Keyword List panel (vocabulary browser). */
+.gal-kw-list { display: flex; flex-direction: column; padding: 4px 0; }
+.gal-kw-empty { color: var(--text-3, #777); font-size: 11px; padding: 8px 10px; }
+.gal-kw-row {
+  align-items: center;
+  border-radius: 4px;
+  color: var(--text-2);
+  cursor: pointer;
+  display: flex;
+  font-size: 12px;
+  gap: 6px;
+  margin: 0 4px;
+  padding: 3px 6px;
+}
+.gal-kw-row:hover { background: rgba(255, 255, 255, 0.06); }
+.gal-kw-row.is-active { background: rgba(255, 255, 255, 0.1); color: var(--text-1, #fff); }
+.gal-kw-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gal-kw-count { color: var(--text-3, #777); font-size: 11px; }
+.gal-kw-del {
+  background: transparent;
+  border: none;
+  color: var(--text-3, #777);
+  cursor: pointer;
+  font-size: 10px;
+  opacity: 0;
+  padding: 0 2px;
+}
+.gal-kw-row:hover .gal-kw-del { opacity: 1; }
+.gal-kw-del:hover { color: var(--text-1, #fff); }
+
+/* Folders panel tree extras. */
+.gal-folder-disc { color: var(--text-3, #777); font-size: 9px; text-align: center; width: 10px; }
+.gal-kw-row.is-drop { background: rgba(255, 255, 255, 0.12); outline: 1px dashed var(--text-3, #777); }
+
+/* Background export progress (StatusBar). */
+.gal-export-progress {
+  align-items: center;
+  color: var(--text-2);
+  display: inline-flex;
+  font-size: 11px;
+  gap: 6px;
+  margin-left: 16px;
+}
+.gal-export-progress button {
+  background: transparent;
+  border: 1px solid var(--border-1, #333);
+  border-radius: 4px;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 10px;
+  padding: 1px 6px;
+}
+.gal-export-progress button:hover { color: var(--text-1, #fff); }
+
+/* Expanded grid style (J cycle): second meta line under the badge bar. */
+.gal-cell-meta2 {
+  color: var(--text-3, #777);
+  font-size: 10px;
+  line-height: 14px;
+  overflow: hidden;
+  padding: 0 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Process Version chip (Develop toolbar) */
+.gal-dev-pv {
+  background: transparent;
+  border: 1px solid var(--border-1, #3a3a3a);
+  border-radius: 3px;
+  color: var(--text-3, #777);
+  cursor: default;
+  font-size: 10px;
+  margin-left: 8px;
+  padding: 2px 6px;
+}
+.gal-dev-pv.is-stale {
+  border-color: var(--accent-raster, #22d3ee);
+  color: var(--accent-raster, #22d3ee);
+  cursor: pointer;
+}
+
+/* Photo stacks */
+.gal-cell-stack {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid var(--border-1, #3a3a3a);
+  border-radius: 3px;
+  color: var(--text-1, #eee);
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 5px;
+}
+.gal-cell-stack:hover { background: rgba(0, 0, 0, 0.85); }
+.gal-stack-banner {
+  align-items: center;
+  background: var(--bg-2, #1a1a1a);
+  border-bottom: 1px solid var(--border-1, #3a3a3a);
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  padding: 6px 12px;
+}
+.gal-stack-banner button {
+  background: var(--bg-3, #2a2a2a);
+  border: 1px solid var(--border-1, #3a3a3a);
+  border-radius: 3px;
+  color: var(--text-1, #eee);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 3px 8px;
+}
+
+/* Targeted Adjustment Tool (Color Mixer) */
+.gal-dev-tat {
+  background: transparent;
+  border: 1px solid var(--border-1, #3a3a3a);
+  border-radius: 3px;
+  color: var(--text-3, #777);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  margin-left: auto;
+  margin-right: 6px;
+  padding: 2px 6px;
+}
+.gal-dev-tat.is-active {
+  border-color: var(--accent-raster, #22d3ee);
+  color: var(--accent-raster, #22d3ee);
+}
+.gal-dev-canvas.is-tat { cursor: crosshair; touch-action: none; }
+
+/* Range masks (Color / Luminance) */
+.gal-mask-samples {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 10px;
+}
+.gal-mask-swatch {
+  border: 1px solid var(--border-1, #3a3a3a);
+  border-radius: 3px;
+  height: 16px;
+  width: 16px;
+}
+.gal-mask-hint { color: var(--text-3, #777); font-size: 10px; }
+.gal-dev-reset.is-active { border-color: var(--accent-raster, #22d3ee); color: var(--accent-raster, #22d3ee); }
+
+/* Missing / offline photos (folder sync) */
+.gal-cell-missing {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  background: rgba(180, 40, 40, 0.85);
+  border: none;
+  border-radius: 3px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 3px 5px;
+}
+.gal-cell-missing:hover { background: rgba(210, 55, 55, 0.95); }

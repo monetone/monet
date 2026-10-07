@@ -1,0 +1,27 @@
+# Too large for GitHub's 100 MB per-file limit (fp32, ~130 MB). Build locally
+# via the recipe in MODELS.md, or distribute via Git LFS / an fp16 re-export.
+drunet_color.onnx
+
+# Real SD-1.5 weights (~2.1 GB): locally-built fp16 UNet/text_encoder + fp32
+# VAEs + real CLIP tokenizer, used at runtime in preference to the tiny sd/
+# demo placeholder. Not committed (size); rebuild via docs/build-sd15-weights.md
+# (scripts/convert-sd15-fp16.py) or download once hosting is set up. See MODELS.md.
+sd15/
+
+# The untrained HF test placeholder has no redistribution license. It remains
+# usable in a source checkout for development, but is never bundled.
+sd/
+
+# The available MI-GAN blob is not directly covered by an upstream weights
+# license. Keep runtime support, but do not redistribute a local copy.
+migan.onnx
+
+# Optional Tier-2 model drops. Their wiring is present, but weights remain
+# local-only until a specific upstream artifact and redistribution license are
+# recorded in MODELS.md and THIRD-PARTY-LICENSES.md.
+colorizer.onnx
+midas.onnx
+harmonizer.onnx
+fbcnn.onnx
+font_classifier.onnx
+face_landmarks.onnx

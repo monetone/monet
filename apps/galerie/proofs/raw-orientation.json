@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "fixtureId": "orientation-6-samsung-nx200",
+  "source": "src-tauri/target/raw-fixtures/orientation-6-samsung-nx200.srw",
+  "sourceDigest": "03563eadfe4ef32b5bf2a2850abb40b29fcc1f8d56b3b2ed92ef307b90d7d9dc",
+  "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "testedOsBuild": "Version 26.4 (Build 25E246)",
+  "decoderBackend": "macos-core-image",
+  "backendRevision": "2",
+  "decoderVersion": "7",
+  "maxEdge": 1024,
+  "nativeWidth": 5472,
+  "nativeHeight": 3648,
+  "inputWidth": 683,
+  "inputHeight": 1024,
+  "sourceOrientation": 6,
+  "outputOrientation": 1,
+  "orientationApplied": true,
+  "activeArea": [
+    0,
+    0,
+    5472,
+    3648
+  ],
+  "scaleNumerator": 32,
+  "scaleDenominator": 171,
+  "workingProfileDigest": "8dc43dc589a0305f6b8a3a2df5f461e56fa4d1806c41b5c7aa895363b2b983e8",
+  "decodeIntentDigest": "74940c2ed82af38d9fd089605d61529a7670588e9c874e413e87dad693785634",
+  "decodedInputDigest": "8e6019a92711797b94dc7ffc091aa4a3aa21d3e0c21f6aa4ba49c1189469ebde",
+  "provenanceDigest": "93a3280f8b8c0a82df402024845e32e7e27c8f0d0b7d60c899bc2474335a48f6"
+}

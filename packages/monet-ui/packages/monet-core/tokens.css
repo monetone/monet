@@ -1,0 +1,104 @@
+/* ─────────────────────────────────────────────────────────────
+   Monet — design tokens (convenience extract)
+   ─────────────────────────────────────────────────────────────
+   A standalone copy of the :root custom properties also defined in
+   styles.css, for consumers that want the tokens without the full
+   component stylesheet. styles.css remains self-contained.
+*/
+
+:root {
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter Display", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;
+
+  /* base desktop tone — dark, slightly cool, slightly warm in highlights */
+  --desktop-0: #0b0e14;
+  --desktop-1: #131722;
+  --desktop-2: #1a1f2c;
+
+  /* glass surfaces — three depths */
+  --glass-0: rgba(255, 255, 255, 0.04);
+  --glass-1: rgba(255, 255, 255, 0.06);
+  --glass-2: rgba(255, 255, 255, 0.09);
+  --glass-3: rgba(255, 255, 255, 0.13);
+
+  --stroke-soft: rgba(255, 255, 255, 0.06);
+  --stroke-medium: rgba(255, 255, 255, 0.10);
+  --stroke-strong: rgba(255, 255, 255, 0.16);
+
+  --hi-top: rgba(255, 255, 255, 0.22);
+  --hi-bottom: rgba(0, 0, 0, 0.35);
+
+  --text-1: rgba(255, 255, 255, 0.92);
+  --text-2: rgba(255, 255, 255, 0.62);
+  --text-3: rgba(255, 255, 255, 0.38);
+  --text-disabled: rgba(255, 255, 255, 0.22);
+
+  --radius-window: 14px;
+  --radius-panel: 10px;
+  --radius-control: 7px;
+  --radius-pill: 999px;
+
+  /* component metrics — fixed chrome heights, mirroring the METRICS export
+     in src/index.ts. styles.css consumes these via var(--monet-h-…, default)
+     so the defaults below are authoritative; [data-density="compact"] in
+     styles.css tightens them. */
+  --monet-h-titlebar-mac: 48px;
+  --monet-h-titlebar-win: 36px;
+  --monet-h-tabstrip-win: 42px;
+  --monet-h-menustrip: 28px;
+  --monet-h-toolbar: 44px;
+  --monet-w-tool-rail: 48px;
+  --monet-sz-tool-button: 36px;
+  --monet-h-panel-tabstrip: 32px;
+  --monet-h-statusbar: 24px;
+
+  /* text colour used on top of an accent fill (dark glyphs on a light chip) */
+  --on-accent: #0b0e14;
+
+  --shadow-window: 0 24px 80px -8px rgba(0, 0, 0, 0.55),
+                   0 8px 24px -4px rgba(0, 0, 0, 0.35),
+                   0 0 0 0.5px rgba(255, 255, 255, 0.08);
+
+  --blur-strong: blur(40px) saturate(180%);
+  --blur-medium: blur(24px) saturate(160%);
+  --blur-light: blur(14px) saturate(140%);
+
+  /* per-app accents — only used in highlights, never structural */
+  --accent-raster: oklch(0.78 0.14 200);   /* cyan */
+  --accent-vector: oklch(0.80 0.14 70);    /* amber */
+  --accent-audio:  oklch(0.74 0.16 305);   /* violet */
+  --accent-motion: oklch(0.75 0.18 350);   /* magenta */
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Light theme — opt-in via data-theme="light" on :root or .monet-window.
+   Dark remains the unscoped default; this only redefines the glass /
+   stroke / highlight / text tokens and desktop tones. The per-app accents
+   and radii are intentionally unchanged. The authoritative copy of this
+   palette lives in styles.css; kept here so the standalone token extract
+   matches. */
+:root[data-theme="light"] {
+  --desktop-0: #c9cfdc;
+  --desktop-1: #e7ebf3;
+  --desktop-2: #f3f5fa;
+
+  --glass-0: rgba(20, 28, 46, 0.04);
+  --glass-1: rgba(20, 28, 46, 0.06);
+  --glass-2: rgba(20, 28, 46, 0.10);
+  --glass-3: rgba(20, 28, 46, 0.16);
+
+  --stroke-soft: rgba(20, 28, 46, 0.08);
+  --stroke-medium: rgba(20, 28, 46, 0.14);
+  --stroke-strong: rgba(20, 28, 46, 0.22);
+
+  --hi-top: rgba(255, 255, 255, 0.75);
+  --hi-bottom: rgba(20, 28, 46, 0.12);
+
+  --text-1: rgba(18, 22, 33, 0.94);
+  --text-2: rgba(18, 22, 33, 0.64);
+  --text-3: rgba(18, 22, 33, 0.42);
+  --text-disabled: rgba(18, 22, 33, 0.26);
+
+  --on-accent: #0b0e14;
+}

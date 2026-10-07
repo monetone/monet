@@ -1,0 +1,158 @@
+/* Monet Jouer — app-specific tweaks on top of @monet-ui/monet-core.
+   Jouer's brand accent is a "play" green; we register it as a custom token and
+   force it onto --accent so every monet-ui component (which defaults to
+   var(--accent)) themes green regardless of the native window accent. */
+.monet-app-pill .glyph {
+  background: center / cover no-repeat url("../src-tauri/icons/32x32.png");
+}
+
+:root {
+  --accent-game: oklch(0.80 0.16 150);
+}
+.monet-window,
+:root {
+  --accent: var(--accent-game);
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+#root {
+  overflow: hidden;
+}
+
+/* ── Phaser viewport host ─────────────────────────────────────────
+   The Phaser canvas fills the central Canvas area; it sits on a checkerboard
+   "outside the world" backdrop so the scene's own background stands out. */
+.mj-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background-color: #0c0f16;
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.018) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.018) 75%),
+    linear-gradient(45deg, rgba(255, 255, 255, 0.018) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.018) 75%);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+}
+.mj-stage canvas {
+  display: block;
+  box-shadow: 0 18px 60px -18px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--stroke-soft);
+  border-radius: 2px;
+}
+.mj-stage-empty {
+  color: var(--text-3);
+  font-size: 13px;
+  text-align: center;
+  padding: 24px;
+  line-height: 1.5;
+}
+
+/* ── Generic panel scaffolding ────────────────────────────────────── */
+.mj-pad { padding: 10px 12px; }
+.mj-col { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.mj-fill { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.mj-row { display: flex; align-items: center; gap: 8px; }
+.mj-row-wrap { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.mj-muted { color: var(--text-3); font-size: 12px; }
+.mj-spacer { flex: 1 1 auto; }
+.mj-divider { height: 1px; background: var(--stroke-soft); margin: 8px 0; }
+
+/* Inline mini-label for inspector rows. */
+.mj-k {
+  color: var(--text-3);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Asset / scene list rows ──────────────────────────────────────── */
+.mj-list { display: flex; flex-direction: column; gap: 2px; padding: 6px; }
+.mj-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  color: var(--text-2); font-size: 12.5px;
+  border: 0.5px solid transparent;
+  user-select: none;
+}
+.mj-item:hover { background: var(--glass-2); color: var(--text-1); }
+.mj-item.is-sel {
+  background: color-mix(in oklch, var(--accent) 24%, transparent);
+  color: var(--text-1);
+  border-color: color-mix(in oklch, var(--accent) 50%, transparent);
+}
+/* Hierarchy-search hit (Unity Hierarchy search highlight). */
+.mj-item.is-match { color: var(--text-1); }
+.mj-item.is-match .mj-item-name { font-weight: 600; }
+.mj-item.is-match:not(.is-sel) {
+  border-color: color-mix(in oklch, var(--accent) 35%, transparent);
+}
+.mj-item-icon { width: 16px; height: 16px; display: inline-flex; flex: 0 0 auto; opacity: 0.85; }
+.mj-item-name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mj-item-meta { color: var(--text-3); font-size: 11px; flex: 0 0 auto; }
+.mj-thumb {
+  width: 22px; height: 22px; flex: 0 0 auto; border-radius: 4px;
+  background: var(--glass-1); border: 0.5px solid var(--stroke-soft);
+  object-fit: contain; image-rendering: pixelated;
+}
+
+/* ── Timeline / animation panel ───────────────────────────────────── */
+.mj-anim { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.mj-anim-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 6px 10px; border-bottom: 0.5px solid var(--stroke-soft);
+}
+.mj-anim-body { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.mj-track-head {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-2);
+}
+
+/* ── Code export preview ──────────────────────────────────────────── */
+.mj-code {
+  margin: 0; padding: 12px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11.5px; line-height: 1.5; color: var(--text-1);
+  white-space: pre; tab-size: 2;
+  background: rgba(10, 13, 20, 0.5);
+}
+
+/* ── Multi-engine live preview host ───────────────────────────────── */
+.mj-preview {
+  flex: 1 1 auto;
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background-color: #0c0f16;
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.02) 75%),
+    linear-gradient(45deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.02) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+}
+.mj-preview canvas {
+  display: block;
+  box-shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* Small toolbar button used in panel headers. */
+.mj-tinybtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  height: 22px; padding: 0 8px; border-radius: 5px;
+  border: 0.5px solid var(--stroke-soft); background: var(--glass-1);
+  color: var(--text-2); font-size: 11.5px; cursor: pointer;
+}
+.mj-tinybtn:hover { background: var(--glass-2); color: var(--text-1); }
+.mj-tinybtn.is-on { background: color-mix(in oklch, var(--accent) 30%, transparent); color: var(--text-1); }
+
+/* Swatch button for color fields. */
+.mj-swatch {
+  width: 22px; height: 22px; border-radius: 5px; flex: 0 0 auto;
+  border: 0.5px solid var(--stroke-strong); cursor: pointer; padding: 0;
+}

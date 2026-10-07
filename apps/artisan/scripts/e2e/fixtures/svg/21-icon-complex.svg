@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <!-- composed "night sky" icon: gradients + groups + paths + nested transforms -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b2a4a"/><stop offset="1" stop-color="#4a6fa5"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff3b0"/><stop offset="1" stop-color="#ffb347"/>
+    </radialGradient>
+  </defs>
+  <circle cx="120" cy="120" r="110" fill="url(#sky)" stroke="#0d1730" stroke-width="6"/>
+  <circle cx="120" cy="118" r="46" fill="url(#sun)"/>
+  <g fill="#ffffff" opacity="0.9">
+    <circle cx="70" cy="70" r="2"/><circle cx="182" cy="60" r="2.6"/><circle cx="160" cy="158" r="2"/>
+    <circle cx="60" cy="168" r="1.8"/><circle cx="200" cy="120" r="2.2"/><circle cx="96" cy="48" r="1.6"/>
+  </g>
+  <path d="M30 178 Q 120 142 210 178 L 210 210 L 30 210 Z" fill="#16324f"/>
+  <path d="M66 178 l 20 -30 l 20 30 z M118 178 l 24 -38 l 24 38 z" fill="#0d2238"/>
+</svg>

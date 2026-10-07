@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "float",
+  "description": "Window ▸ Arrange float windows: a document canvas that receives frames from, and sends input to, the main window. No event emit: a float speaks only through float:input, so the main window can trust monet://menu and the MCP bridge",
+  "windows": ["float-*"],
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "core:window:allow-start-dragging",
+    "float:allow-attach",
+    "float:allow-input"
+  ]
+}

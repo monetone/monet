@@ -1,0 +1,20 @@
+/* Monet core — single entry point: tokens are bundled inside
+   styles.css already, so this just layers the component sheet and the
+   Tauri bare-window glass treatment. */
+@import "./styles.css";
+@import "./tauri.css";
+
+/* In-house component sheets. Imported AFTER styles.css so the controls
+   sheet's interactive slider overrides (vertical/disabled/focus) win on
+   equal specificity, and overlay surfaces layer above the chrome. */
+@import "./controls.css";
+@import "./overlays.css";
+
+/* DesignCanvas surface ("monet-dc-" prefix). Layered last: it is an
+   intentionally-light "paper" canvas with its own local palette, distinct from
+   the dark glass chrome above. */
+@import "./canvas.css";
+
+/* Mocked pro-creative-app components ("monet-cv-" prefix); layered last so
+   these panels sit above the chrome and reuse its tokens + existing classes. */
+@import "./creative.css";

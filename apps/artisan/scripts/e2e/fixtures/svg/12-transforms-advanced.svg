@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- rotate-about-point, skewX, skewY, compound translate+rotate+scale -->
+  <rect x="20" y="40" width="80" height="50" fill="#e0573a" transform="rotate(20 60 65)"/>
+  <rect x="140" y="30" width="70" height="45" fill="#3ac06a" transform="skewX(22)"/>
+  <rect x="280" y="30" width="70" height="45" fill="#4a9eff" transform="skewY(16)"/>
+  <g transform="translate(70 200) rotate(-15) scale(1.1)">
+    <rect x="0" y="0" width="80" height="50" fill="#e0a13a"/>
+    <rect x="0" y="0" width="80" height="50" fill="none" stroke="#222222" stroke-width="3" transform="translate(22 22)"/>
+  </g>
+  <rect x="0" y="0" width="64" height="64" fill="#a855f7" transform="translate(320 210) rotate(45) translate(-32 -32)"/>
+</svg>

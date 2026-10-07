@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- clip-path (circle) and mask (gradient fade) -->
+  <defs>
+    <clipPath id="clip"><circle cx="110" cy="120" r="70"/></clipPath>
+    <linearGradient id="g"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#000000"/></linearGradient>
+    <mask id="fade"><rect x="0" y="0" width="400" height="300" fill="url(#g)"/></mask>
+  </defs>
+  <rect x="40" y="50" width="140" height="140" fill="#e0573a" clip-path="url(#clip)"/>
+  <rect x="220" y="60" width="150" height="120" fill="#3ac06a" mask="url(#fade)"/>
+  <text x="40" y="250" font-size="20" fill="#333333">clip + mask</text>
+</svg>

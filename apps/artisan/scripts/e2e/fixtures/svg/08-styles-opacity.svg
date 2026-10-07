@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="0 0 400 300">
+  <!-- style="" CSS, group-inherited fill-opacity, opacity, rgb/hex/hsl + named colors, inkscape:label -->
+  <g inkscape:label="Overlapping" fill-opacity="0.6">
+    <circle cx="120" cy="120" r="72" style="fill:rgb(224,87,58)"/>
+    <circle cx="185" cy="120" r="72" style="fill:#3ac06a"/>
+    <circle cx="152" cy="178" r="72" style="fill:hsl(210,90%,58%)"/>
+  </g>
+  <rect x="255" y="40" width="120" height="95" fill="rebeccapurple" opacity="0.5"/>
+  <rect inkscape:label="Named tan" x="255" y="165" width="120" height="95" fill="tan" stroke="darkslategray" stroke-width="6"/>
+</svg>

@@ -1,0 +1,48 @@
+{
+  "name": "@monet-ui/monet-collab",
+  "version": "0.1.0",
+  "description": "Monet — real-time collaboration substrate: bind a Monet app's document store to a Yjs CRDT synced over a backend, with awareness-based presence (live cursors + selection). Shared by every Monet app; opt-in.",
+  "license": "MIT",
+  "author": "Monet / monet-ui",
+  "type": "module",
+  "sideEffects": false,
+  "files": ["dist"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./react": { "types": "./dist/react.d.ts", "import": "./dist/react.js" }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:e2e": "node test/e2e.mjs",
+    "prepare": "pnpm run build"
+  },
+  "dependencies": {
+    "yjs": "^13.6.0",
+    "y-websocket": "^2.0.0",
+    "y-protocols": "^1.0.6"
+  },
+  "peerDependencies": {
+    "react": "^18.3.0"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true }
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "react": "^18.3.1",
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.8"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monetone/monet.git",
+    "directory": "packages/monet-ui/packages/monet-collab"
+  },
+  "publishConfig": { "access": "public" }
+}

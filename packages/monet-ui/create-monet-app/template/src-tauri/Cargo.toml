@@ -1,0 +1,36 @@
+[package]
+name = "__APP_CRATE__"
+description = "__APP_PRODUCT_NAME__ — a Monet liquid-glass desktop app."
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "__APP_CRATE__"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# `macos-private-api` is required for Monet's transparent + native-vibrancy
+# window on macOS.
+tauri = { version = "2", features = ["macos-private-api"] }
+
+# The Monet Tauri integration crate, consumed from the vendored submodule at
+# vendor/monet-ui — one checkout serves both this crate and the frontend
+# packages. Bump it with `git -C vendor/monet-ui pull`.
+monet-ui = { path = "../vendor/monet-ui/crates/monet-ui" }
+
+# Native OS file/save/message dialogs. Registered via `monet_ui::dialog_plugin()`
+# in main.rs and matched by the `@tauri-apps/plugin-dialog` JS package. The
+# `"dialog:default"` capability (see capabilities/default.json) permits the
+# commands these dialogs invoke.
+tauri-plugin-dialog = "2"
+
+# A slimmer release profile for the bundled app.
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

@@ -1,0 +1,27 @@
+[package]
+name = "monet-db"
+description = "Monet — the shared SQLite plumbing every Monet app's database goes through: open + pragmas, integrity/optimize/backup/VACUUM INTO, the content + file digest helpers, and the container ↔ live-database lifecycle."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[features]
+default = ["container"]
+# The container ↔ live-database lifecycle (design doc 11). ON by default so
+# `cargo test -p monet-db` covers it; an app that only wants the SQLite plumbing
+# (Galerie today — `.galcat` is a live database with no container around it)
+# turns it off and never links the zip/JSON code.
+container = ["dep:monet-format"]
+
+[dependencies]
+# The one database dependency, moved here from Galerie. `bundled` compiles
+# SQLite from source so there's no system-library dependency across dev
+# machines / CI — the same feature Galerie already asked for.
+rusqlite = { version = "0.32", features = ["bundled"] }
+# Content digests (`sha256_hex`, `digest_file`) — the identity half of the
+# library, moved from Galerie's catalog.
+sha2 = "0.10"
+# The container primitive (design doc 11). Optional: see the `container` feature.
+monet-format = { path = "../monet-format", optional = true }

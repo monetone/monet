@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Monet Artisan",
+  "version": "0.1.0",
+  "identifier": "dev.monet.artisan",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1421",
+    "beforeDevCommand": "pnpm vite --port 1421 --strictPort",
+    "beforeBuildCommand": "pnpm vite build"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "macOSPrivateApi": true,
+    "windows": [],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-src 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "macOS": {
+      "bundleName": "Artisan"
+    },
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "mart"
+        ],
+        "name": "Monet Artisan Document",
+        "description": "Monet Artisan Document",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "mvis",
+          "mgal",
+          "mcin",
+          "mjou",
+          "mani",
+          "mryt"
+        ],
+        "name": "Monet Document",
+        "description": "Monet document from another app",
+        "role": "Viewer"
+      }
+    ]
+  }
+}

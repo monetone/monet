@@ -1,0 +1,2704 @@
+{
+  "app": "rythme",
+  "version": "0.1.0",
+  "tools": [
+    {
+      "name": "analysis.amplitudeStats",
+      "description": "Amplitude Statistics for the current scope — peak, RMS, dynamic range, DC offset\nand possibly-clipped sample count, as a readable summary.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "analysis.histogram",
+      "description": "Amplitude histogram for the current scope — the dBFS distribution of sample\nvalues: the modal (most common) level, how many bins hold ≥1% of the samples,\nand the total sample count.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "binDb": {
+            "type": "number",
+            "description": "dB per histogram bin.",
+            "minimum": 0.1,
+            "maximum": 12,
+            "default": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "analysis.loudness",
+      "description": "Loudness metering for the current scope — EBU R128 / ITU-R BS.1770 integrated\nloudness (LUFS), True Peak (dBTP, oversampled), short-term max and the\nLoudness Range (LRA), as shown in Audition's Loudness / Match Loudness panel.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "analysis.loudnessGraph",
+      "description": "Loudness Radar — loudness over time for the current scope. Reports the momentary\nloudness span (min … max), the integrated value, the range, and how many\nmomentary / short-term points were measured.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "analysis.markAudio",
+      "description": "Mark Audio: detect the non-silent regions of the mix and drop a range marker on\neach (great for splitting a long recording into takes).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "thresholdDb": {
+            "type": "number",
+            "description": "Level at or below which audio counts as silence, dBFS.",
+            "minimum": -90,
+            "maximum": 0,
+            "default": -45
+          },
+          "minSilenceMs": {
+            "type": "number",
+            "description": "A silent gap at least this long separates two regions, ms.",
+            "minimum": 0,
+            "maximum": 5000,
+            "default": 300
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "analysis.markBeats",
+      "description": "Mark Beats: detect the rhythmic onsets of the mix and drop a cue marker on\neach (Audition's \"generate markers from beats\").",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sensitivity": {
+            "type": "number",
+            "description": "Onset threshold as a multiple of the mean energy flux (higher = fewer beats).",
+            "default": 3
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "analysis.phaseAnalysis",
+      "description": "Phase Analysis for the current scope — stereo correlation (−1 out of phase … +1\nin phase), balance, width and mono compatibility.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "analysis.pitch",
+      "description": "Pitch detection for the current scope — the dominant fundamental (Hz), its\nnearest note + octave, cents off, and a confidence (YIN algorithm).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "analysis.spectrogram",
+      "description": "Spectrogram (Spectral Frequency Display) of the current scope — reports the\nmatrix dimensions and the loudest time/frequency cell.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "analysis.tempo",
+      "description": "Tempo / beat detection for the current scope — reports the estimated BPM and\nhow many rhythmic onsets were found, without changing the project.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sensitivity": {
+            "type": "number",
+            "description": "Onset threshold as a multiple of the mean energy flux (higher = fewer beats).",
+            "default": 3
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "analysis.vectorscope",
+      "description": "Phase Scope / vectorscope of the current scope — reports the goniometer point\ncloud's shape (vertical = mono, horizontal = out of phase, diagonal = offset).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.applyKeyboardShortcutPreset",
+      "description": "Apply an app-global keyboard shortcut preset to the current project.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Preset id.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.deleteKeyboardShortcutPreset",
+      "description": "Delete an app-global keyboard shortcut preset.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Preset id.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.discoverControlSurfaces",
+      "description": "Discover browser/WebView-visible MIDI control surface ports.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "requestPermission": {
+            "type": "number",
+            "description": "Request Web MIDI permission before listing ports. (0 or 1)",
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.exportKeyboardShortcutPreset",
+      "description": "Export an app-global keyboard shortcut preset as JSON.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Preset id.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.getAudioHardwarePreferences",
+      "description": "Get app-global audio hardware defaults used by New Session.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.getControlSurfacePreferences",
+      "description": "Get app-global MIDI/control-surface preferences.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.getFilePreferences",
+      "description": "Get app-global file behavior preferences for default mixdown and batch export.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.getPanelPreferences",
+      "description": "Get app-global Analyze and Effects panel defaults used by New Session.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.getWorkspacePreferences",
+      "description": "Get app-global workspace/editor defaults used by New Session.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.importKeyboardShortcutPreset",
+      "description": "Import an app-global keyboard shortcut preset from JSON.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "presetJson": {
+            "type": "string",
+            "description": "JSON object with id, name, and shortcuts.",
+            "default": "{}"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.listKeyboardShortcutPresets",
+      "description": "List app-global keyboard shortcut presets stored for this Rythme installation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.saveKeyboardShortcutPreset",
+      "description": "Save the current project keyboard shortcut overrides as an app-global preset.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Preset name.",
+            "default": "Custom Shortcuts"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.setAudioHardwarePreferences",
+      "description": "Set app-global audio hardware defaults used by New Session.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "inputDeviceId": {
+            "type": "string",
+            "description": "Browser/native input device id, or empty for system default.",
+            "default": ""
+          },
+          "outputDeviceId": {
+            "type": "string",
+            "description": "Browser/native output device id, or empty for system default.",
+            "default": ""
+          },
+          "hardwareSampleRate": {
+            "type": "number",
+            "description": "Requested hardware sample rate in Hz.",
+            "minimum": 8000,
+            "maximum": 192000,
+            "default": 48000
+          },
+          "inputChannels": {
+            "type": "number",
+            "description": "Requested hardware input channels.",
+            "minimum": 1,
+            "maximum": 8,
+            "default": 2
+          },
+          "inputMonitoring": {
+            "type": "string",
+            "enum": [
+              "off",
+              "armed",
+              "always"
+            ],
+            "description": "Input monitoring mode: \"off\", \"armed\", or \"always\".",
+            "default": "off"
+          },
+          "latencyCompensationMs": {
+            "type": "number",
+            "description": "Timeline placement compensation in milliseconds.",
+            "minimum": -1000,
+            "maximum": 1000,
+            "default": 0
+          },
+          "preRollSeconds": {
+            "type": "number",
+            "description": "Pre-roll before punch/playhead in seconds.",
+            "minimum": 0,
+            "maximum": 30,
+            "default": 0
+          },
+          "countInBars": {
+            "type": "number",
+            "description": "Count-in length in bars before recording.",
+            "minimum": 0,
+            "maximum": 8,
+            "default": 0
+          },
+          "meterCalibrationDb": {
+            "type": "number",
+            "description": "Display offset applied to meter dB readouts.",
+            "minimum": -60,
+            "maximum": 60,
+            "default": 0
+          },
+          "meterPeakHoldMs": {
+            "type": "number",
+            "description": "Software mixer meter peak-hold duration in milliseconds.",
+            "minimum": 0,
+            "maximum": 10000,
+            "default": 1200
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.setControlSurfaceMappings",
+      "description": "Set app-global custom MIDI control mappings from JSON.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mappingsJson": {
+            "type": "string",
+            "description": "JSON array of mapping objects with trigger/status/data1 and action/type fields.",
+            "default": "[]"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.setControlSurfacePreferences",
+      "description": "Set app-global MIDI/control-surface preferences.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "number",
+            "description": "Whether the configured surface is enabled. (0 or 1)",
+            "default": 0
+          },
+          "protocol": {
+            "type": "string",
+            "description": "Surface protocol: genericMidi, mackieControl, or hui.",
+            "default": "genericMidi"
+          },
+          "inputId": {
+            "type": "string",
+            "description": "MIDI input id, or empty for none.",
+            "default": ""
+          },
+          "outputId": {
+            "type": "string",
+            "description": "MIDI output id, or empty for none.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.setFilePreferences",
+      "description": "Set app-global file behavior preferences for default mixdown and batch export.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "exportFormat": {
+            "type": "string",
+            "description": "Default audio format: \"wav\" or \"aiff\".",
+            "default": "wav"
+          },
+          "bitDepth": {
+            "type": "number",
+            "description": "Default audio bit depth: 16, 24, or 32.",
+            "default": 24
+          },
+          "exportFloat": {
+            "type": "number",
+            "description": "Use 32-bit float WAV when exportFormat is \"wav\" and bitDepth is 32. (0 or 1)",
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.setPanelPreferences",
+      "description": "Set app-global Analyze and Effects panel defaults used by New Session.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "defaultsJson": {
+            "type": "string",
+            "description": "JSON object with optional analyze and effects preference sections.",
+            "default": "{}"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "app.setWorkspacePreferences",
+      "description": "Set app-global workspace/editor defaults used by New Session.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "defaultWorkspaceId": {
+            "type": "string",
+            "description": "Built-in workspace id: default, maxWaveform, maxSpectral, mixing, or radio.",
+            "default": "default"
+          },
+          "editorMode": {
+            "type": "string",
+            "description": "Default editor mode: multitrack or waveform.",
+            "default": "multitrack"
+          },
+          "tool": {
+            "type": "string",
+            "description": "Default tool: select, razor, marquee, envelope, fade, marker, hand, or zoom.",
+            "default": "select"
+          },
+          "snap": {
+            "type": "number",
+            "description": "Whether snapping is enabled by default (0/1).",
+            "default": 1
+          },
+          "displayTimeFormat": {
+            "type": "string",
+            "description": "Display time format: decimal, smpte30, samples, or barsBeats.",
+            "default": "decimal"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "bus.setAutomationMode",
+      "description": "Set a bus automation mode. \"off\" bypasses bus automation during render;\nwrite/touch/latch persist the session mode for automation workflows.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bus": {
+            "type": "number",
+            "description": "Bus index, 0-based.",
+            "default": 0
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "read",
+              "off",
+              "write",
+              "touch",
+              "latch"
+            ],
+            "description": "Automation mode: \"read\", \"off\", \"write\", \"touch\", or \"latch\".",
+            "default": "read"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "clip.autoCrossfade",
+      "description": "Auto-Crossfade every overlapping pair of clips on a track — the earlier clip\nfades out as the later fades in across the overlap (Audition's multitrack\ncrossfade), smoothing the seam.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "track": {
+            "type": "number",
+            "description": "Track index whose overlapping clips to crossfade, 0-based.",
+            "default": 0
+          },
+          "linear": {
+            "type": "number",
+            "description": "Use a linear (equal-gain) curve instead of equal-power (0 = equal-power, 1 = linear).",
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "clip.matchVolume",
+      "description": "Match Clip Volume — bring the selected clips to a common level by setting each\nclip's gain trim (non-destructive); matches to the loudest clip in the set.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "description": "What to equalise: \"peak\", \"rms\", or \"loudness\".",
+            "default": "peak"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "clip.merge",
+      "description": "Merge Clips — render the currently selected clips (which must share a track)\ninto a single clip spanning from the earliest start to the latest end, the\ninverse of Split.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "clip.setAutomationMode",
+      "description": "Set a clip automation mode by clip id. \"off\" bypasses clip automation during render;\nwrite/touch/latch persist the session mode for automation workflows.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "clipId": {
+            "type": "string",
+            "description": "Clip id.",
+            "default": ""
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "read",
+              "off",
+              "write",
+              "touch",
+              "latch"
+            ],
+            "description": "Automation mode: \"read\", \"off\", \"write\", \"touch\", or \"latch\".",
+            "default": "read"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "clip.splitAtMarkers",
+      "description": "Split Clips at Markers — razor every clip at each marker position (region\nmarkers cut at both edges), turning Mark Audio / Mark Beats markers into clip\nboundaries.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.applyFavorite",
+      "description": "Apply a saved Favorite effect chain by id or exact name to the current edit scope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "idOrName": {
+            "type": "string",
+            "description": "Favorite chain id or exact favorite name.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.autoPhaseCorrect",
+      "description": "Apply Automatic Phase Correction (inter-channel alignment) over the current scope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "maxShiftMs": {
+            "type": "number",
+            "description": "Maximum inter-channel lag searched in ms, 0 = polarity only.",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 5
+          },
+          "correctPolarity": {
+            "type": "boolean",
+            "description": "Flip the right channel if the channels are anti-correlated.",
+            "default": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.convertSampleType",
+      "description": "Convert Sample Type over the current scope — change channel count and/or bit depth.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "number",
+            "description": "Target channel count, 1 (mono) or 2 (stereo).",
+            "default": 2
+          },
+          "bitDepth": {
+            "type": "number",
+            "description": "Target bit depth; 32 = no re-quantization.",
+            "minimum": 8,
+            "maximum": 32,
+            "default": 16
+          },
+          "dither": {
+            "type": "boolean",
+            "description": "Add triangular dither when lowering the bit depth.",
+            "default": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.convolutionIr",
+      "description": "Apply Convolution Reverb using a supplied impulse-response audio file. The\nIR must be base64-encoded WAV or AIFF bytes; Rythme decodes, downmixes,\nenergy-normalizes, and applies it to the current effect scope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "File name for format sniffing, e.g. \"room.wav\" or \"hall.aiff\".",
+            "default": "impulse.wav"
+          },
+          "base64": {
+            "type": "string",
+            "description": "Base64-encoded WAV/AIFF impulse-response audio bytes.",
+            "default": ""
+          },
+          "mix": {
+            "type": "number",
+            "description": "Wet/dry mix,.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.3
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.deleteSilence",
+      "description": "Delete Silence over the current scope — trim the gaps between phrases.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "thresholdDb": {
+            "type": "number",
+            "description": "Level at or below which audio counts as silence, dBFS.",
+            "minimum": -90,
+            "maximum": 0,
+            "default": -50
+          },
+          "minSilenceMs": {
+            "type": "number",
+            "description": "Only gaps at least this long are trimmed, ms.",
+            "minimum": 0,
+            "maximum": 5000,
+            "default": 200
+          },
+          "keepMs": {
+            "type": "number",
+            "description": "Silence left in each trimmed gap, ms; 0 removes it entirely.",
+            "minimum": 0,
+            "maximum": 2000,
+            "default": 100
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.essentialDuck",
+      "description": "Essential Sound Auto-Duck: bake ducking onto every Music-role track using\nevery Dialogue-role track as a key.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "amountDb": {
+            "type": "number",
+            "description": "Attenuation while dialogue is active, dB.",
+            "minimum": -48,
+            "maximum": 0,
+            "default": -12
+          },
+          "thresholdDb": {
+            "type": "number",
+            "description": "Dialogue level that engages ducking, dBFS.",
+            "minimum": -90,
+            "maximum": 0,
+            "default": -30
+          },
+          "attackMs": {
+            "type": "number",
+            "description": "Time to duck down once dialogue crosses threshold, ms.",
+            "minimum": 1,
+            "maximum": 2000,
+            "default": 60
+          },
+          "releaseMs": {
+            "type": "number",
+            "description": "Time to recover after dialogue falls silent, ms.",
+            "minimum": 1,
+            "maximum": 5000,
+            "default": 400
+          },
+          "holdMs": {
+            "type": "number",
+            "description": "Keep ducking this long after dialogue drops below threshold, ms.",
+            "minimum": 0,
+            "maximum": 5000,
+            "default": 200
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.essentialSound",
+      "description": "Essential Sound role preset for the current scope. If role is \"auto\", Rythme\nuses the active track's assigned role, then falls back to Dialogue.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "dialogue",
+              "music",
+              "sfx",
+              "ambience"
+            ],
+            "description": "Role preset to apply, or \"auto\" to use the active track role.",
+            "default": "auto"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.fullReverb",
+      "description": "Apply a Full Reverb (synthesized colored-IR convolution reverb) over the current scope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "decayMs": {
+            "type": "number",
+            "description": "Decay time / RT60 in ms — how long the tail lasts.",
+            "minimum": 20,
+            "maximum": 6000,
+            "default": 1500
+          },
+          "perception": {
+            "type": "number",
+            "description": "Room irregularity: higher = more, more-varied early reflections.",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 40
+          },
+          "mix": {
+            "type": "number",
+            "description": "Dry/wet mix,.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.3
+          },
+          "colorHighDb": {
+            "type": "number",
+            "description": "Coloration high-shelf gain in dB at ~6 kHz — negative darkens the tail.",
+            "minimum": -24,
+            "maximum": 6,
+            "default": -6
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.gainEnvelope",
+      "description": "Apply a Gain Envelope (time-varying amplitude) over the current scope, as a\nstart → middle → end shape (1 = unity, 0 = silence, >1 = boost).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "startGain": {
+            "type": "number",
+            "description": "Linear gain at the start of the selection.",
+            "minimum": 0,
+            "maximum": 4,
+            "default": 1
+          },
+          "midGain": {
+            "type": "number",
+            "description": "Linear gain at the middle of the selection.",
+            "minimum": 0,
+            "maximum": 4,
+            "default": 1
+          },
+          "endGain": {
+            "type": "number",
+            "description": "Linear gain at the end of the selection.",
+            "minimum": 0,
+            "maximum": 4,
+            "default": 1
+          },
+          "spline": {
+            "type": "boolean",
+            "description": "Use a smooth spline curve instead of straight segments.",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.graphicEq",
+      "description": "Apply a Graphic Equalizer (10-band octave EQ) preset over the current scope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "preset": {
+            "type": "string",
+            "description": "Tone-shaping curve: bassBoost · trebleBoost · loudness · vocalPresence · midScoop · telephone.",
+            "default": "bassBoost"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.graphicPhaseShifter",
+      "description": "Apply a Graphic Phase Shifter (magnitude-preserving all-pass) over the current scope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "phaseDeg": {
+            "type": "number",
+            "description": "Uniform phase shift across all frequencies, in degrees.",
+            "minimum": -360,
+            "maximum": 360,
+            "default": 90
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "both",
+              "left",
+              "right"
+            ],
+            "description": "Which channels to shift — \"both\", \"left\", or \"right\".",
+            "default": "both"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.mastering",
+      "description": "Apply an Audition-style Mastering rack preset over the current scope. \"Open\"\nenables the ambience/reverb stage; the other presets preserve duration.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "preset": {
+            "type": "string",
+            "enum": [
+              "warm",
+              "bright",
+              "loud",
+              "wide",
+              "open"
+            ],
+            "description": "Preset id: \"warm\", \"bright\", \"loud\", \"wide\", or \"open\".",
+            "default": "warm"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.parametricEq",
+      "description": "Apply a Parametric Equalizer (free-form shelf + bell cascade) preset over the current scope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "preset": {
+            "type": "string",
+            "description": "Curve: vocalClarity · warm · bright · deMud · loudness · lofi.",
+            "default": "vocalClarity"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.pitchShift",
+      "description": "Pitch-shift the current selection (or scope) by semitones, preserving duration.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "semitones": {
+            "type": "number",
+            "description": "Pitch shift in semitones.",
+            "minimum": -24,
+            "maximum": 24
+          }
+        },
+        "required": [
+          "semitones"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.remixToDuration",
+      "description": "Remix the current selection/scope to a target duration without changing\nplayback speed or pitch, using crossfaded music-bed edits.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "seconds": {
+            "type": "number",
+            "description": "Target duration in seconds.",
+            "minimum": 0.1,
+            "maximum": 7200,
+            "default": 30
+          },
+          "crossfadeMs": {
+            "type": "number",
+            "description": "Crossfade length at loop/cut points, ms.",
+            "minimum": 0,
+            "maximum": 5000,
+            "default": 120
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.saveFavoriteRack",
+      "description": "Save the selected clip rack, active track rack, or master rack as a project Favorite.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Optional favorite name. Defaults to the active rack name.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.scientificFilter",
+      "description": "Apply a Scientific Filter (high-order analog-prototype IIR) over the current scope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "butterworth",
+              "chebyshev1",
+              "chebyshev2",
+              "bessel",
+              "elliptic"
+            ],
+            "description": "Analog prototype family.",
+            "default": "butterworth"
+          },
+          "response": {
+            "type": "string",
+            "enum": [
+              "lowpass",
+              "highpass",
+              "bandpass",
+              "bandstop"
+            ],
+            "description": "Frequency response shape.",
+            "default": "lowpass"
+          },
+          "order": {
+            "type": "number",
+            "description": "Prototype order; band-pass/stop realize twice this.",
+            "minimum": 1,
+            "maximum": 12,
+            "default": 4
+          },
+          "cutoffHz": {
+            "type": "number",
+            "description": "Corner frequency in Hz; lower edge for band-pass/stop.",
+            "minimum": 1,
+            "maximum": 20000,
+            "default": 1000
+          },
+          "cutoffHz2": {
+            "type": "number",
+            "description": "Upper edge in Hz for band-pass/stop.",
+            "minimum": 1,
+            "maximum": 20000,
+            "default": 4000
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.sidechainCompress",
+      "description": "Sidechain Compressor — compress the active track using the key track as the\ndetector (the \"pumping\" effect), baking the result over the active track's\ntimeline. Continuous and proportional, unlike the binary Auto-Duck.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "keyTrack": {
+            "type": "number",
+            "description": "Index of the detector (key) track, 0-based.",
+            "default": 0
+          },
+          "thresholdDb": {
+            "type": "number",
+            "description": "Key level above which the target is compressed, dBFS.",
+            "minimum": -90,
+            "maximum": 0,
+            "default": -24
+          },
+          "ratio": {
+            "type": "number",
+            "description": "Compression ratio.",
+            "minimum": 1,
+            "maximum": 20,
+            "default": 4
+          },
+          "kneeDb": {
+            "type": "number",
+            "description": "Soft-knee width around the threshold, dB.",
+            "minimum": 0,
+            "maximum": 24,
+            "default": 6
+          },
+          "attackMs": {
+            "type": "number",
+            "description": "Gain-reduction onset time, ms.",
+            "minimum": 1,
+            "maximum": 500,
+            "default": 10
+          },
+          "releaseMs": {
+            "type": "number",
+            "description": "Gain-recovery time, ms.",
+            "minimum": 1,
+            "maximum": 5000,
+            "default": 150
+          },
+          "makeupDb": {
+            "type": "number",
+            "description": "Make-up gain applied to the whole target, dB.",
+            "minimum": 0,
+            "maximum": 24,
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.sidechainDuck",
+      "description": "Sidechain Ducking (Auto-Duck) — dip the active track whenever the key track is\npresent, baking the result over the active track's timeline. Like Audition's\nEssential Sound ▸ Ducking (music ducks under dialogue).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "keyTrack": {
+            "type": "number",
+            "description": "Index of the track that triggers ducking (0-based).",
+            "default": 0
+          },
+          "amountDb": {
+            "type": "number",
+            "description": "Attenuation while the key is active, dB.",
+            "minimum": -48,
+            "maximum": 0,
+            "default": -12
+          },
+          "thresholdDb": {
+            "type": "number",
+            "description": "Key level that engages ducking, dBFS.",
+            "minimum": -90,
+            "maximum": 0,
+            "default": -30
+          },
+          "attackMs": {
+            "type": "number",
+            "description": "Time to duck down once the key crosses the threshold, ms.",
+            "minimum": 1,
+            "maximum": 2000,
+            "default": 60
+          },
+          "releaseMs": {
+            "type": "number",
+            "description": "Time to recover after the key falls silent, ms.",
+            "minimum": 1,
+            "maximum": 5000,
+            "default": 400
+          },
+          "holdMs": {
+            "type": "number",
+            "description": "Keep ducking this long after the key drops below threshold, ms.",
+            "minimum": 0,
+            "maximum": 5000,
+            "default": 200
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.sidechainGate",
+      "description": "Sidechain Gate — gate the active track by the key track so it is audible only\nwhile the key plays (the inverse of Auto-Duck), baked over the active track's\ntimeline. A keyed / \"trance\" gate.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "keyTrack": {
+            "type": "number",
+            "description": "Index of the detector (key) track, 0-based.",
+            "default": 0
+          },
+          "thresholdDb": {
+            "type": "number",
+            "description": "Key level above which the gate opens, dBFS.",
+            "minimum": -90,
+            "maximum": 0,
+            "default": -30
+          },
+          "rangeDb": {
+            "type": "number",
+            "description": "Attenuation while the gate is closed, dB.",
+            "minimum": -90,
+            "maximum": 0,
+            "default": -60
+          },
+          "attackMs": {
+            "type": "number",
+            "description": "Time to open once the key crosses the threshold, ms.",
+            "minimum": 1,
+            "maximum": 500,
+            "default": 5
+          },
+          "holdMs": {
+            "type": "number",
+            "description": "Keep the gate open after the key drops below threshold, ms.",
+            "minimum": 0,
+            "maximum": 5000,
+            "default": 50
+          },
+          "releaseMs": {
+            "type": "number",
+            "description": "Time to close after the hold, ms.",
+            "minimum": 1,
+            "maximum": 5000,
+            "default": 150
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.spectralGain",
+      "description": "Apply gain to a rectangular spectral selection: time range plus frequency band.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "number",
+            "description": "Selection start time in seconds.",
+            "minimum": 0,
+            "maximum": 86400
+          },
+          "end": {
+            "type": "number",
+            "description": "Selection end time in seconds.",
+            "minimum": 0,
+            "maximum": 86400
+          },
+          "minHz": {
+            "type": "number",
+            "description": "Lower frequency edge in Hz.",
+            "minimum": 0,
+            "maximum": 24000
+          },
+          "maxHz": {
+            "type": "number",
+            "description": "Upper frequency edge in Hz.",
+            "minimum": 0,
+            "maximum": 24000
+          },
+          "gainDb": {
+            "type": "number",
+            "description": "Gain applied inside the rectangle; -120 is practical silence.",
+            "minimum": -120,
+            "maximum": 24,
+            "default": -24
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "minHz",
+          "maxHz"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.splitBands",
+      "description": "Frequency Band Splitter: split the current scope into bands at the two crossover\nfrequencies, each on its own new track (three bands; the bands recombine exactly).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "crossover1": {
+            "type": "number",
+            "description": "Lower crossover frequency in Hz.",
+            "minimum": 1,
+            "maximum": 20000,
+            "default": 800
+          },
+          "crossover2": {
+            "type": "number",
+            "description": "Upper crossover frequency in Hz.",
+            "minimum": 1,
+            "maximum": 20000,
+            "default": 3200
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.stereoExpander",
+      "description": "Apply a Stereo Expander (stereo width + centre placement) over the current scope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "expand": {
+            "type": "number",
+            "description": "Stereo width: 100 = unchanged, 0 = mono, up to 300 = wide.",
+            "minimum": 0,
+            "maximum": 300,
+            "default": 100
+          },
+          "centerPan": {
+            "type": "number",
+            "description": "Centre position, −100 hard-left … 100 hard-right.",
+            "minimum": -100,
+            "maximum": 100,
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.swapChannels",
+      "description": "Swap the left and right channels over the current scope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.timeStretch",
+      "description": "Time-stretch the current selection (or scope) by a factor, preserving pitch.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "factor": {
+            "type": "number",
+            "description": "Stretch factor (>1 = longer, <1 = shorter).",
+            "minimum": 0.25,
+            "maximum": 4
+          }
+        },
+        "required": [
+          "factor"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "effect.truePeakLimiter",
+      "description": "True Peak (ISP) Limiter over the current scope — a brickwall limiter that holds\nthe inter-sample (true) peak under a dBTP ceiling using 4× oversampled\ndetection, so the reconstructed signal never clips the converter.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ceilingDb": {
+            "type": "number",
+            "description": "Inter-sample peak ceiling, dBTP.",
+            "minimum": -24,
+            "maximum": 0,
+            "default": -1
+          },
+          "inputBoostDb": {
+            "type": "number",
+            "description": "Gain applied before limiting, dB.",
+            "minimum": 0,
+            "maximum": 36,
+            "default": 0
+          },
+          "lookAheadMs": {
+            "type": "number",
+            "description": "Peak anticipation window, ms.",
+            "minimum": 0,
+            "maximum": 50,
+            "default": 5
+          },
+          "releaseMs": {
+            "type": "number",
+            "description": "Gain recovery time after a peak, ms.",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 100
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "file.batchExport",
+      "description": "Batch-export separate files from the current session: track stems, marker\nregions, or selected clips. The files download through the same path as the\nFile menu's Batch Export commands.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "tracks",
+              "regions",
+              "clips"
+            ],
+            "description": "What to export: \"tracks\", \"regions\", or \"clips\".",
+            "default": "tracks"
+          },
+          "format": {
+            "type": "string",
+            "description": "Audio file format: \"default\", \"wav\", or \"aiff\".",
+            "default": "default"
+          },
+          "bitDepth": {
+            "type": "number",
+            "description": "PCM bit depth for the exported files; 0 uses app default.",
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "file.edl",
+      "description": "Export the session timeline as CMX-style EDL text for Adobe Premiere import.\nUse alongside WAV/AIFF stem export when the NLE needs media files.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "frameRate": {
+            "type": "number",
+            "description": "Non-drop-frame timeline rate for the EDL.",
+            "minimum": 1,
+            "maximum": 120,
+            "default": 30
+          },
+          "includeMuted": {
+            "type": "number",
+            "description": "Include muted/disabled clips and tracks (0 or 1).",
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "file.premiereXml",
+      "description": "Export the session timeline as Final Cut Pro 7 XML text for Adobe Premiere\nimport. Use alongside WAV/AIFF stem export when the NLE needs media files.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "frameRate": {
+            "type": "number",
+            "description": "Non-drop-frame timeline rate for the XML.",
+            "minimum": 1,
+            "maximum": 120,
+            "default": 30
+          },
+          "includeMuted": {
+            "type": "number",
+            "description": "Include muted/disabled clips and tracks (0 or 1).",
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "generate.dtmf",
+      "description": "Generate a DTMF dial-string clip (Audition Generate ▸ DTMF Signals), inserted\nat the playhead. Keys 0–9, *, #, A–D; a space / comma / dash inserts a pause.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dial": {
+            "type": "string",
+            "description": "The dial string, e.g. \"1 800 555 0100\".",
+            "default": "0123456789"
+          },
+          "toneMs": {
+            "type": "number",
+            "description": "Length of each key's tone, ms.",
+            "minimum": 10,
+            "maximum": 2000,
+            "default": 100
+          },
+          "breakMs": {
+            "type": "number",
+            "description": "Silence between tones, ms.",
+            "minimum": 0,
+            "maximum": 2000,
+            "default": 50
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "generate.insert",
+      "description": "Generate a tone or noise clip and insert it at the playhead on the active track.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "sine",
+              "square",
+              "sawtooth",
+              "triangle",
+              "white",
+              "pink",
+              "brown",
+              "chirp",
+              "silence"
+            ],
+            "description": "Generator kind."
+          },
+          "freq": {
+            "type": "number",
+            "description": "Tone frequency in Hz (for tones/chirp).",
+            "minimum": 1,
+            "maximum": 20000,
+            "default": 440
+          },
+          "seconds": {
+            "type": "number",
+            "description": "Clip length in seconds.",
+            "minimum": 0.01,
+            "maximum": 600,
+            "default": 2
+          },
+          "amplitude": {
+            "type": "number",
+            "description": "Peak amplitude.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.7
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "generate.tones",
+      "description": "Generate a Tones clip (Audition Generate ▸ Tones) with frequency modulation and\nharmonics, inserted at the playhead on the active track.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "freq": {
+            "type": "number",
+            "description": "Base frequency in Hz.",
+            "minimum": 1,
+            "maximum": 20000,
+            "default": 440
+          },
+          "seconds": {
+            "type": "number",
+            "description": "Clip length in seconds.",
+            "minimum": 0.01,
+            "maximum": 600,
+            "default": 2
+          },
+          "modDepthHz": {
+            "type": "number",
+            "description": "Frequency-modulation depth in Hz; the pitch swings ±depth/2.",
+            "minimum": 0,
+            "maximum": 5000,
+            "default": 0
+          },
+          "modRateHz": {
+            "type": "number",
+            "description": "Frequency-modulation rate in Hz, the warble speed.",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 0
+          },
+          "harmonics": {
+            "type": "number",
+            "description": "Overtones added above the fundamental,.",
+            "minimum": 0,
+            "maximum": 5,
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "marker.exportCsv",
+      "description": "Export the project's markers as Audition-style CSV (Name, Start, End, Duration,\nType), returned as text.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "marker.importCsv",
+      "description": "Import markers from an Audition-style marker CSV, adding them to the project.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "csv": {
+            "type": "string",
+            "description": "The CSV text (a header plus Name,Start,End,Duration,Type rows).",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mixer.meterBridge",
+      "description": "Read the Mixer meter bridge at the playhead or an explicit timeline position,\nreporting post-fader track, bus, master, insert-tap, and send-tap peak/RMS levels.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "atSec": {
+            "type": "number",
+            "description": "Timeline position in seconds. Negative values use the current playhead.",
+            "default": -1
+          },
+          "windowMs": {
+            "type": "number",
+            "description": "Meter integration window in milliseconds.",
+            "minimum": 10,
+            "maximum": 10000,
+            "default": 250
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "multitrack.bounce",
+      "description": "Bounce to a new track: render the active track (or the whole session mix) down\nto a single clip on a brand-new track, leaving the sources intact.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "track",
+              "session"
+            ],
+            "description": "What to bounce: the active \"track\" or the entire \"session\" mix.",
+            "default": "track"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "plugin.addToTrackRack",
+      "description": "Add a project-managed native audio plug-in to a track rack as an\ninventory-only slot. This still does not host or process the plug-in.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "track": {
+            "type": "number",
+            "description": "Track index, 0-based.",
+            "default": 0
+          },
+          "pluginId": {
+            "type": "string",
+            "description": "Plug-in id returned by plugin.listManaged.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "plugin.importCandidateMetadata",
+      "description": "Import native audio plug-in candidates that already include scanner metadata,\nsuch as version, bundle identifier, validation status, and validation issues.\nThis still does not host or process plug-ins.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "candidatesJson": {
+            "type": "string",
+            "description": "JSON array of candidate objects with at least a path.",
+            "default": "[]"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "plugin.importCandidates",
+      "description": "Scan candidate native audio plug-in paths and store the discovered inventory in\nthis project Audio Plug-In Manager. This still does not host or process plug-ins.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "paths": {
+            "type": "string",
+            "description": "Newline- or semicolon-separated candidate plug-in paths.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "plugin.importRoots",
+      "description": "Recursively scan native audio plug-in search roots and store the discovered\ninventory in this project Audio Plug-In Manager. This still does not host or\nprocess plug-ins.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "roots": {
+            "type": "string",
+            "description": "Newline- or semicolon-separated plug-in search root folders.",
+            "default": ""
+          },
+          "maxDepth": {
+            "type": "number",
+            "description": "Maximum nested folder depth below each root.",
+            "minimum": 0,
+            "maximum": 16,
+            "default": 6
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "plugin.listManaged",
+      "description": "List the project-persisted Audio Plug-In Manager inventory, including\nenablement, inventory-only host status, and stored preset metadata.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "plugin.scanCandidates",
+      "description": "Inventory native audio plug-in candidate paths (.vst3, .vst, .component,\n.dll, .so), returning format, name, status, and path. Candidate paths are\nnewline- or semicolon-separated. This does not host or process plug-ins.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "paths": {
+            "type": "string",
+            "description": "Newline- or semicolon-separated candidate plug-in paths.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "plugin.scanRoots",
+      "description": "Recursively scan native audio plug-in search roots for .vst3, .vst,\n.component, .dll, and .so candidates. This still does not host or process\nplug-ins.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "roots": {
+            "type": "string",
+            "description": "Newline- or semicolon-separated plug-in search root folders.",
+            "default": ""
+          },
+          "maxDepth": {
+            "type": "number",
+            "description": "Maximum nested folder depth below each root.",
+            "minimum": 0,
+            "maximum": 16,
+            "default": 6
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "plugin.searchRoots",
+      "description": "List standard native audio plug-in search roots for VST3, VST2, and Audio\nUnits. This is inventory support only; Rythme does not host native plug-ins yet.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "darwin",
+              "win32",
+              "linux"
+            ],
+            "description": "Target platform: \"auto\", \"darwin\", \"win32\", or \"linux\".",
+            "default": "auto"
+          },
+          "homeDir": {
+            "type": "string",
+            "description": "Optional user home directory for per-user plug-in roots.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "plugin.setEnabled",
+      "description": "Enable or disable a project-managed native plug-in entry.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pluginId": {
+            "type": "string",
+            "description": "Plug-in id returned by plugin.listManaged.",
+            "default": ""
+          },
+          "enabled": {
+            "type": "number",
+            "description": "1 to enable, 0 to disable.",
+            "default": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "plugin.setPreset",
+      "description": "Store preset/state metadata for a project-managed native plug-in entry.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pluginId": {
+            "type": "string",
+            "description": "Plug-in id returned by plugin.listManaged.",
+            "default": ""
+          },
+          "presetName": {
+            "type": "string",
+            "description": "Preset name to remember with the project.",
+            "default": "Default"
+          },
+          "stateJson": {
+            "type": "string",
+            "description": "Optional JSON object of primitive state values.",
+            "default": "{}"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.applyKeyboardShortcutPreset",
+      "description": "Apply a project keyboard shortcut preset to the active shortcut overrides.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Preset id.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.convertSampleRate",
+      "description": "Convert the whole session to a new sample rate (resamples every clip).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "rate": {
+            "type": "number",
+            "description": "Target sample rate in Hz.",
+            "minimum": 8000,
+            "maximum": 192000,
+            "default": 48000
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.deleteCustomWorkspace",
+      "description": "Delete a project-persisted custom workspace layout.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Custom workspace id to delete.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.deleteKeyboardShortcutPreset",
+      "description": "Delete a project keyboard shortcut preset.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Preset id.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.exportKeyboardShortcutPreset",
+      "description": "Export a project keyboard shortcut preset as JSON.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Preset id.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.importKeyboardShortcutPreset",
+      "description": "Import a keyboard shortcut preset from JSON.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "presetJson": {
+            "type": "string",
+            "description": "JSON object with id, name, and shortcuts.",
+            "default": "{}"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.removeKeyboardShortcut",
+      "description": "Remove a project-persisted keyboard shortcut override, restoring the built-in\ndefault for that action.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Shortcut action id to restore.",
+            "default": "edit.split"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.saveCustomWorkspace",
+      "description": "Save a project-persisted custom workspace layout. If layoutJson is empty,\nRythme saves the default dock layout as the custom workspace seed.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Workspace name.",
+            "default": "Custom Workspace"
+          },
+          "layoutJson": {
+            "type": "string",
+            "description": "Serialized DockLayout JSON, or empty to use the default layout.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.saveKeyboardShortcutPreset",
+      "description": "Save the current project keyboard shortcut overrides as a named preset.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Preset name.",
+            "default": "Custom Shortcuts"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.setAnalyzePanelPreferences",
+      "description": "Configure project-persisted Analyze panel spectral edit defaults.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "spectralMinHz": {
+            "type": "number",
+            "description": "Spectral selection lower bound in Hz.",
+            "default": 1000
+          },
+          "spectralMaxHz": {
+            "type": "number",
+            "description": "Spectral selection upper bound in Hz.",
+            "default": 8000
+          },
+          "spectralGainDb": {
+            "type": "number",
+            "description": "Spectral gain amount in dB.",
+            "default": -24
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.setAudioHardware",
+      "description": "Configure session audio hardware and recording preferences.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "inputDeviceId": {
+            "type": "string",
+            "description": "Browser/native input device id, or empty for system default.",
+            "default": ""
+          },
+          "outputDeviceId": {
+            "type": "string",
+            "description": "Browser/native output device id, or empty for system default.",
+            "default": ""
+          },
+          "hardwareSampleRate": {
+            "type": "number",
+            "description": "Requested hardware sample rate in Hz.",
+            "minimum": 8000,
+            "maximum": 192000,
+            "default": 48000
+          },
+          "inputChannels": {
+            "type": "number",
+            "description": "Requested hardware input channels.",
+            "minimum": 1,
+            "maximum": 8,
+            "default": 2
+          },
+          "inputMonitoring": {
+            "type": "string",
+            "enum": [
+              "off",
+              "armed",
+              "always"
+            ],
+            "description": "Input monitoring mode: \"off\", \"armed\", or \"always\".",
+            "default": "off"
+          },
+          "latencyCompensationMs": {
+            "type": "number",
+            "description": "Timeline placement compensation in milliseconds.",
+            "minimum": -1000,
+            "maximum": 1000,
+            "default": 0
+          },
+          "preRollSeconds": {
+            "type": "number",
+            "description": "Pre-roll before punch/playhead in seconds.",
+            "minimum": 0,
+            "maximum": 30,
+            "default": 0
+          },
+          "countInBars": {
+            "type": "number",
+            "description": "Count-in length in bars before recording.",
+            "minimum": 0,
+            "maximum": 8,
+            "default": 0
+          },
+          "meterCalibrationDb": {
+            "type": "number",
+            "description": "Display offset applied to meter dB readouts.",
+            "minimum": -60,
+            "maximum": 60,
+            "default": 0
+          },
+          "meterPeakHoldMs": {
+            "type": "number",
+            "description": "Software mixer meter peak-hold duration in milliseconds.",
+            "minimum": 0,
+            "maximum": 10000,
+            "default": 1200
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.setChannelCount",
+      "description": "Set the project output channel count for mono, stereo, or surround sessions.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "number",
+            "description": "Output channels: 1 mono, 2 stereo, 6 for 5.1.",
+            "minimum": 1,
+            "maximum": 8,
+            "default": 2
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.setEditorPreferences",
+      "description": "Configure session editor display/editing preferences that persist with the\nRythme project.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "editorMode": {
+            "type": "string",
+            "enum": [
+              "multitrack",
+              "waveform"
+            ],
+            "description": "Default editor mode: \"multitrack\" or \"waveform\".",
+            "default": "multitrack"
+          },
+          "tool": {
+            "type": "string",
+            "enum": [
+              "select",
+              "razor",
+              "marquee",
+              "envelope",
+              "fade",
+              "marker",
+              "hand",
+              "zoom"
+            ],
+            "description": "Default tool: select, razor, marquee, envelope, fade, marker, hand, or zoom.",
+            "default": "select"
+          },
+          "snap": {
+            "type": "number",
+            "description": "Whether snapping is enabled by default (0/1).",
+            "default": 1
+          },
+          "displayTimeFormat": {
+            "type": "string",
+            "enum": [
+              "decimal",
+              "smpte30",
+              "samples",
+              "barsBeats"
+            ],
+            "description": "Display time format: decimal, smpte30, samples, or barsBeats.",
+            "default": "decimal"
+          },
+          "spectralMinHz": {
+            "type": "number",
+            "description": "Spectral display lower bound in Hz.",
+            "default": 0
+          },
+          "spectralMaxHz": {
+            "type": "number",
+            "description": "Spectral display upper bound in Hz.",
+            "default": 24000
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.setEffectsPanelPreferences",
+      "description": "Configure project-persisted Effects panel default parameters from JSON.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "defaultsJson": {
+            "type": "string",
+            "description": "JSON object with EffectsPanelPreferences numeric fields.",
+            "default": "{}"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.setKeyboardShortcut",
+      "description": "Customize a project-persisted keyboard shortcut for an existing keyboard\naction. The override replaces the built-in shortcut for that action.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Shortcut action id, such as edit.split, project.save, or tool.razor.",
+            "default": "edit.split"
+          },
+          "key": {
+            "type": "string",
+            "description": "Key name, such as k, space, home, arrowleft, or backspace.",
+            "default": "k"
+          },
+          "mod": {
+            "type": "number",
+            "description": "Whether Cmd/Ctrl is held (0/1).",
+            "default": 1
+          },
+          "shift": {
+            "type": "number",
+            "description": "Whether Shift is held (0/1).",
+            "default": 0
+          },
+          "alt": {
+            "type": "number",
+            "description": "Whether Alt/Option is held (0/1).",
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.setMasterAutomationMode",
+      "description": "Set the master automation mode. \"off\" bypasses master automation during render;\nwrite/touch/latch persist the session mode for automation workflows.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "read",
+              "off",
+              "write",
+              "touch",
+              "latch"
+            ],
+            "description": "Automation mode: \"read\", \"off\", \"write\", \"touch\", or \"latch\".",
+            "default": "read"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.setMasterGain",
+      "description": "Set the master output gain in decibels.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "gainDb": {
+            "type": "number",
+            "description": "Master gain in dB.",
+            "minimum": -60,
+            "maximum": 12
+          }
+        },
+        "required": [
+          "gainDb"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.setPunchRange",
+      "description": "Set or clear the punch-in recording range.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "startSec": {
+            "type": "number",
+            "description": "Punch-in start in seconds. Use a negative value to clear.",
+            "default": -1
+          },
+          "endSec": {
+            "type": "number",
+            "description": "Punch-out end in seconds.",
+            "default": -1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.setTempo",
+      "description": "Set the project tempo in beats per minute.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tempo": {
+            "type": "number",
+            "description": "Tempo in BPM.",
+            "minimum": 20,
+            "maximum": 400
+          }
+        },
+        "required": [
+          "tempo"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "session.new",
+      "description": "Start a new, empty session (4 tracks), replacing the current project.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "tool.set",
+      "description": "Select the active timeline tool.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string",
+            "enum": [
+              "select",
+              "razor",
+              "marquee",
+              "envelope",
+              "fade",
+              "marker",
+              "hand",
+              "zoom"
+            ],
+            "description": "Tool to activate."
+          }
+        },
+        "required": [
+          "tool"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "track.addRackSlot",
+      "description": "Add a persistent built-in effect slot to a track's nondestructive rack.\nGain and pan slot ids can be passed to track.automateRackParam.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "track": {
+            "type": "number",
+            "description": "Track index, 0-based.",
+            "default": 0
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "gain",
+              "pan",
+              "compressor",
+              "limiter",
+              "tubeCompressor",
+              "speechLeveler",
+              "parametricEQ",
+              "graphicEQ",
+              "notchFilter",
+              "dehummer",
+              "declicker",
+              "deesser",
+              "centerChannel",
+              "channelMixer",
+              "graphicPhaseShifter",
+              "autoPhaseCorrect",
+              "phaser",
+              "stereoExpander",
+              "waveshaper",
+              "guitarSuite",
+              "exciter",
+              "vocalEnhancer",
+              "mastering",
+              "delay",
+              "analogDelay",
+              "echo",
+              "studioReverb",
+              "fullReverb",
+              "invertPolarity",
+              "silence"
+            ],
+            "description": "Built-in slot kind: gain/pan/dynamics/EQ/restoration/stereo/modulation/special/delay/reverb rack processor.",
+            "default": "gain"
+          },
+          "value": {
+            "type": "number",
+            "description": "Primary initial value: gain dB, pan, threshold/ceiling dB, EQ gain/frequency, width, or delay time.",
+            "default": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "track.automateRackParam",
+      "description": "Add a persistent automation lane for a built-in track rack slot parameter.\nSupports gain.gainDb and pan.pan; values are rendered as parameter offsets.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "track": {
+            "type": "number",
+            "description": "Track index, 0-based.",
+            "default": 0
+          },
+          "slotId": {
+            "type": "string",
+            "description": "Effect slot id returned by track.addRackSlot.",
+            "default": ""
+          },
+          "param": {
+            "type": "string",
+            "enum": [
+              "gainDb",
+              "pan"
+            ],
+            "description": "Parameter to automate: \"gainDb\" for gain slots or \"pan\" for pan slots.",
+            "default": "gainDb"
+          },
+          "startSec": {
+            "type": "number",
+            "description": "First point time in seconds.",
+            "default": 0
+          },
+          "startValue": {
+            "type": "number",
+            "description": "First point value in dB or pan units.",
+            "default": 0
+          },
+          "endSec": {
+            "type": "number",
+            "description": "Second point time in seconds.",
+            "default": 1
+          },
+          "endValue": {
+            "type": "number",
+            "description": "Second point value in dB or pan units.",
+            "default": 0
+          },
+          "interpolation": {
+            "type": "string",
+            "enum": [
+              "linear",
+              "hold"
+            ],
+            "description": "Interpolation mode: \"linear\" or \"hold\".",
+            "default": "linear"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "track.setAudioRole",
+      "description": "Assign an Essential Sound role to a track for role presets and automatic\nmusic-under-dialogue ducking.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "track": {
+            "type": "number",
+            "description": "Track index, 0-based.",
+            "default": 0
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "dialogue",
+              "music",
+              "sfx",
+              "ambience",
+              "none"
+            ],
+            "description": "Essential Sound role, or \"none\" to clear it.",
+            "default": "dialogue"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "track.setAutomationMode",
+      "description": "Set a track automation mode. \"off\" bypasses track automation during render;\nwrite/touch/latch persist the session mode for automation workflows.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "track": {
+            "type": "number",
+            "description": "Track index, 0-based.",
+            "default": 0
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "read",
+              "off",
+              "write",
+              "touch",
+              "latch"
+            ],
+            "description": "Automation mode: \"read\", \"off\", \"write\", \"touch\", or \"latch\".",
+            "default": "read"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "track.setInput",
+      "description": "Assign a hardware input channel/device to a track for recording.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "track": {
+            "type": "number",
+            "description": "Track index, 0-based.",
+            "default": 0
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "stereo",
+              "mono",
+              "left",
+              "right",
+              "input1",
+              "input2",
+              "input3",
+              "input4",
+              "input5",
+              "input6",
+              "input7",
+              "input8",
+              "clear"
+            ],
+            "description": "Input channel mapping: \"stereo\", \"mono\", \"left\", \"right\", \"input1\"..\"input8\", or \"clear\".",
+            "default": "stereo"
+          },
+          "deviceId": {
+            "type": "string",
+            "description": "Optional device id overriding the session input device.",
+            "default": ""
+          },
+          "monitoring": {
+            "type": "string",
+            "enum": [
+              "session",
+              "off",
+              "armed",
+              "always"
+            ],
+            "description": "Track monitoring override: \"session\", \"off\", \"armed\", or \"always\".",
+            "default": "session"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "track.setSurroundPan",
+      "description": "Set the 5.1 surround panner for a track. The project should have 6+ output\nchannels for this to affect rendering.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "track": {
+            "type": "number",
+            "description": "Track index, 0-based.",
+            "default": 0
+          },
+          "x": {
+            "type": "number",
+            "description": "Left/right position: -1 left, 0 center, 1 right.",
+            "default": 0
+          },
+          "y": {
+            "type": "number",
+            "description": "Front/rear position: -1 rear, 0 middle, 1 front.",
+            "default": 1
+          },
+          "center": {
+            "type": "number",
+            "description": "Amount sent to the center speaker.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0
+          },
+          "lfe": {
+            "type": "number",
+            "description": "Amount sent to LFE.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0
+          },
+          "divergence": {
+            "type": "number",
+            "description": "Amount spread across corner speakers.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transport.play",
+      "description": "Start playback from the current playhead.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transport.returnToZero",
+      "description": "Stop and return the playhead to the start (or the selection start).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transport.seek",
+      "description": "Move the playhead to a position in seconds.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "seconds": {
+            "type": "number",
+            "description": "Playhead position in seconds.",
+            "minimum": 0,
+            "maximum": 86400
+          }
+        },
+        "required": [
+          "seconds"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transport.stop",
+      "description": "Stop playback.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transport.toggle",
+      "description": "Toggle playback (play if stopped, stop if playing).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transport.toggleMetronome",
+      "description": "Toggle the metronome on or off.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "view.setEditorMode",
+      "description": "Switch between Rythme's Audition-style editor surfaces.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "multitrack",
+              "waveform"
+            ],
+            "description": "Editor mode: \"multitrack\" or \"waveform\".",
+            "default": "multitrack"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "view.setWorkspace",
+      "description": "Select the active project workspace by built-in or custom workspace id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Built-in or custom workspace id.",
+            "default": "default"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "view.zoom",
+      "description": "Set the timeline zoom in pixels per second.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pxPerSecond": {
+            "type": "number",
+            "description": "Horizontal zoom in pixels per second.",
+            "minimum": 2,
+            "maximum": 8000
+          }
+        },
+        "required": [
+          "pxPerSecond"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "view.zoomBy",
+      "description": "Zoom the timeline in or out by a multiplicative factor.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "factor": {
+            "type": "number",
+            "description": "Zoom factor (>1 zooms in, <1 zooms out).",
+            "minimum": 0.05,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "factor"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

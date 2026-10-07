@@ -1,0 +1,7 @@
+# pnpm v10+ blocks dependency build scripts by default. Vite's esbuild ships a
+# native binary via a postinstall build, so it must be approved here — otherwise
+# `pnpm run build` / `pnpm tauri build` fail with ERR_PNPM_IGNORED_BUILDS.
+allowBuilds:
+  esbuild: true
+onlyBuiltDependencies:
+  - esbuild

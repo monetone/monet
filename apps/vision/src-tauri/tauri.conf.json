@@ -1,0 +1,135 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Monet Vision",
+  "version": "0.1.0",
+  "identifier": "dev.monet.vision",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "pnpm vite --port 1420 --strictPort",
+    "beforeBuildCommand": "pnpm run build:release"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "macOSPrivateApi": true,
+    "windows": [],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'; connect-src 'self' ipc: http://ipc.localhost asset: http://asset.localhost ws://localhost:1420 http://localhost:1420 blob: data:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$APPDATA/models/**"
+        ]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "macOS": {
+      "bundleName": "Vision"
+    },
+    "targets": "all",
+    "fileAssociations": [
+      {
+        "ext": [
+          "png",
+          "jpg",
+          "jpeg",
+          "webp",
+          "avif",
+          "heic",
+          "heif",
+          "bmp",
+          "tif",
+          "tiff",
+          "gif",
+          "tga",
+          "pnm",
+          "ppm",
+          "pgm",
+          "pbm",
+          "pcx",
+          "jp2",
+          "jpf",
+          "jpx",
+          "j2k",
+          "j2c",
+          "jpc",
+          "cin",
+          "dpx",
+          "sdpx",
+          "iff",
+          "ilbm",
+          "lbm",
+          "dcm",
+          "dc3",
+          "dic",
+          "dicom",
+          "rawps"
+        ],
+        "name": "Image",
+        "description": "Image",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "psd",
+          "psb",
+          "xcf"
+        ],
+        "name": "Layered Image",
+        "description": "Layered image",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "cr2",
+          "cr3",
+          "nef",
+          "arw",
+          "dng",
+          "raf",
+          "rw2",
+          "orf",
+          "pef",
+          "srw",
+          "raw",
+          "nrw",
+          "mrw",
+          "dcr"
+        ],
+        "name": "Camera Raw Image",
+        "description": "Camera raw image",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "mvis"
+        ],
+        "name": "Monet Vision Document",
+        "description": "Monet Vision Document",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "mart",
+          "mgal",
+          "mcin",
+          "mjou",
+          "mani",
+          "mryt"
+        ],
+        "name": "Monet Document",
+        "description": "Monet document from another app",
+        "role": "Viewer"
+      }
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

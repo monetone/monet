@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- mask-type="alpha": composites by the mask content's alpha channel, not luminance -->
+  <defs>
+    <linearGradient id="ag" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="1"/>
+    </linearGradient>
+    <mask id="am" mask-type="alpha"><rect x="0" y="0" width="400" height="300" fill="url(#ag)"/></mask>
+  </defs>
+  <rect x="40" y="50" width="320" height="180" fill="#3ac06a" mask="url(#am)"/>
+  <text x="40" y="270" font-size="20" fill="#333333">alpha mask</text>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- patternContentUnits=objectBoundingBox: tile child coords are 0..1 of the shape bbox -->
+  <defs>
+    <pattern id="grid" width="0.25" height="0.25" patternContentUnits="objectBoundingBox">
+      <rect width="0.25" height="0.25" fill="#eef7ff"/>
+      <circle cx="0.125" cy="0.125" r="0.08" fill="#4a9eff"/>
+    </pattern>
+  </defs>
+  <rect x="40" y="40" width="320" height="220" fill="url(#grid)" stroke="#222222" stroke-width="3"/>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- <pattern> tile used as a fill -->
+  <defs>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <rect width="24" height="24" fill="#ffe0ec"/>
+      <circle cx="12" cy="12" r="6" fill="#e0573a"/>
+    </pattern>
+  </defs>
+  <rect x="40" y="40" width="320" height="220" fill="url(#dots)" stroke="#222222" stroke-width="3"/>
+</svg>

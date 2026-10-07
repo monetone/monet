@@ -1,0 +1,446 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-04T00:00:00Z",
+  "title": "Design System: Monet Progress Board (site/)",
+  "extensions": {
+    "colorMeta": {
+      "desktop-0": {
+        "role": "neutral",
+        "displayName": "Cool Near-Black Desktop",
+        "canonical": "#0b0e14",
+        "tonalRamp": [
+          "#0b0e14",
+          "#131722",
+          "#1a1f2c"
+        ]
+      },
+      "glass-1": {
+        "role": "neutral",
+        "displayName": "Glass, Second Depth",
+        "canonical": "rgba(255, 255, 255, 0.06)",
+        "tonalRamp": [
+          "rgba(255, 255, 255, 0.04)",
+          "rgba(255, 255, 255, 0.06)",
+          "rgba(255, 255, 255, 0.09)",
+          "rgba(255, 255, 255, 0.13)"
+        ]
+      },
+      "stroke-soft": {
+        "role": "neutral",
+        "displayName": "Hairline Stroke",
+        "canonical": "rgba(255, 255, 255, 0.06)",
+        "tonalRamp": [
+          "rgba(255, 255, 255, 0.06)",
+          "rgba(255, 255, 255, 0.10)",
+          "rgba(255, 255, 255, 0.16)"
+        ]
+      },
+      "text-1": {
+        "role": "neutral",
+        "displayName": "Primary Text",
+        "canonical": "rgba(255, 255, 255, 0.92)",
+        "tonalRamp": [
+          "rgba(255, 255, 255, 0.92)",
+          "rgba(255, 255, 255, 0.62)",
+          "rgba(255, 255, 255, 0.52)",
+          "rgba(255, 255, 255, 0.30)"
+        ]
+      },
+      "text-3": {
+        "role": "neutral",
+        "displayName": "Third Tint (raised for this surface — 0.38 in the app)",
+        "canonical": "rgba(255, 255, 255, 0.52)",
+        "tonalRamp": [
+          "rgba(255, 255, 255, 0.92)",
+          "rgba(255, 255, 255, 0.62)",
+          "rgba(255, 255, 255, 0.52)",
+          "rgba(255, 255, 255, 0.30)"
+        ]
+      },
+      "text-disabled": {
+        "role": "neutral",
+        "displayName": "Disabled Tint (raised for this surface — 0.22 in the app; separator glyph only)",
+        "canonical": "rgba(255, 255, 255, 0.30)",
+        "tonalRamp": [
+          "rgba(255, 255, 255, 0.30)",
+          "rgba(255, 255, 255, 0.22)"
+        ]
+      },
+      "accent-raster": {
+        "role": "primary",
+        "displayName": "Raster Cyan",
+        "canonical": "oklch(0.78 0.14 200)",
+        "tonalRamp": [
+          "oklch(0.15 0.14 200)",
+          "oklch(0.26 0.14 200)",
+          "oklch(0.37 0.14 200)",
+          "oklch(0.48 0.14 200)",
+          "oklch(0.59 0.14 200)",
+          "oklch(0.70 0.14 200)",
+          "oklch(0.81 0.14 200)",
+          "oklch(0.92 0.14 200)"
+        ]
+      },
+      "accent-vector": {
+        "role": "primary",
+        "displayName": "Vector Amber",
+        "canonical": "oklch(0.80 0.14 70)",
+        "tonalRamp": [
+          "oklch(0.15 0.14 70)",
+          "oklch(0.26 0.14 70)",
+          "oklch(0.37 0.14 70)",
+          "oklch(0.48 0.14 70)",
+          "oklch(0.59 0.14 70)",
+          "oklch(0.70 0.14 70)",
+          "oklch(0.81 0.14 70)",
+          "oklch(0.92 0.14 70)"
+        ]
+      },
+      "accent-audio": {
+        "role": "primary",
+        "displayName": "Audio Violet",
+        "canonical": "oklch(0.74 0.16 305)",
+        "tonalRamp": [
+          "oklch(0.15 0.16 305)",
+          "oklch(0.26 0.16 305)",
+          "oklch(0.37 0.16 305)",
+          "oklch(0.48 0.16 305)",
+          "oklch(0.59 0.16 305)",
+          "oklch(0.70 0.16 305)",
+          "oklch(0.81 0.16 305)",
+          "oklch(0.92 0.16 305)"
+        ]
+      },
+      "accent-motion": {
+        "role": "primary",
+        "displayName": "Motion Magenta",
+        "canonical": "oklch(0.75 0.18 350)",
+        "tonalRamp": [
+          "oklch(0.15 0.18 350)",
+          "oklch(0.26 0.18 350)",
+          "oklch(0.37 0.18 350)",
+          "oklch(0.48 0.18 350)",
+          "oklch(0.59 0.18 350)",
+          "oklch(0.70 0.18 350)",
+          "oklch(0.81 0.18 350)",
+          "oklch(0.92 0.18 350)"
+        ]
+      },
+      "accent-game": {
+        "role": "primary",
+        "displayName": "Jouer Green (app-local, not in tokens.css)",
+        "canonical": "oklch(0.80 0.16 150)",
+        "tonalRamp": [
+          "oklch(0.15 0.16 150)",
+          "oklch(0.26 0.16 150)",
+          "oklch(0.37 0.16 150)",
+          "oklch(0.48 0.16 150)",
+          "oklch(0.59 0.16 150)",
+          "oklch(0.70 0.16 150)",
+          "oklch(0.81 0.16 150)",
+          "oklch(0.92 0.16 150)"
+        ]
+      },
+      "alarm-red": {
+        "role": "tertiary",
+        "displayName": "Alarm Red (failing test count, declared inline)",
+        "canonical": "oklch(0.72 0.17 25)",
+        "tonalRamp": [
+          "oklch(0.15 0.17 25)",
+          "oklch(0.26 0.17 25)",
+          "oklch(0.37 0.17 25)",
+          "oklch(0.48 0.17 25)",
+          "oklch(0.59 0.17 25)",
+          "oklch(0.70 0.17 25)",
+          "oklch(0.81 0.17 25)",
+          "oklch(0.92 0.17 25)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The single h1. Capped at 21ch with text-wrap: balance."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "App name in each panel header."
+      },
+      "lede": {
+        "displayName": "Lede",
+        "purpose": "The two opening paragraphs, capped at 68ch."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Page base. 14px here against Monet UI's 12px window base — reading distance, not app density."
+      },
+      "label": {
+        "displayName": "Section Label",
+        "purpose": "Adopted verbatim from .monet-section-label. Every panel heading and column header."
+      },
+      "mono": {
+        "displayName": "Mono Readout",
+        "purpose": "Every number on the page. Always tabular-nums."
+      }
+    },
+    "shadows": [
+      {
+        "name": "panel-lift",
+        "value": "0 24px 80px -8px rgba(0, 0, 0, 0.55), inset 0 0.5px 0 rgba(255, 255, 255, 0.22)",
+        "purpose": "The only elevated surface on the page. First layer of Monet UI's --shadow-window plus the top catchlight; the remaining two layers are dropped because the panel already carries a real 0.5px border."
+      },
+      {
+        "name": "accent-glow",
+        "value": "0 0 8px var(--accent)",
+        "purpose": "On the meter's lit fill only. Inherited verbatim from .monet-slider .fill."
+      },
+      {
+        "name": "track-recess",
+        "value": "inset 0 0.5px 0 rgba(0, 0, 0, 0.3)",
+        "purpose": "Meter track. Adopted verbatim from .monet-slider."
+      },
+      {
+        "name": "icon-lift-strip",
+        "value": "drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45))",
+        "purpose": "Suite strip app icons. A filter rather than a box-shadow because the icons are transparent PNGs."
+      },
+      {
+        "name": "icon-lift-panel",
+        "value": "drop-shadow(0 6px 16px rgba(0, 0, 0, 0.5))",
+        "purpose": "App panel header icons."
+      },
+      {
+        "name": "focus-ring",
+        "value": "0 0 0 1px color-mix(in oklch, var(--accent) 75%, transparent), 0 0 0 4px color-mix(in oklch, var(--accent) 26%, transparent)",
+        "purpose": "Keyboard focus on links, capability cells and strip cells. Monet UI's two-layer accent ring with an outset inner ring (its own is inset 1px at 70% plus 3px at 28%)."
+      },
+      {
+        "name": "blur-strong",
+        "value": "blur(40px) saturate(180%)",
+        "purpose": "Panel backdrop. Monet UI's --blur-strong, inlined literally — this page does not declare the token."
+      },
+      {
+        "name": "blur-medium",
+        "value": "blur(24px) saturate(160%)",
+        "purpose": "Sticky chrome backdrop. Monet UI's --blur-medium, inlined literally."
+      }
+    ],
+    "motion": [
+      {
+        "name": "answered-by-default",
+        "value": ".meter fills render at scaleX(var(--built)) in the base rule; an inline <head> script sets document.documentElement.className = \"js\", and .js .meter .built/.covered { transform: scaleX(0) } is the only rule that empties them",
+        "purpose": "Progressive-enhancement inversion. A host CSP that blocks the inline script yields a correct static page instead of 82 empty bars. Every animation rule is scoped under .js for the same reason."
+      },
+      {
+        "name": "meter-settle",
+        "value": "transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The page's one authored animation, attached to one component class. Meters scale into value on scroll-into-view via IntersectionObserver (rootMargin 0px 0px -12% 0px, threshold 0.12), fired once per group. Not a page-entrance system: sections do not fade in and panels do not rise. Introduced by this surface."
+      },
+      {
+        "name": "meter-stagger",
+        "value": "min(index * 32ms, 240ms); lit fill trails its faint fill by a further 100ms",
+        "purpose": "Within a .areas group, so a dense app reads as a sequence of readings."
+      },
+      {
+        "name": "hover-tint",
+        "value": "background 0.18s ease",
+        "purpose": "Suite strip cell hover. Monet UI's idiom, used verbatim."
+      },
+      {
+        "name": "hover-lift",
+        "value": "transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "Suite strip icon rise on hover. Monet UI's easing curve."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "all durations clamped to 0.001ms; script calls lightAll() so every meter is pre-filled at its real value",
+        "purpose": "prefers-reduced-motion: reduce. The same pre-filled path runs when IntersectionObserver is absent."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "xl",
+        "value": "1080px"
+      },
+      {
+        "name": "lg",
+        "value": "900px"
+      },
+      {
+        "name": "md",
+        "value": "860px"
+      },
+      {
+        "name": "sm",
+        "value": "720px"
+      },
+      {
+        "name": "xs",
+        "value": "460px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Two-Stage Meter",
+      "kind": "custom",
+      "refersTo": "meter-track",
+      "description": "The signature component. One track, two fills: faint = how much exists, lit = how much of that is also tested. Renders at value with no script; the .js class is the only thing that rewinds it so it can animate. Both fills use scaleX, never width.",
+      "html": "<span class=\"ds-meter\" style=\"--built:0.72;--covered:0.54\"><span class=\"ds-meter-track\"><span class=\"ds-meter-built\"></span><span class=\"ds-meter-covered\"></span></span></span>",
+      "css": ".ds-meter { display: block; width: 100%; --accent: var(--accent-raster, oklch(0.78 0.14 200)); } .ds-meter-track { position: relative; display: block; height: 4px; border-radius: 2px; background: var(--glass-0, rgba(255,255,255,0.04)); box-shadow: inset 0 0.5px 0 rgba(0,0,0,0.3); overflow: hidden; } .ds-meter-built, .ds-meter-covered { position: absolute; inset: 0; transform-origin: left center; transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); } /* default IS the answered state — no script required */ .ds-meter-built { transform: scaleX(var(--built)); background: color-mix(in oklch, var(--accent) 34%, transparent); } .ds-meter-covered { transform: scaleX(var(--covered)); background: var(--accent); opacity: 0.92; box-shadow: 0 0 8px var(--accent); } /* .js on <html> is the ONLY thing that empties them, so they can animate in */ .js .ds-meter-built, .js .ds-meter-covered { transform: scaleX(0); } .js .is-lit .ds-meter-built { transform: scaleX(var(--built)); } .js .is-lit .ds-meter-covered { transform: scaleX(var(--covered)); transition-delay: 0.1s; }"
+    },
+    {
+      "name": "Meter Readouts",
+      "kind": "custom",
+      "refersTo": "meter-track",
+      "description": "The two raw percentages that always accompany a meter. Built in text-2, tested in text-1, both mono and tabular. Each carries a verbose sr-only label plus a one-word .mini label that becomes visible at <=460px, where the column header has scrolled away.",
+      "html": "<span class=\"ds-vals\"><span class=\"ds-v ds-v-built\"><b>72</b><i>%</i><span class=\"ds-sr-only\"> built</span><span class=\"ds-mini\" aria-hidden=\"true\">built</span></span><span class=\"ds-v ds-v-tested\"><b>75</b><i>%</i><span class=\"ds-sr-only\"> of that covered by tests</span><span class=\"ds-mini\" aria-hidden=\"true\">tested</span></span></span>",
+      "css": ".ds-vals { display: inline-flex; align-items: baseline; gap: 10px; font-family: var(--font-mono, \"JetBrains Mono\", \"SF Mono\", ui-monospace, Menlo, monospace); font-variant-numeric: tabular-nums; font-size: 11.5px; white-space: nowrap; } .ds-v { display: inline-flex; align-items: baseline; min-width: 34px; justify-content: flex-end; } .ds-v i { font-style: normal; color: var(--text-3, rgba(255,255,255,0.52)); font-size: 9.5px; margin-left: 1px; } .ds-v-built b { font-weight: 500; color: var(--text-2, rgba(255,255,255,0.62)); } .ds-v-tested b { font-weight: 500; color: var(--text-1, rgba(255,255,255,0.92)); } .ds-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .ds-mini { display: none; font-family: var(--font-ui, system-ui, sans-serif); font-size: 9px; color: var(--text-3, rgba(255,255,255,0.52)); letter-spacing: 0.04em; margin-left: 3px; } @media (max-width: 460px) { .ds-mini { display: inline; } .ds-v { min-width: 0; gap: 0; } }"
+    },
+    {
+      "name": "Capability Cell",
+      "kind": "custom",
+      "refersTo": "matrix-cell",
+      "description": "Four states drawn in one stroke weight, authored in a 12-unit viewBox and rendered at 14px. Present and partial take the column accent; both negative states are text-3, held at the 3:1 WCAG 1.4.11 floor for meaningful graphics. tabindex=0 so the notes are keyboard reachable.",
+      "html": "<span class=\"ds-cell ds-is-full\"><span class=\"ds-cell-in\" role=\"img\" tabindex=\"0\" aria-label=\"Monet Vision — Document format: Present\"><svg viewBox=\"0 0 12 12\" aria-hidden=\"true\"><rect x=\"1\" y=\"1\" width=\"10\" height=\"10\" rx=\"2.5\" fill=\"currentColor\"/></svg></span></span><span class=\"ds-cell ds-is-partial\"><span class=\"ds-cell-in\" role=\"img\" tabindex=\"0\" aria-label=\"Monet Anime — Document format: Partial\"><svg viewBox=\"0 0 12 12\" aria-hidden=\"true\"><path d=\"M3.5 1h5A2.5 2.5 0 0 1 11 3.5v5A2.5 2.5 0 0 1 8.5 11H6V1Z\" fill=\"currentColor\"/><rect x=\"1.5\" y=\"1.5\" width=\"9\" height=\"9\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1\"/></svg></span></span><span class=\"ds-cell ds-is-none\"><span class=\"ds-cell-in\" role=\"img\" tabindex=\"0\" aria-label=\"Monet Anime — Agent control: Absent\"><svg viewBox=\"0 0 12 12\" aria-hidden=\"true\"><rect x=\"1.5\" y=\"1.5\" width=\"9\" height=\"9\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1\"/></svg></span></span><span class=\"ds-cell ds-is-na\"><span class=\"ds-cell-in\" role=\"img\" tabindex=\"0\" aria-label=\"Monet Rythme — Vector layers: Not applicable\"><svg viewBox=\"0 0 12 12\" aria-hidden=\"true\"><rect x=\"2\" y=\"5.5\" width=\"8\" height=\"1\" rx=\"0.5\" fill=\"currentColor\"/></svg></span></span>",
+      "css": ".ds-cell { display: inline-block; text-align: center; padding: 8px; min-width: 62px; --accent: var(--accent-raster, oklch(0.78 0.14 200)); } .ds-cell-in { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: var(--radius-control, 7px); cursor: default; } .ds-cell svg { width: 14px; height: 14px; display: block; } .ds-is-full .ds-cell-in { color: var(--accent); } .ds-is-partial .ds-cell-in { color: color-mix(in oklch, var(--accent) 62%, transparent); } .ds-is-none .ds-cell-in { color: var(--text-3, rgba(255,255,255,0.52)); } .ds-is-na .ds-cell-in { color: var(--text-3, rgba(255,255,255,0.52)); } .ds-cell-in:focus-visible { outline: none; box-shadow: 0 0 0 1px color-mix(in oklch, var(--accent) 75%, transparent), 0 0 0 4px color-mix(in oklch, var(--accent) 26%, transparent); }"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "The page's only elevated surface. Glass over a strong blur, hairline border, 14px window radius, with a recessed header band adopted from the app's in-panel tab strip.",
+      "html": "<section class=\"ds-panel\"><div class=\"ds-panel-head\"><h2 class=\"ds-section-label\">Shared capabilities</h2><p class=\"ds-panel-note\">The substrate is the product. These ten rows are the things an app gets by being part of the monorepo.</p></div><div class=\"ds-panel-body\">…</div></section>",
+      "css": ".ds-panel { background: var(--glass-1, rgba(255,255,255,0.06)); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); border: 0.5px solid var(--stroke-soft, rgba(255,255,255,0.06)); border-radius: var(--radius-window, 14px); box-shadow: 0 24px 80px -8px rgba(0,0,0,0.55), inset 0 0.5px 0 var(--hi-top, rgba(255,255,255,0.22)); overflow: hidden; } .ds-panel-head { padding: 18px 22px 16px; background: rgba(0,0,0,0.16); border-bottom: 0.5px solid var(--stroke-soft, rgba(255,255,255,0.06)); } .ds-panel-note { margin: 10px 0 0; max-width: 68ch; font-size: 13px; line-height: 1.55; color: var(--text-2, rgba(255,255,255,0.62)); } .ds-panel-body { padding: 20px 22px 24px; }"
+    },
+    {
+      "name": "Section Label",
+      "kind": "custom",
+      "refersTo": "section-label",
+      "description": "Adopted verbatim from .monet-section-label (10px/600/0.08em/uppercase/text-3). Only the margin differs.",
+      "html": "<h2 class=\"ds-section-label\">The apps</h2>",
+      "css": ".ds-section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3, rgba(255,255,255,0.52)); margin: 0; }"
+    },
+    {
+      "name": "Maturity Chip",
+      "kind": "chip",
+      "refersTo": "chip-maturity",
+      "description": "Status badge on each app header. Text tint steps down by maturity; the production variant fills with the app accent at 20%. Deviates from .monet-chip: shorter, pill-radiused, hairline-ringed instead of catchlit.",
+      "html": "<span class=\"ds-chip ds-chip-production\">Production</span><span class=\"ds-chip ds-chip-alpha\">Alpha</span><span class=\"ds-chip ds-chip-scaffold\">Scaffold</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; height: 22px; padding: 0 10px; margin-right: 8px; border-radius: var(--radius-pill, 999px); font-size: 10.5px; font-weight: 500; letter-spacing: 0.01em; white-space: nowrap; background: var(--glass-1, rgba(255,255,255,0.06)); color: var(--text-2, rgba(255,255,255,0.62)); box-shadow: inset 0 0 0 0.5px var(--stroke-medium, rgba(255,255,255,0.10)); --accent: var(--accent-raster, oklch(0.78 0.14 200)); } .ds-chip-production { background: color-mix(in oklch, var(--accent) 20%, transparent); color: var(--text-1, rgba(255,255,255,0.92)); box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 45%, transparent); } .ds-chip-alpha { color: var(--text-2, rgba(255,255,255,0.62)); } .ds-chip-scaffold { color: var(--text-3, rgba(255,255,255,0.52)); }"
+    },
+    {
+      "name": "Gap Pill",
+      "kind": "chip",
+      "refersTo": "gap-pill",
+      "description": "The 'Not yet' items in an app footer. Same badge family as the maturity chip, one depth quieter.",
+      "html": "<span class=\"ds-gaps-label\">Not yet</span><span class=\"ds-gap-pill\">Waveform view</span><span class=\"ds-gap-pill\">Video layers</span>",
+      "css": ".ds-gaps-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3, rgba(255,255,255,0.52)); margin-right: 10px; } .ds-gap-pill { display: inline-block; font-size: 11.5px; color: var(--text-2, rgba(255,255,255,0.62)); padding: 3px 9px; margin-right: 6px; border-radius: var(--radius-pill, 999px); background: var(--glass-0, rgba(255,255,255,0.04)); box-shadow: inset 0 0 0 0.5px var(--stroke-soft, rgba(255,255,255,0.06)); }"
+    },
+    {
+      "name": "Suite Strip Cell",
+      "kind": "nav",
+      "refersTo": "strip-app",
+      "description": "One of seven cells in the opening readout row. A column at wide widths, a horizontal row below 720px — never a 2- or 3-column grid. Takes an INSET focus ring because the strip clips its overflow and cells paint edge to edge.",
+      "html": "<a class=\"ds-strip-app\" href=\"#vision\"><span class=\"ds-strip-icon\"></span><span class=\"ds-strip-name\">Vision</span><span class=\"ds-meter ds-meter-sm\" style=\"--built:0.72;--covered:0.54\"><span class=\"ds-meter-track\"><span class=\"ds-meter-built\"></span><span class=\"ds-meter-covered\"></span></span></span><span class=\"ds-strip-num\"><b>72</b><i>%</i> built</span></a>",
+      "css": ".ds-strip-app { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 22px 10px 18px; background: var(--glass-0, rgba(255,255,255,0.04)); text-decoration: none; transition: background 0.18s ease; --accent: var(--accent-raster, oklch(0.78 0.14 200)); } .ds-strip-app:hover { background: var(--glass-2, rgba(255,255,255,0.09)); } .ds-strip-icon { width: 60px; height: 60px; display: block; border-radius: 24%; background: var(--glass-1, rgba(255,255,255,0.06)); box-shadow: inset 0 0 0 1px var(--stroke-medium, rgba(255,255,255,0.10)), inset 0 1px 0 var(--hi-top, rgba(255,255,255,0.22)); background-image: repeating-linear-gradient(-45deg, transparent 0 5px, rgba(255,255,255,0.05) 5px 10px); filter: drop-shadow(0 6px 14px rgba(0,0,0,0.45)); transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-strip-app:hover .ds-strip-icon { transform: translateY(-2px) scale(1.03); } .ds-strip-name { font-size: 12.5px; font-weight: 500; color: var(--text-1, rgba(255,255,255,0.92)); letter-spacing: -0.005em; } .ds-strip-app .ds-meter { width: 100%; max-width: 76px; } .ds-meter-sm .ds-meter-track { height: 3px; } .ds-strip-num { font-family: var(--font-mono, \"JetBrains Mono\", \"SF Mono\", ui-monospace, Menlo, monospace); font-size: 10.5px; color: var(--text-3, rgba(255,255,255,0.52)); font-variant-numeric: tabular-nums; } .ds-strip-num b { color: var(--text-2, rgba(255,255,255,0.62)); font-weight: 500; } .ds-strip-num i { font-style: normal; } .ds-strip-app:focus-visible { outline: none; box-shadow: inset 0 0 0 2px color-mix(in oklch, var(--accent) 80%, transparent), inset 0 0 0 5px color-mix(in oklch, var(--accent) 22%, transparent); } @media (max-width: 720px) { .ds-strip-app { flex-direction: row; align-items: center; gap: 14px; padding: 13px 16px; text-align: left; } .ds-strip-icon { width: 34px; height: 34px; flex: 0 0 34px; } .ds-strip-name { flex: 0 0 74px; font-size: 13px; } .ds-strip-app .ds-meter { flex: 1 1 auto; max-width: none; width: auto; } .ds-strip-app:hover .ds-strip-icon { transform: none; } }"
+    },
+    {
+      "name": "Chrome Strip",
+      "kind": "nav",
+      "refersTo": "chrome",
+      "description": "Sticky page header at 48px — the app title bar height, adopted verbatim. Wordmark, hairline-separated title, illustrative legend meter, measurement date in mono.",
+      "html": "<header class=\"ds-chrome\"><span class=\"ds-wordmark\">Monet</span><span class=\"ds-chrome-title\">Build progress</span><span class=\"ds-chrome-spacer\"></span><span class=\"ds-measured\">Measured 2026-08-04</span></header>",
+      "css": ".ds-chrome { position: sticky; top: 0; z-index: 20; height: 48px; padding: 0 clamp(20px, 5vw, 64px); display: flex; align-items: center; gap: 14px; background: rgba(11, 14, 20, 0.72); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); border-bottom: 0.5px solid var(--stroke-soft, rgba(255,255,255,0.06)); box-shadow: inset 0 0.5px 0 var(--hi-top, rgba(255,255,255,0.22)); } .ds-wordmark { font-family: var(--font-display, -apple-system, BlinkMacSystemFont, \"SF Pro Display\", system-ui, sans-serif); font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-1, rgba(255,255,255,0.92)); } .ds-chrome-title { font-size: 11px; color: var(--text-3, rgba(255,255,255,0.52)); padding-left: 14px; border-left: 0.5px solid var(--stroke-medium, rgba(255,255,255,0.10)); line-height: 1; } .ds-chrome-spacer { flex: 1; } .ds-measured { font-family: var(--font-mono, \"JetBrains Mono\", \"SF Mono\", ui-monospace, Menlo, monospace); font-size: 10.5px; color: var(--text-3, rgba(255,255,255,0.52)); font-variant-numeric: tabular-nums; white-space: nowrap; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Suite's Own Inspector Dock",
+    "overview": "The page refuses the card-grid-of-apps that every status page ships. Instead it renders as one of the tools it reports on: a stack of full-width inspector panels under a sticky 48px window chrome, where each app is a row of readouts and each feature area is a labelled meter. The argument is that a tool reporting on itself should speak in the vocabulary it already uses to report a value — so a completion percentage is drawn the way Monet UI draws a slider, not the way a marketing page draws a progress bar.\n\nDensity is deliberately app-like rather than web-like: 0.5px hairlines instead of gaps, 10–13px labels, tabular monospace for every number, and a single lifted plane per panel. The one concession to the web is reading size — body text is 14px here against Monet UI's 12px window base, because this is read at browser distance by someone who is not already inside the app.\n\nThe material is Monet UI's whole: a cool near-black desktop, three glass depths, hairline strokes, a 14px window radius, and per-app accents that tint highlights and never structure. Nothing here is skeuomorphic and nothing is decorative — the one authored animation exists to make a number's arrival legible, not to entertain.",
+    "keyCharacteristics": [
+      "Inspector panel stack, not a card grid — full-width panels, hairline-separated.",
+      "Every number is monospace and tabular; every percentage is also drawn.",
+      "Accent tints highlights only; all structure is neutral stroke tokens.",
+      "Exactly one drop shadow (the panel) and exactly one authored motion (the meter).",
+      "Dark only. No light theme, despite Monet UI shipping one."
+    ],
+    "rules": [
+      {
+        "name": "The Accent-Tints-Never-Structures Rule",
+        "body": "Inherited verbatim from tokens.css (\"only used in highlights, never structural\") and held throughout: accents appear in meter fills, capability glyphs, the production chip, focus rings and link hover. Every border, divider and separator on this page is a neutral stroke token. Never draw a line in an accent.",
+        "section": "colors"
+      },
+      {
+        "name": "The Raised Third Tint Rule",
+        "body": "--text-3 is 0.52 on this surface and 0.38 in the app. The difference is not drift — it is the price of using that tint for content instead of chrome. If you find yourself adding a --text-3 slot that carries no information, use --text-2 or restructure; do not lower the token back.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Alarm Rule",
+        "body": "Red appears exactly once on this page, on a failing test count. Anything else that wants to be red is asking to be a percentage instead.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Readout Rule",
+        "body": "Every number on this page is --font-mono with font-variant-numeric: tabular-nums — measurement date, strip percentages, area readouts, suite totals, per-app file and test counts. Prose is never monospace and numbers are never proportional. This is what lets 60-odd meters read as one column.",
+        "section": "typography"
+      },
+      {
+        "name": "The Two-Number Rule",
+        "body": "A percentage never appears alone. Built and tested are always adjacent, in a fixed order, with built in text-2 and tested in text-1 so the eye can tell them apart without reading the header. Each is right-aligned in a 34px minimum box.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hairline Stack Rule",
+        "body": "Separation on this page is a 0.5px stroke-soft line, never a gap and never a card. If two things need distinguishing, put a hairline between them and keep them the same width.",
+        "section": "layout"
+      },
+      {
+        "name": "The Single Lifted Plane Rule",
+        "body": "Only .panel leaves the desktop. Nothing nested inside a panel gets its own shadow — rows, chips, cells and meters are all drawn with hairlines, tonal fills and inset highlights. If a new element seems to need a shadow, it probably wants to be a panel or wants a hairline.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Moment Rule",
+        "body": "This page has one authored animation and it is attached to one component class. It is not a page-entrance system: sections do not fade in, panels do not rise on scroll, and nothing staggers except meters within a single app's feature list. Do not add a second moment, and do not generalize this one into a per-section entrance. If something new needs to feel alive, give it the strip's 0.18s ease hover and nothing more.",
+        "section": "components"
+      },
+      {
+        "name": "The Answered-By-Default Rule",
+        "body": "The meter's resting CSS is its filled state; .js is what empties it. Invert that — put scaleX(0) in the base rule and the value behind a class — and a host CSP that blocks the inline script silently serves 82 empty bars on a page whose entire job is showing numbers. If you touch the meter, load the page with JavaScript disabled and confirm the bars are still full.",
+        "section": "components"
+      },
+      {
+        "name": "The Readout-Row-At-Every-Width Rule",
+        "body": "The suite strip is a row of readouts, not a grid of cards, at every viewport. Seven items never divide evenly into 2 or 3 columns, so the obvious narrow-screen reflow produces both visible empty cells and exactly the card-grid-of-apps scaffold this page's thesis refuses. Below 720px it becomes one readout per row. Do not restore a 2- or 3-column grid at any width.",
+        "section": "layout"
+      }
+    ],
+    "dos": [
+      "Do edit scripts/site/build.mjs; site/index.html is generated output.",
+      "Do take new values from packages/monet-ui/packages/monet-core/tokens.css first. If a token exists there, copy it verbatim rather than picking a neighbour.",
+      "Do set --accent on a container and let children read var(--accent). That is Monet UI's contract and every component here follows it.",
+      "Do animate meters with transform: scaleX() from a left origin. Width-based fills would put 82 elements through layout on a very long page.",
+      "Do load the page with JavaScript disabled after touching the meter. Filled bars is the correct result; empty bars means the .js inversion got flipped.",
+      "Do keep every number in --font-mono with tabular-nums, and keep built and tested adjacent and distinguishable by weight of color (text-2 vs text-1).",
+      "Do give any drawn state a text equivalent — the matrix cells carry a full aria-label and every meter is accompanied by its two raw percentages.",
+      "Do keep anything that carries a note reachable by keyboard. The capability cells are tabindex=0 for exactly this reason; a hover-only note is invisible to half the audience.",
+      "Do hold meaningful graphics at 3:1 or better (WCAG 1.4.11) and text at 4.5:1. Both floors have already forced a value change on this page.",
+      "Do separate things with a 0.5px var(--stroke-soft) hairline."
+    ],
+    "donts": [
+      "Don't lower --text-3 back to Monet UI's 0.38 on this surface. It fails the 4.5:1 floor on this ground and every slot using it here carries information.",
+      "Don't use --text-disabled for anything a reader has to read. It is 2.6:1. Its only sanctioned use here is a · separator glyph.",
+      "Don't put the meter's value behind a class and scaleX(0) in the base rule. The filled state is the default; .js is what empties it.",
+      "Don't give the suite strip a 2- or 3-column grid at narrow widths. Below 720px it is one readout per row, deliberately.",
+      "Don't fold .strip-app:focus-visible into the general focus selector. It needs an inset ring because the strip clips its overflow.",
+      "Don't tint a glyph with a stroke-* token. Those are for strokes; stroke-strong is 1.65:1 as a foreground and already failed this once.",
+      "Don't draw structure in an accent. Borders, dividers and separators are neutral stroke tokens; accents tint fills, glyphs, glows and focus rings only.",
+      "Don't add a second drop shadow. Only .panel is lifted.",
+      "Don't add a webfont, an icon library, or any external request. The page ships as one self-contained index.html plus icons/, with no build step and no runtime dependency. The consequence is that a Windows or Linux reader gets Segoe UI or Roboto, not SF Pro — check non-Apple stacks before changing type sizes.",
+      "Don't turn the panel stack into a card grid. The stack is the thesis of the page.",
+      "Don't promote --accent-game into tokens.css as a fifth shared accent without that decision being made upstream. Here it is a carry from apps/jouer/src/styles.css.",
+      "Don't assume a light theme works. Monet UI ships an opt-in [data-theme=\"light\"] palette; this page declares <meta name=\"color-scheme\" content=\"dark\">, never sets the attribute, and hardcodes four opaque dark values for the sticky elements. Supporting light here is real work, not a toggle."
+    ]
+  }
+}

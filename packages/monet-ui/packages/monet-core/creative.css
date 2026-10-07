@@ -1,0 +1,2301 @@
+/* ─────────────────────────────────────────────────────────────
+   Monet — creative-app components ("monet-cv-" prefix)
+   ─────────────────────────────────────────────────────────────
+   Mocked-but-sharable pro-creative-app UI: color, layers, timeline/motion,
+   numeric/transform, viewport and inspector panels. Layered last in index.css
+   so these surfaces sit above the chrome and reuse its tokens + existing
+   classes (.monet-layer, .monet-row, .monet-section-label, .monet-chip,
+   .monet-swatch, .monet-iconbtn, .monet-track*). Component rules are added
+   here per wave; everything reads the shared design tokens so theme
+   (data-theme), density (data-density) and accent (var(--accent)) respond
+   automatically. */
+
+/* ─── creative-numeric: scrubbers + transform controls ─── */
+
+/* PropertyRow — leading-icon slot over the chrome .monet-row */
+.monet-cv-row-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  color: var(--text-3);
+}
+
+/* ScrubbyNumber — drag-to-scrub number + type-to-edit */
+.monet-cv-scrub {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--radius-control);
+  background: var(--glass-0);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+  font-size: 11px;
+  color: var(--text-1);
+  user-select: none;
+  outline: none;
+}
+.monet-cv-scrub.is-dragging {
+  cursor: ew-resize;
+  background: var(--glass-1);
+  box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 50%, var(--stroke-strong));
+}
+.monet-cv-scrub.is-editing {
+  background: var(--glass-1);
+  box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 60%, var(--stroke-strong));
+}
+.monet-cv-scrub:focus-visible {
+  box-shadow:
+    inset 0 0 0 0.5px var(--stroke-soft),
+    0 0 0 2px color-mix(in oklch, var(--accent) 45%, transparent);
+}
+.monet-cv-scrub.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.monet-cv-scrub-label {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  cursor: ew-resize;
+  flex: 0 0 auto;
+}
+.monet-cv-scrub-value {
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  cursor: ew-resize;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+.monet-cv-scrub-suffix {
+  color: var(--text-3);
+  margin-left: 1px;
+}
+.monet-cv-scrub-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: right;
+  padding: 0;
+  -moz-appearance: textfield;
+}
+
+/* Stepper — compact inc/dec with optional readout */
+.monet-cv-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: var(--radius-control);
+  background: var(--glass-0);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+  padding: 1px;
+}
+.monet-cv-stepper.is-disabled { opacity: 0.45; pointer-events: none; }
+.monet-cv-stepper-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  color: var(--text-2);
+}
+.monet-cv-stepper.is-md .monet-cv-stepper-btn { width: 24px; height: 24px; }
+.monet-cv-stepper-btn:hover:not(:disabled) { background: var(--glass-2); color: var(--text-1); }
+.monet-cv-stepper-btn:disabled { color: var(--text-disabled); }
+.monet-cv-stepper-value {
+  min-width: 28px;
+  padding: 0 4px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-1);
+  outline: none;
+  white-space: nowrap;
+}
+.monet-cv-stepper.is-md .monet-cv-stepper-value { min-width: 34px; font-size: 12px; }
+.monet-cv-stepper-value:focus-visible {
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 45%, transparent);
+}
+.monet-cv-stepper-suffix { color: var(--text-3); margin-left: 1px; }
+
+/* RangeSlider — two-thumb min/max */
+.monet-cv-rangeslider {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 7px;
+}
+.monet-cv-rangeslider.is-vertical {
+  height: auto;
+  width: 16px;
+  min-height: 80px;
+  padding: 7px 0;
+  flex-direction: column;
+}
+.monet-cv-rangeslider-track {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  width: 100%;
+  border-radius: 2px;
+  background: var(--glass-0);
+  box-shadow: inset 0 0.5px 0 var(--hi-bottom);
+}
+.monet-cv-rangeslider.is-vertical .monet-cv-rangeslider-track {
+  width: 4px;
+  height: auto;
+}
+.monet-cv-rangeslider-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--accent);
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--accent);
+  opacity: 0.85;
+}
+.monet-cv-rangeslider.is-vertical .monet-cv-rangeslider-fill {
+  left: 0;
+  right: 0;
+  top: auto;
+  bottom: auto;
+}
+.monet-cv-rangeslider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.65));
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5), inset 0 0.5px 0 rgba(255,255,255,0.9);
+  outline: none;
+  cursor: grab;
+  touch-action: none;
+}
+.monet-cv-rangeslider.is-vertical .monet-cv-rangeslider-thumb {
+  top: auto;
+  left: 50%;
+  transform: translate(-50%, 50%);
+}
+.monet-cv-rangeslider-thumb:focus-visible {
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.5),
+    inset 0 0.5px 0 rgba(255,255,255,0.9),
+    0 0 0 3px color-mix(in oklch, var(--accent) 45%, transparent);
+}
+.monet-cv-rangeslider.is-disabled { opacity: 0.45; pointer-events: none; }
+
+/* AngleDial + Knob — rotary degree dial */
+.monet-cv-angledial {
+  position: relative;
+  display: inline-block;
+  border-radius: 50%;
+  outline: none;
+  cursor: grab;
+  touch-action: none;
+  --pct: 0;
+}
+.monet-cv-angledial.is-disabled { opacity: 0.45; pointer-events: none; }
+.monet-cv-angledial-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--glass-1);
+  box-shadow:
+    inset 0 0 0 0.5px var(--stroke-medium),
+    inset 0 1px 2px var(--hi-bottom),
+    inset 0 0.5px 0 var(--hi-top);
+}
+.monet-cv-angledial-fill {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 180deg,
+    color-mix(in oklch, var(--accent) 70%, transparent) calc(var(--pct) * 360deg),
+    transparent 0
+  );
+  opacity: 0.7;
+  -webkit-mask: radial-gradient(closest-side, transparent 62%, #000 64%);
+  mask: radial-gradient(closest-side, transparent 62%, #000 64%);
+}
+.monet-cv-angledial.is-knob .monet-cv-angledial-track {
+  background: radial-gradient(closest-side, var(--glass-2), var(--glass-1));
+}
+.monet-cv-angledial-needle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.5px;
+  height: 44%;
+  margin-left: -0.75px;
+  transform-origin: 50% 100%;
+  background: var(--accent);
+  border-radius: 1px;
+  box-shadow: 0 0 6px var(--accent);
+  pointer-events: none;
+}
+.monet-cv-angledial:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 45%, transparent);
+}
+
+/* TransformFields — X/Y/W/H + rotation group */
+.monet-cv-transform {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.monet-cv-transform-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  align-items: center;
+}
+.monet-cv-transform-cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.monet-cv-transform-cell > .monet-cv-scrub { flex: 1; }
+.monet-cv-transform-cell.is-rotation {
+  gap: 6px;
+  justify-content: flex-start;
+}
+.monet-cv-transform-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  min-width: 12px;
+}
+.monet-cv-transform-lock {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  color: var(--text-2);
+  justify-self: start;
+}
+.monet-cv-transform-lock:hover { background: var(--glass-1); color: var(--text-1); }
+.monet-cv-transform-lock.is-active {
+  background: color-mix(in oklch, var(--accent) 22%, transparent);
+  color: var(--text-1);
+  box-shadow:
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 50%, transparent);
+}
+.monet-cv-transform-lock:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 45%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Inspector & layout (Section / SegmentedControl / ToggleGroup /
+   ToolbarGroup / Breadcrumb / TreeView / SearchField / Badge /
+   ProgressBar / Spinner). Behaviour lives in
+   monet-react/src/creative-inspector.tsx (+ creative-tree.tsx). Token-only so
+   theme / density / accent respond automatically; reuses .monet-section-label,
+   .monet-chip, .monet-iconbtn, .monet-input where they fit.
+   ───────────────────────────────────────────────────────────── */
+
+/* shared keyboard focus ring (accent glow) for the new interactive leaves */
+.monet-cv-section-toggle:focus-visible,
+.monet-cv-segment:focus-visible,
+.monet-cv-crumb:focus-visible,
+.monet-cv-treeitem:focus-visible,
+.monet-cv-search:focus-within {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--accent, #6aa0ff) 75%, transparent),
+    0 0 0 3px color-mix(in oklch, var(--accent, #6aa0ff) 28%, transparent);
+}
+
+/* ─── Section ─── */
+.monet-cv-section { display: block; }
+.monet-cv-section + .monet-cv-section {
+  border-top: 0.5px solid var(--stroke-soft);
+}
+.monet-cv-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+}
+.monet-cv-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  margin: 0;            /* override .monet-section-label block margin */
+  padding: 6px 2px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  text-align: left;
+  border-radius: var(--radius-control);
+}
+.monet-cv-section-toggle:hover:not(:disabled) { color: var(--text-2); }
+.monet-cv-section-toggle:disabled { cursor: default; }
+.monet-cv-section-twisty {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--text-3);
+  transition: color 0.12s;
+}
+.monet-cv-section-toggle:hover .monet-cv-section-twisty { color: var(--text-1); }
+.monet-cv-section-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.monet-cv-section-badge {
+  flex: 0 0 auto;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-3);
+}
+.monet-cv-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+.monet-cv-section-body {
+  padding: 2px 0 8px;
+  overflow: hidden;
+}
+.monet-cv-section-body.is-collapsed { display: none; }
+
+/* ─── SegmentedControl ─── (mirrors the sandbox .sbx-seg preset pill) */
+.monet-cv-segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--glass-0);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+  max-width: 100%;
+}
+.monet-cv-segmented.is-block { display: flex; width: 100%; }
+.monet-cv-segment {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+.monet-cv-segmented.is-block .monet-cv-segment { flex: 1; }
+.monet-cv-segmented--sm .monet-cv-segment { padding: 4px 10px; font-size: 11px; gap: 5px; }
+.monet-cv-segment:hover:not(:disabled) { color: var(--text-1); }
+.monet-cv-segment:disabled { color: var(--text-disabled); cursor: not-allowed; }
+.monet-cv-segment.is-active {
+  background: var(--glass-2);
+  color: color-mix(in oklch, var(--accent) 70%, var(--text-1));
+  box-shadow: inset 0 0.5px 0 var(--hi-top), 0 1px 3px var(--hi-bottom);
+}
+.monet-cv-segment-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.5;
+  flex: 0 0 auto;
+}
+.monet-cv-segment.is-active .monet-cv-segment-dot {
+  opacity: 1;
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* ─── ToggleGroup ─── (icon items reuse .monet-iconbtn, labels .monet-chip) */
+.monet-cv-togglegroup {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.monet-cv-toggle { cursor: pointer; border: none; }
+.monet-cv-toggle:disabled { opacity: 0.45; cursor: not-allowed; }
+.monet-cv-togglegroup--md .monet-cv-toggle.monet-iconbtn { width: 30px; height: 30px; }
+
+/* ─── ToolbarGroup + separator ─── */
+.monet-cv-toolbargroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.monet-cv-toolbargroup.is-vertical { flex-direction: column; }
+.monet-cv-toolbar-sep {
+  flex: 0 0 auto;
+  background: var(--stroke-soft);
+}
+.monet-cv-toolbar-sep.is-horizontal { width: 0.5px; height: 18px; margin: 0 4px; }
+.monet-cv-toolbar-sep.is-vertical { height: 0.5px; width: 18px; margin: 4px 0; }
+
+/* ─── Breadcrumb ─── */
+.monet-cv-breadcrumb { min-width: 0; }
+.monet-cv-breadcrumb-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.monet-cv-crumb-item { display: inline-flex; align-items: center; min-width: 0; }
+.monet-cv-crumb {
+  appearance: none;
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 6px;
+  border-radius: var(--radius-control);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--text-3);
+  cursor: pointer;
+  max-width: 16ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+button.monet-cv-crumb:hover:not(:disabled) { color: var(--text-1); background: var(--glass-1); }
+button.monet-cv-crumb:disabled { color: var(--text-disabled); cursor: not-allowed; }
+.monet-cv-crumb.is-current { color: var(--text-1); font-weight: 500; cursor: default; }
+.monet-cv-crumb.is-ellipsis { color: var(--text-3); padding: 2px 4px; cursor: default; }
+.monet-cv-crumb-sep {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-3);
+  opacity: 0.7;
+  flex: 0 0 auto;
+}
+
+/* ─── TreeView ─── */
+.monet-cv-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.monet-cv-treeitem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding-right: 8px;
+  /* indent grows with depth via the row-local custom properties */
+  padding-left: calc((var(--monet-cv-depth, 1) - 1) * var(--monet-cv-indent, 14px) + 6px);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--text-1);
+  cursor: pointer;
+  min-width: 0;
+  outline: none;
+}
+.monet-cv-treeitem:hover { background: var(--glass-1); }
+.monet-cv-treeitem.is-selected {
+  background: color-mix(in oklch, var(--accent) 18%, transparent);
+  box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 40%, transparent);
+}
+.monet-cv-treeitem[aria-disabled="true"] {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+.monet-cv-twisty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  flex: 0 0 14px;
+  color: var(--text-3);
+  border-radius: 3px;
+}
+.monet-cv-twisty.is-branch { cursor: pointer; }
+.monet-cv-twisty.is-branch:hover { color: var(--text-1); background: var(--glass-2); }
+.monet-cv-treeitem-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--text-2);
+}
+.monet-cv-treeitem-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── SearchField ─── (mirrors .monet-input-wrap, adds a trailing clear) */
+.monet-cv-search {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 6px 0 9px;
+  gap: 6px;
+  background: var(--glass-0);
+  border-radius: var(--radius-control);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft), inset 0 1px 2px rgba(0,0,0,0.22);
+  min-width: 0;
+  transition: box-shadow 0.14s ease, background 0.14s ease;
+}
+.monet-cv-search.monet-input--sm { height: 22px; border-radius: 6px; }
+.monet-cv-search.is-disabled { opacity: 0.55; }
+.monet-cv-search .monet-cv-search-input { flex: 1; }
+.monet-cv-search-clear {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  color: var(--text-3);
+}
+.monet-cv-search-clear:hover { color: var(--text-1); }
+
+/* ─── Badge ─── (formalised .monet-chip) */
+.monet-cv-badge { line-height: 1; }
+.monet-cv-badge--sm { height: 18px; padding: 0 7px; font-size: 10px; gap: 4px; }
+.monet-cv-badge-icon { display: inline-flex; align-items: center; flex: 0 0 auto; }
+button.monet-cv-badge { appearance: none; border: none; cursor: pointer; font: inherit; }
+
+/* ─── ProgressBar ─── */
+.monet-cv-progress { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.monet-cv-progress-label {
+  font-size: 11px;
+  color: var(--text-2);
+}
+.monet-cv-progress-track {
+  position: relative;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--glass-0);
+  box-shadow: inset 0 0.5px 0 rgba(0,0,0,0.3);
+  overflow: hidden;
+}
+.monet-cv-progress--sm .monet-cv-progress-track { height: 4px; }
+.monet-cv-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  opacity: 0.9;
+  transition: width 0.2s ease;
+}
+.monet-cv-progress-track.is-indeterminate .monet-cv-progress-fill {
+  width: 40%;
+  transition: none;
+  animation: monet-cv-progress-slide 1.1s ease-in-out infinite;
+}
+@keyframes monet-cv-progress-slide {
+  0%   { left: -40%; }
+  100% { left: 100%; }
+}
+
+/* ─── Spinner ─── */
+.monet-cv-spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  animation: monet-cv-spin 0.8s linear infinite;
+}
+.monet-cv-spinner-track { stroke: var(--glass-3); }
+.monet-cv-spinner-arc { stroke: currentColor; }
+@keyframes monet-cv-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* density: tighten the inspector rows in compact mode */
+[data-density="compact"] .monet-cv-treeitem { height: 22px; }
+[data-density="compact"] .monet-cv-section-header { min-height: 22px; }
+
+/* reduced motion: drop the spinner + indeterminate animations */
+@media (prefers-reduced-motion: reduce) {
+  .monet-cv-spinner { animation-duration: 1.6s; }
+  .monet-cv-progress-track.is-indeterminate .monet-cv-progress-fill { animation: none; left: 0; width: 100%; opacity: 0.5; }
+}
+
+/* ─── creative-color: color field, sliders, wheel, gradient, swatches ─── */
+/* Wave 2. Canonical state is HSV; hex/rgb derive from it. Component JS sets the
+   paint backgrounds inline (hue/sat/value/alpha/gradient stops + thumb fills),
+   so these rules supply the box, positioning, borders, checkerboard, conic ring
+   and focus affordances only. Checkerboard + inner-shadow rgba(0,0,0,…) literals
+   follow the existing idiom (see .monet-bg / .monet-swatch). */
+
+/* shared 1D track knob (hue + alpha) */
+.monet-cv-hueslider,
+.monet-cv-alphaslider {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  outline: none;
+  touch-action: none;
+  cursor: pointer;
+  --accent: #6aa0ff;
+}
+.monet-cv-hueslider.is-vertical,
+.monet-cv-alphaslider.is-vertical {
+  width: 12px;
+  height: 120px;
+}
+.monet-cv-hueslider.is-disabled,
+.monet-cv-alphaslider.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.monet-cv-hueslider-track,
+.monet-cv-alphaslider-track {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 0.5px var(--stroke-soft),
+    inset 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+/* alpha sits over a checkerboard, with the transparent→tint ramp on top */
+.monet-cv-alphaslider-track {
+  background:
+    var(--ramp, linear-gradient(to right, transparent, var(--tint, #fff))),
+    repeating-conic-gradient(rgba(255, 255, 255, 0.5) 0% 25%, rgba(0, 0, 0, 0.28) 0% 50%) 0 0 / 8px 8px;
+}
+.monet-cv-hueslider-knob,
+.monet-cv-alphaslider-knob {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow:
+    0 0 0 1.5px rgba(255, 255, 255, 0.85),
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.45),
+    0 1px 3px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+.monet-cv-alphaslider-knob {
+  background: #fff;
+}
+.monet-cv-hueslider.is-vertical .monet-cv-hueslider-knob,
+.monet-cv-alphaslider.is-vertical .monet-cv-alphaslider-knob {
+  top: auto;
+  left: 50%;
+  transform: translate(-50%, 50%);
+}
+.monet-cv-hueslider:focus-visible,
+.monet-cv-alphaslider:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 45%, transparent);
+}
+
+/* ColorField — saturation × value square */
+.monet-cv-colorfield {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  min-height: 120px;
+  border-radius: var(--radius-control);
+  outline: none;
+  touch-action: none;
+  cursor: crosshair;
+  box-shadow:
+    inset 0 0 0 0.5px var(--stroke-medium),
+    inset 0 1px 3px rgba(0, 0, 0, 0.3);
+  --accent: #6aa0ff;
+}
+.monet-cv-colorfield.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.monet-cv-colorfield-thumb {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow:
+    0 0 0 1.5px rgba(255, 255, 255, 0.9),
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+.monet-cv-colorfield:focus-visible {
+  box-shadow:
+    inset 0 0 0 0.5px var(--stroke-medium),
+    0 0 0 3px color-mix(in oklch, var(--accent) 45%, transparent);
+}
+
+/* ColorWheel — conic HSV wheel */
+.monet-cv-colorwheel {
+  position: relative;
+  border-radius: 50%;
+  outline: none;
+  touch-action: none;
+  cursor: crosshair;
+  --accent: #6aa0ff;
+}
+.monet-cv-colorwheel.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.monet-cv-colorwheel-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* hue around the wheel; white toward the center for saturation */
+  background:
+    radial-gradient(circle at center, #fff 0%, transparent 70%),
+    conic-gradient(
+      from 90deg,
+      hsl(0 100% 50%), hsl(60 100% 50%), hsl(120 100% 50%),
+      hsl(180 100% 50%), hsl(240 100% 50%), hsl(300 100% 50%), hsl(360 100% 50%)
+    );
+  box-shadow:
+    inset 0 0 0 0.5px var(--stroke-medium),
+    inset 0 0 4px rgba(0, 0, 0, 0.3);
+}
+.monet-cv-colorwheel-thumb {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow:
+    0 0 0 1.5px rgba(255, 255, 255, 0.9),
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+.monet-cv-colorwheel:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 45%, transparent);
+}
+
+/* EyedropperReadout — swatch + readout (+ optional pick) */
+.monet-cv-eyedropper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: var(--radius-control);
+  background: var(--glass-0);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+.monet-cv-eyedropper-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  flex: 0 0 auto;
+}
+.monet-cv-eyedropper-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.monet-cv-eyedropper-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-1);
+  letter-spacing: 0.02em;
+}
+.monet-cv-eyedropper-sub {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: var(--text-3);
+}
+.monet-cv-eyedropper-pick {
+  margin-left: auto;
+}
+
+/* GradientEditor — bar + draggable stops + controls */
+.monet-cv-gradient {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  --accent: #6aa0ff;
+}
+.monet-cv-gradient-bar {
+  position: relative;
+  height: 22px;
+  border-radius: var(--radius-control);
+  cursor: copy;
+  touch-action: none;
+  box-shadow: inset 0 0 0 0.5px var(--stroke-medium);
+  background:
+    repeating-conic-gradient(rgba(255, 255, 255, 0.5) 0% 25%, rgba(0, 0, 0, 0.28) 0% 50%) 0 0 / 8px 8px;
+}
+.monet-cv-gradient-preview {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.monet-cv-gradient-stop {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--stop-color, #fff);
+  cursor: grab;
+  outline: none;
+  box-shadow:
+    0 0 0 1.5px rgba(255, 255, 255, 0.85),
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.45),
+    0 1px 3px rgba(0, 0, 0, 0.45);
+}
+.monet-cv-gradient-stop.is-selected {
+  box-shadow:
+    0 0 0 2px var(--accent),
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.45),
+    0 1px 3px rgba(0, 0, 0, 0.45);
+}
+.monet-cv-gradient-stop:focus-visible {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px color-mix(in oklch, var(--accent) 55%, transparent);
+}
+.monet-cv-gradient-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.monet-cv-gradient-types {
+  display: inline-flex;
+  gap: 4px;
+}
+.monet-cv-gradient-type {
+  cursor: pointer;
+  font-size: 11px;
+}
+.monet-cv-gradient-type.is-active {
+  background: color-mix(in oklch, var(--accent) 22%, transparent);
+  color: var(--text-1);
+  box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 50%, transparent);
+}
+.monet-cv-gradient-type:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 45%, transparent);
+}
+
+/* ColorPicker — composite layout */
+.monet-cv-colorpicker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 220px;
+  --accent: #6aa0ff;
+}
+.monet-cv-colorpicker-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.monet-cv-colorpicker-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.monet-cv-colorpicker-rgb,
+.monet-cv-colorpicker-hsv {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.monet-cv-colorpicker-input {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.monet-cv-colorpicker-input-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+.monet-cv-colorpicker-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 2px;
+}
+.monet-cv-colorpicker-add {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  color: var(--text-2);
+}
+.monet-cv-colorpicker-add:hover {
+  background: var(--glass-2);
+  color: var(--text-1);
+}
+
+/* Swatch — focusable color chip */
+.monet-cv-swatch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+.monet-cv-swatch-chip {
+  width: var(--swatch-size, 18px);
+  height: var(--swatch-size, 18px);
+  border-radius: 4px;
+}
+.monet-cv-swatch-btn.is-empty .monet-cv-swatch-chip {
+  background:
+    linear-gradient(to top left, transparent calc(50% - 0.75px), #e0483a calc(50% - 0.75px), #e0483a calc(50% + 0.75px), transparent calc(50% + 0.75px)),
+    var(--glass-1);
+}
+.monet-cv-swatch-btn.is-selected {
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent, #6aa0ff) 75%, transparent);
+}
+.monet-cv-swatch-btn:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent, #6aa0ff) 70%, transparent);
+}
+
+/* SwatchGrid — listbox of swatches */
+.monet-cv-swatchgrid {
+  display: grid;
+  --cols: 8;
+}
+.monet-cv-swatchgrid-cell {
+  width: 100%;
+  padding: 0;
+}
+.monet-cv-swatchgrid-cell.is-square {
+  aspect-ratio: 1 / 1;
+}
+.monet-cv-swatchgrid-cell .monet-cv-swatch-chip {
+  width: 100%;
+  height: 100%;
+}
+.monet-cv-swatchgrid-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  border-radius: 4px;
+  color: var(--text-3);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+.monet-cv-swatchgrid-add:hover {
+  background: var(--glass-2);
+  color: var(--text-1);
+}
+
+/* GlyphGrid — grid of selectable glyphs */
+.monet-cv-glyphgrid {
+  display: grid;
+  gap: 4px;
+  --cols: 6;
+}
+.monet-cv-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  border: none;
+  border-radius: var(--radius-control);
+  background: var(--glass-0);
+  color: var(--text-1);
+  cursor: pointer;
+  outline: none;
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+.monet-cv-glyph:hover {
+  background: var(--glass-2);
+}
+.monet-cv-glyph.is-selected {
+  background: color-mix(in oklch, var(--accent, #6aa0ff) 20%, transparent);
+  box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--accent, #6aa0ff) 55%, transparent);
+}
+.monet-cv-glyph:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent, #6aa0ff) 60%, transparent);
+}
+.monet-cv-glyph-char {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* HexInput — reuses .monet-input via the shared Input */
+.monet-cv-hexinput {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+/* ─── creative-layers: layer / channel / artboard inspectors ─── */
+
+/* LayerRow / ChannelRow / ArtboardList rows extend the chrome .monet-layer.
+   The eye + lock are real <button> switches (not decorative spans), so they
+   need the native button chrome reset + their own focus ring; .monet-layer .vis
+   still sizes/colors them. */
+.monet-cv-layer,
+.monet-cv-channel,
+.monet-cv-artboard {
+  cursor: pointer;
+  outline: none;
+}
+.monet-layer button.vis {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 0 0 14px;
+}
+.monet-layer button.vis:hover { color: var(--text-1); background: var(--glass-2); }
+.monet-layer button.vis.is-off { color: var(--text-3); opacity: 0.55; }
+.monet-layer button.vis.is-off:hover { opacity: 0.9; }
+.monet-layer button.vis:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+.monet-layer button.vis:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--accent) 70%, transparent),
+    0 0 0 2px color-mix(in oklch, var(--accent) 28%, transparent);
+}
+
+/* the lock switch sits at the trailing edge, after the name/meta */
+.monet-cv-layer-lock { margin-left: 2px; }
+.monet-layer:hover .monet-cv-layer-lock { color: var(--text-2); }
+
+/* the color chip + thumb leading the row */
+.monet-cv-layer-chip {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: 0 0 10px;
+}
+.monet-cv-layer-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* the default meta slot: blend mode + opacity readout */
+.monet-cv-layer .meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.monet-cv-layer-blend {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: var(--text-3);
+  max-width: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.monet-cv-layer-opacity {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── LayerList — header / scrolling body / footer ─── */
+.monet-cv-layerlist {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+.monet-cv-layerlist-header,
+.monet-cv-layerlist-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  flex: 0 0 auto;
+}
+.monet-cv-layerlist-header {
+  border-bottom: 0.5px solid var(--stroke-soft);
+  color: var(--text-2);
+  font-size: 11px;
+}
+.monet-cv-layerlist-footer {
+  border-top: 0.5px solid var(--stroke-soft);
+  justify-content: flex-end;
+}
+.monet-cv-layerlist-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+/* ─── ChannelList ─── */
+.monet-cv-channellist {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 2px;
+  min-width: 0;
+}
+.monet-cv-channel-thumb {
+  width: 28px;
+  flex: 0 0 28px;
+}
+.monet-cv-channel.is-composite {
+  font-weight: 600;
+  color: var(--text-1);
+}
+.monet-cv-channel.is-composite + .monet-cv-channel {
+  border-top: 0.5px solid var(--stroke-soft);
+  margin-top: 1px;
+  padding-top: 1px;
+}
+.monet-cv-channel-shortcut {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  flex: 0 0 auto;
+}
+
+/* ─── OpacityControl — slider grows, monospace % readout ─── */
+.monet-cv-opacity {
+  gap: 8px;
+}
+.monet-cv-opacity-slider {
+  flex: 1;
+  min-width: 0;
+}
+.monet-cv-opacity-val {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+  flex: 0 0 auto;
+  min-width: 34px;
+  text-align: right;
+}
+
+/* ─── LayerTree — a LayerRow inside each treeitem ─── */
+.monet-cv-layertree {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* the LayerRow fills the treeitem; the treeitem owns indent + hover/selected,
+   so the inner row drops its own height/hover and just lays out its contents */
+.monet-cv-treeitem .monet-cv-layertree-row {
+  flex: 1;
+  height: auto;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  min-width: 0;
+}
+.monet-cv-treeitem .monet-cv-layertree-row:hover { background: none; }
+.monet-cv-treeitem .monet-cv-layertree-row.is-selected { background: none; box-shadow: none; }
+
+/* ─── ArtboardList ─── */
+.monet-cv-artboardlist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  min-width: 0;
+}
+.monet-cv-artboard {
+  gap: 10px;
+  height: 44px;
+}
+.monet-cv-artboard-thumb {
+  width: 48px;
+  height: 32px;
+  flex: 0 0 48px;
+  border-radius: 4px;
+}
+.monet-cv-artboard-size {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── BlendModeSelect — inherits the form Select; nothing extra by default ─── */
+.monet-cv-blendmode { min-width: 0; }
+
+/* density: tighten the layer/artboard rows in compact mode */
+[data-density="compact"] .monet-cv-artboard { height: 38px; }
+[data-density="compact"] .monet-cv-artboard-thumb { width: 40px; height: 26px; flex: 0 0 40px; }
+
+/* ─────────────────────────────────────────────────────────────
+   creative-timeline: transport / ruler / playhead / keyframes / timeline.
+   Behaviour lives in monet-react/src/creative-timeline.tsx (+ the pure timecode
+   math in creative-time.ts). Token-only so theme / density / accent respond
+   automatically; reuses the chrome .monet-track / .monet-track-head /
+   .monet-track-body / .monet-clip and .monet-iconbtn where they fit. One
+   pixelsPerSecond + offset + fps geometry is threaded through every component so
+   the ruler, playhead and lanes stay pixel-aligned.
+   ───────────────────────────────────────────────────────────── */
+
+/* shared keyboard focus ring (accent glow), matching the Wave-1/2 leaves */
+.monet-cv-timecode-value:focus-visible,
+.monet-cv-timecode-input:focus-visible,
+.monet-cv-playhead:focus-visible,
+.monet-cv-keyframe:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--accent, #6aa0ff) 75%, transparent),
+    0 0 0 3px color-mix(in oklch, var(--accent, #6aa0ff) 28%, transparent);
+}
+
+/* ─── TimeDisplay ─── monospace timecode readout, optional click-to-edit */
+.monet-cv-timecode {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-1);
+  line-height: 1;
+}
+.monet-cv-timecode.is-muted { color: var(--text-3); }
+.monet-cv-timecode-value {
+  display: inline-block;
+  padding: 2px 4px;
+  border-radius: 5px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  outline: none;
+}
+.monet-cv-timecode.is-editable .monet-cv-timecode-value {
+  cursor: text;
+}
+.monet-cv-timecode.is-editable .monet-cv-timecode-value:hover {
+  background: var(--glass-1);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+.monet-cv-timecode-input {
+  width: 12ch;
+  padding: 2px 4px;
+  border: none;
+  outline: none;
+  border-radius: 5px;
+  background: var(--glass-1);
+  box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 50%, var(--stroke-strong));
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+/* ─── Transport ─── play/pause/stop/loop/record toolbar + readouts */
+.monet-cv-transport {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: var(--radius-control);
+  background: var(--glass-0);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+.monet-cv-transport-btn.monet-iconbtn-ctl { color: var(--text-2); }
+.monet-cv-transport-btn.is-play.is-active {
+  color: color-mix(in oklch, var(--accent) 85%, var(--text-1));
+}
+/* loop reads accent when armed */
+.monet-cv-transport-btn.is-loop.is-active {
+  color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 18%, transparent);
+}
+/* record dot glows red-of-accent when armed (the glyph fills via currentColor) */
+.monet-cv-transport-btn.is-rec.is-armed {
+  color: var(--accent-motion, oklch(0.62 0.22 25));
+  background: color-mix(in oklch, var(--accent-motion, oklch(0.62 0.22 25)) 20%, transparent);
+}
+.monet-cv-transport-btn.is-rec.is-armed svg path {
+  fill: currentColor;
+  stroke: none;
+}
+.monet-cv-transport-time {
+  margin-left: 6px;
+  padding-left: 8px;
+  border-left: 0.5px solid var(--stroke-soft);
+}
+.monet-cv-transport-duration::before {
+  content: "/";
+  margin: 0 5px;
+  color: var(--text-disabled);
+}
+
+/* ─── TimelineRuler ─── scrubbable tick ruler over a duration */
+.monet-cv-ruler {
+  position: relative;
+  height: 26px;
+  min-width: 0;
+  flex: 1;
+  background: rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 -0.5px 0 var(--stroke-soft);
+  cursor: ew-resize;
+  user-select: none;
+  overflow: hidden;
+  outline: none;
+}
+.monet-cv-ruler-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+}
+.monet-cv-ruler-tick::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0.5px;
+  height: 5px;
+  background: var(--stroke-medium);
+}
+.monet-cv-ruler-tick.is-major::after {
+  height: 9px;
+  background: var(--stroke-strong);
+}
+.monet-cv-ruler-label {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1;
+  color: var(--text-3);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ─── Playhead ─── draggable seconds head on a track */
+.monet-cv-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  z-index: 3;
+  outline: none;
+}
+.monet-cv-playhead.is-disabled { opacity: 0.45; pointer-events: none; }
+.monet-cv-playhead-head {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 11px;
+  height: 11px;
+  border-radius: 2px 2px 5px 5px;
+  background: var(--accent);
+  box-shadow:
+    inset 0 0.5px 0 var(--hi-top),
+    0 1px 3px rgba(0, 0, 0, 0.45);
+  cursor: ew-resize;
+}
+.monet-cv-playhead-line {
+  position: absolute;
+  top: 11px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  background: color-mix(in oklch, var(--accent) 75%, transparent);
+}
+.monet-cv-playhead.is-compact .monet-cv-playhead-line { display: none; }
+/* when the playhead lives inside the ruler, its line ends at the ruler floor */
+.monet-cv-ruler > .monet-cv-playhead .monet-cv-playhead-line { bottom: 0; }
+
+/* ─── KeyframeTrack ─── draggable keyframe diamonds on a lane */
+.monet-cv-kftrack { user-select: none; }
+.monet-cv-kftrack-head {
+  color: var(--text-2);
+  font-size: 11px;
+}
+.monet-cv-kftrack-body { cursor: copy; }
+.monet-cv-keyframe {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border-radius: 2px;
+  background: color-mix(in oklch, var(--accent) 55%, var(--glass-3));
+  box-shadow:
+    inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 80%, transparent),
+    inset 0 0.5px 0 var(--hi-top);
+  cursor: ew-resize;
+  outline: none;
+}
+.monet-cv-keyframe:hover {
+  background: color-mix(in oklch, var(--accent) 70%, var(--glass-3));
+}
+.monet-cv-keyframe.is-selected {
+  background: var(--accent);
+  box-shadow:
+    inset 0 0 0 0.5px var(--hi-top),
+    0 0 0 1.5px color-mix(in oklch, var(--accent) 40%, transparent);
+}
+/* hold = filled square (no rotation); bezier = hollow diamond */
+.monet-cv-keyframe.is-hold {
+  border-radius: 1px;
+  transform: translate(-50%, -50%);
+}
+.monet-cv-keyframe.is-bezier {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--accent) 85%, transparent);
+}
+.monet-cv-keyframe.is-bezier.is-selected {
+  background: color-mix(in oklch, var(--accent) 30%, transparent);
+}
+
+/* ─── Timeline (composite) ─── ruler + playhead + clip/keyframe rows */
+.monet-cv-timeline {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-radius: var(--radius-panel);
+  background: var(--glass-0);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+  overflow: hidden;
+}
+.monet-cv-timeline-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 0.5px solid var(--stroke-soft);
+  background: rgba(0, 0, 0, 0.12);
+}
+.monet-cv-timeline-head {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+.monet-cv-timeline-head-spacer {
+  border-right: 0.5px solid var(--stroke-soft);
+  background: rgba(0, 0, 0, 0.16);
+}
+.monet-cv-timeline-ruler { flex: 1; }
+.monet-cv-timeline-body {
+  position: relative;
+  overflow: auto;
+  max-height: 320px;
+}
+/* the composite shares the chrome track rows; pin the head + clamp the body */
+.monet-cv-timeline-lane.monet-track { border-bottom: 0.5px solid var(--stroke-soft); }
+.monet-cv-timeline-lane .monet-track-head {
+  overflow: hidden;
+}
+.monet-cv-timeline-clip {
+  cursor: default;
+}
+.monet-cv-timeline-track-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+.monet-cv-timeline-track-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.monet-cv-timeline-track-flags {
+  display: inline-flex;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+.monet-cv-timeline-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  background: var(--glass-1);
+  color: var(--text-3);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+.monet-cv-timeline-flag.is-solo { color: color-mix(in oklch, var(--accent) 80%, var(--text-1)); }
+.monet-cv-timeline-flag.is-muted { color: var(--text-2); }
+.monet-cv-timeline-flag.is-locked { color: var(--text-3); }
+
+/* ─────────────────────────────────────────────────────────────
+   creative-curve.tsx — SVG bezier curve editors (CurveEditor, EasingCurve)
+   ───────────────────────────────────────────────────────────── */
+
+/* CurveEditor — the N-point editor SVG (also the EasingCurve plot via .is-easing) */
+.monet-cv-curve {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-control);
+  background: rgba(0, 0, 0, 0.30);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+  touch-action: none;
+  cursor: copy;
+  --accent: #6aa0ff;
+}
+.monet-cv-curve.is-readonly { cursor: default; }
+.monet-cv-curve.is-easing {
+  width: auto;
+  cursor: default;
+  aspect-ratio: 1 / 1;
+}
+
+.monet-cv-curve-grid line {
+  stroke: var(--stroke-soft);
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.monet-cv-curve-fill {
+  fill: color-mix(in oklch, var(--accent) 16%, transparent);
+  stroke: none;
+  pointer-events: none;
+}
+
+.monet-cv-curve-path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+  filter: drop-shadow(0 0 3px color-mix(in oklch, var(--accent) 45%, transparent));
+}
+
+/* draggable points (EQ bands / transfer-curve nodes) */
+.monet-cv-curve-point {
+  fill: var(--point-color, var(--accent));
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 1.5;
+  cursor: grab;
+  outline: none;
+  vector-effect: non-scaling-stroke;
+  transition: r 0.12s ease;
+}
+.monet-cv-curve.is-readonly .monet-cv-curve-point { cursor: default; }
+.monet-cv-curve-point:hover { r: 6; }
+.monet-cv-curve-point.is-selected {
+  stroke: #fff;
+  stroke-width: 2;
+}
+.monet-cv-curve-point:focus-visible {
+  stroke: #fff;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 0 2px #fff)
+    drop-shadow(0 0 4px color-mix(in oklch, var(--accent) 60%, transparent));
+}
+
+/* EasingCurve — wrapper around the plot SVG + preset chips */
+.monet-cv-curve-easing {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 10px;
+  --accent: #6aa0ff;
+}
+
+/* easing handle leader-line from the fixed endpoint to the control point */
+.monet-cv-curve-handle-line {
+  stroke: color-mix(in oklch, var(--accent) 55%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+/* easing handle (the two cubic-bezier control points) */
+.monet-cv-curve-handle {
+  fill: var(--accent);
+  stroke: #fff;
+  stroke-width: 1.5;
+  cursor: grab;
+  outline: none;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+  transition: r 0.12s ease;
+}
+.monet-cv-curve-handle:hover { r: 7; }
+.monet-cv-curve-handle:focus-visible {
+  filter: drop-shadow(0 0 0 2px #fff)
+    drop-shadow(0 0 4px color-mix(in oklch, var(--accent) 60%, transparent));
+}
+
+.monet-cv-curve-presets { align-self: stretch; }
+
+/* --- creative-viewport --- */
+/* ─────────────────────────────────────────────────────────────
+   creative-viewport: canvas ruler / zoom / navigator / marquee / grid-guides.
+   Behaviour lives in monet-react/src/creative-viewport.tsx. Token-only so
+   theme / density / accent respond automatically; reuses the chrome .monet-row
+   and the .monet-iconbtn-ctl controls where they fit. The Navigator marquee and
+   the selection Marquee copy the Slider focus-ring idiom from Wave 1–3.
+   ───────────────────────────────────────────────────────────── */
+
+/* shared keyboard focus ring (accent glow), matching the other "monet-cv-" leaves */
+.monet-cv-zoom-value:focus-visible,
+.monet-cv-navigator-marquee:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--accent, #6aa0ff) 75%, transparent),
+    0 0 0 3px color-mix(in oklch, var(--accent, #6aa0ff) 28%, transparent);
+}
+
+/* ─── CanvasRuler ─── decorative tick ruler for a canvas edge + optional cursor */
+.monet-cv-canvasruler {
+  position: relative;
+  background: rgba(0, 0, 0, 0.16);
+  user-select: none;
+  overflow: hidden;
+  font-family: var(--font-mono);
+}
+.monet-cv-canvasruler.is-horizontal {
+  height: 20px;
+  min-width: 0;
+  box-shadow: inset 0 -0.5px 0 var(--stroke-soft);
+}
+.monet-cv-canvasruler.is-vertical {
+  width: 20px;
+  min-height: 0;
+  box-shadow: inset -0.5px 0 0 var(--stroke-soft);
+}
+.monet-cv-canvasruler-tick { position: absolute; }
+.monet-cv-canvasruler.is-horizontal .monet-cv-canvasruler-tick { top: 0; bottom: 0; width: 0; }
+.monet-cv-canvasruler.is-vertical .monet-cv-canvasruler-tick { left: 0; right: 0; height: 0; }
+.monet-cv-canvasruler-tick::after {
+  content: "";
+  position: absolute;
+  background: var(--stroke-medium);
+}
+.monet-cv-canvasruler.is-horizontal .monet-cv-canvasruler-tick::after { left: 0; bottom: 0; width: 0.5px; height: 4px; }
+.monet-cv-canvasruler.is-vertical .monet-cv-canvasruler-tick::after { top: 0; right: 0; height: 0.5px; width: 4px; }
+.monet-cv-canvasruler-tick.is-major::after { background: var(--stroke-strong); }
+.monet-cv-canvasruler.is-horizontal .monet-cv-canvasruler-tick.is-major::after { height: 7px; }
+.monet-cv-canvasruler.is-vertical .monet-cv-canvasruler-tick.is-major::after { width: 7px; }
+.monet-cv-canvasruler-label {
+  position: absolute;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--text-3);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.monet-cv-canvasruler.is-horizontal .monet-cv-canvasruler-label { left: 2px; top: 2px; }
+.monet-cv-canvasruler.is-vertical .monet-cv-canvasruler-label {
+  left: 2px;
+  top: 2px;
+  transform: rotate(90deg);
+  transform-origin: left top;
+}
+.monet-cv-canvasruler-cursor {
+  position: absolute;
+  background: color-mix(in oklch, var(--accent) 80%, transparent);
+  pointer-events: none;
+}
+.monet-cv-canvasruler.is-horizontal .monet-cv-canvasruler-cursor { top: 0; bottom: 0; width: 1px; transform: translateX(-0.5px); }
+.monet-cv-canvasruler.is-vertical .monet-cv-canvasruler-cursor { left: 0; right: 0; height: 1px; transform: translateY(-0.5px); }
+
+/* ─── ZoomControl ─── − / + + percent readout + Fit + preset Select */
+.monet-cv-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px;
+  border-radius: var(--radius-control);
+  background: var(--glass-0);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+.monet-cv-zoom.is-disabled { opacity: 0.5; pointer-events: none; }
+.monet-cv-zoom-btn.monet-iconbtn-ctl,
+.monet-cv-zoom-fit.monet-iconbtn-ctl { color: var(--text-2); }
+.monet-cv-zoom-value {
+  min-width: 5ch;
+  padding: 2px 4px;
+  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: center;
+  color: var(--text-1);
+  cursor: ns-resize;
+  outline: none;
+  user-select: none;
+}
+.monet-cv-zoom-value:hover { background: var(--glass-1); }
+.monet-cv-zoom-fit { margin-left: 2px; }
+.monet-cv-zoom-presets { margin-left: 2px; }
+
+/* ─── Navigator ─── inset preview minimap + draggable viewport marquee + zoom row */
+.monet-cv-navigator {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border-radius: var(--radius-control);
+  background: var(--glass-0);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+}
+.monet-cv-navigator-preview {
+  position: relative;
+  width: 100%;
+  border-radius: 5px;
+  background:
+    repeating-conic-gradient(rgba(0, 0, 0, 0.18) 0% 25%, transparent 0% 50%) 0 0 / 12px 12px,
+    var(--glass-1);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-medium);
+  overflow: hidden;
+  user-select: none;
+}
+.monet-cv-navigator-preview > img,
+.monet-cv-navigator-preview > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.monet-cv-navigator-marquee {
+  position: absolute;
+  border-radius: 2px;
+  background: color-mix(in oklch, var(--accent) 14%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--accent) 85%, transparent),
+    0 1px 4px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+  outline: none;
+  touch-action: none;
+}
+.monet-cv-navigator-marquee:active { cursor: grabbing; }
+.monet-cv-navigator-zoom.monet-row { min-height: 0; }
+.monet-cv-navigator-zoom .lbl { width: auto; }
+.monet-cv-navigator-zoom .monet-slider { flex: 1; min-width: 0; }
+.monet-cv-navigator-zoom .val { min-width: 4ch; text-align: right; }
+
+/* ─── Marquee ─── dashed marching-ants selection rectangle */
+.monet-cv-marquee {
+  position: absolute;
+  border-radius: 1px;
+  /* two layered conic-gradient borders give a contrasting (light/dark) dash */
+  background:
+    linear-gradient(90deg, var(--hi-top) 50%, transparent 0) repeat-x 0 0 / 6px 1px,
+    linear-gradient(90deg, var(--hi-top) 50%, transparent 0) repeat-x 0 100% / 6px 1px,
+    linear-gradient(0deg, var(--hi-top) 50%, transparent 0) repeat-y 0 0 / 1px 6px,
+    linear-gradient(0deg, var(--hi-top) 50%, transparent 0) repeat-y 100% 0 / 1px 6px;
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--accent) 30%, transparent);
+  pointer-events: none;
+}
+.monet-cv-marquee.is-marching { animation: monet-cv-marquee-ants 0.6s linear infinite; }
+.monet-cv-marquee-label {
+  position: absolute;
+  left: 0;
+  top: -16px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: var(--text-1);
+  background: color-mix(in oklch, var(--accent) 22%, var(--glass-3));
+  box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 50%, transparent);
+}
+@keyframes monet-cv-marquee-ants {
+  to { background-position: 6px 0, -6px 100%, 0 -6px, 100% 6px; }
+}
+
+/* ─── GridGuides ─── grid + guide-line overlay */
+.monet-cv-gridguides {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.monet-cv-gridguides.has-grid {
+  background-image:
+    linear-gradient(to right, var(--stroke-soft) 0.5px, transparent 0.5px),
+    linear-gradient(to bottom, var(--stroke-soft) 0.5px, transparent 0.5px);
+  background-size: var(--grid) var(--grid);
+}
+.monet-cv-gridguides.has-grid.has-sub {
+  background-image:
+    linear-gradient(to right, var(--stroke-medium) 0.5px, transparent 0.5px),
+    linear-gradient(to bottom, var(--stroke-medium) 0.5px, transparent 0.5px),
+    linear-gradient(to right, var(--stroke-soft) 0.5px, transparent 0.5px),
+    linear-gradient(to bottom, var(--stroke-soft) 0.5px, transparent 0.5px);
+  background-size:
+    var(--grid) var(--grid),
+    var(--grid) var(--grid),
+    var(--grid-sub) var(--grid-sub),
+    var(--grid-sub) var(--grid-sub);
+}
+.monet-cv-gridguides-line {
+  position: absolute;
+  background: color-mix(in oklch, var(--accent) 70%, transparent);
+}
+.monet-cv-gridguides-line.is-x { top: 0; bottom: 0; width: 1px; transform: translateX(-0.5px); }
+.monet-cv-gridguides-line.is-y { left: 0; right: 0; height: 1px; transform: translateY(-0.5px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .monet-cv-marquee.is-marching { animation: none; }
+}
+
+/* --- creative-meters --- */
+/* ─────────────────────────────────────────────────────────────
+   creative-meters: data-viz / measurement widgets (Histogram /
+   LevelMeter / ChannelStrip / Spectrum). Behaviour lives in
+   monet-react/src/creative-meters.tsx. Token-only so theme / density /
+   accent respond automatically; the inset-dark plots reuse the
+   var(--glass-0) + inset-shadow idiom of the color/inspector surfaces, and
+   the stat rows reuse .monet-row / .lbl / .val. The pure-display widgets
+   are role="img" / role="meter" (internals aria-hidden); the ChannelStrip
+   composes the chrome .monet-slider (vertical) + this module's
+   .monet-cv-meter.
+   ───────────────────────────────────────────────────────────── */
+
+/* ─── Histogram ─── */
+.monet-cv-histogram {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  --accent: #6aa0ff;
+}
+.monet-cv-histogram-plot {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 6px;
+  border-radius: var(--radius-control);
+  background:
+    linear-gradient(to top, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0)) ,
+    var(--glass-0);
+  box-shadow:
+    inset 0 0 0 0.5px var(--stroke-soft),
+    inset 0 1px 3px rgba(0, 0, 0, 0.32);
+  overflow: hidden;
+}
+/* each channel is an absolutely-stacked row of flex bars so overlays register */
+.monet-cv-histogram-series {
+  position: absolute;
+  inset: 6px;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  --series: var(--accent);
+}
+.monet-cv-histogram-bar {
+  flex: 1 1 0;
+  min-width: 0;
+  align-self: flex-end;
+  background: color-mix(in oklch, var(--series) 80%, transparent);
+  border-radius: 1px 1px 0 0;
+}
+/* base (mono / luminance) channel reads slightly fuller than the overlays */
+.monet-cv-histogram-series:not(.is-overlay) .monet-cv-histogram-bar {
+  background: color-mix(in oklch, var(--accent) 62%, var(--glass-3));
+}
+/* R/G/B overlays blend additively over the base so coincident bars brighten */
+.monet-cv-histogram-series.is-overlay {
+  mix-blend-mode: screen;
+}
+.monet-cv-histogram-series.is-overlay .monet-cv-histogram-bar {
+  background: color-mix(in oklch, var(--series) 70%, transparent);
+}
+.monet-cv-histogram-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.monet-cv-histogram-stat.monet-row {
+  min-height: 18px;
+  font-size: 11px;
+}
+.monet-cv-histogram-stat .lbl { color: var(--text-3); }
+.monet-cv-histogram-stat .val {
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── LevelMeter ─── */
+.monet-cv-meter {
+  display: inline-flex;
+  gap: 4px;
+  --accent: #6aa0ff;
+}
+.monet-cv-meter.is-vertical {
+  flex-direction: column;
+  align-items: center;
+  height: 120px;
+}
+.monet-cv-meter.is-horizontal {
+  flex-direction: row-reverse;
+  align-items: center;
+  width: 160px;
+}
+.monet-cv-meter-track {
+  position: relative;
+  border-radius: var(--radius-control);
+  background: var(--glass-0);
+  box-shadow:
+    inset 0 0 0 0.5px var(--stroke-soft),
+    inset 0 1px 3px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+.monet-cv-meter.is-vertical .monet-cv-meter-track { width: 14px; flex: 1 1 auto; }
+.monet-cv-meter.is-horizontal .monet-cv-meter-track { height: 14px; flex: 1 1 auto; }
+/* dB grid lines etched across the track */
+.monet-cv-meter-grid { position: absolute; inset: 0; pointer-events: none; }
+.monet-cv-meter-gridline {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.38);
+}
+.monet-cv-meter.is-vertical .monet-cv-meter-gridline {
+  left: 0; right: 0; height: 0.5px;
+  box-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.05);
+}
+.monet-cv-meter.is-horizontal .monet-cv-meter-gridline {
+  top: 0; bottom: 0; width: 0.5px;
+  box-shadow: 0.5px 0 0 rgba(255, 255, 255, 0.05);
+}
+.monet-cv-meter-bars {
+  position: relative;
+  display: flex;
+  gap: 1px;
+  width: 100%;
+  height: 100%;
+}
+.monet-cv-meter.is-horizontal .monet-cv-meter-bars { flex-direction: column; }
+.monet-cv-meter-bar { position: relative; flex: 1 1 0; }
+.monet-cv-meter-fill {
+  position: absolute;
+  /* the fill carries the FULL ramp pinned to the bar, then the height/width
+     reveals the bottom (quiet) slice so the color stays anchored to 0 dBFS. */
+  background: var(--ramp);
+  background-attachment: local;
+}
+.monet-cv-meter.is-vertical .monet-cv-meter-fill {
+  left: 0; right: 0; bottom: 0;
+  background-size: 100% calc(100% * 100 / max(var(--h, 100), 1));
+  background-position: bottom;
+}
+/* vertical fill grows upward from the floor; horizontal grows from the left */
+.monet-cv-meter.is-vertical .monet-cv-meter-fill { background-size: auto; height: 0; }
+.monet-cv-meter.is-vertical .monet-cv-meter-fill[style*="height"] { background-size: 100% 120px; }
+.monet-cv-meter.is-horizontal .monet-cv-meter-fill {
+  left: 0; top: 0; bottom: 0; width: 0;
+  background-size: 160px 100%;
+}
+.monet-cv-meter-peak {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
+}
+.monet-cv-meter.is-vertical .monet-cv-meter-peak { left: 0; right: 0; height: 1.5px; }
+.monet-cv-meter.is-horizontal .monet-cv-meter-peak { top: 0; bottom: 0; width: 1.5px; }
+.monet-cv-meter-label {
+  font-size: 9px;
+  line-height: 1;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* ─── ChannelStrip ─── */
+.monet-cv-channelstrip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 64px;
+  padding: 8px 6px;
+  border-radius: var(--radius-control);
+  background: var(--glass-1);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+  --accent: #6aa0ff;
+}
+.monet-cv-channelstrip.is-master {
+  background: color-mix(in oklch, var(--accent) 10%, var(--glass-2));
+  box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 35%, var(--stroke-medium));
+}
+.monet-cv-channelstrip.is-muted { opacity: 0.78; }
+.monet-cv-channelstrip-inserts {
+  width: 100%;
+  font-size: 9px;
+  color: var(--text-3);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.monet-cv-channelstrip-toggles {
+  display: flex;
+  gap: 3px;
+}
+.monet-cv-channelstrip-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: var(--glass-0);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+  color: var(--text-3);
+  font-size: 9px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+}
+.monet-cv-channelstrip-toggle:hover { color: var(--text-1); }
+.monet-cv-channelstrip-toggle:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--accent) 75%, transparent),
+    0 0 0 2px color-mix(in oklch, var(--accent) 28%, transparent);
+}
+.monet-cv-channelstrip-toggle.is-mute.is-active {
+  background: color-mix(in oklch, #ff3b30 70%, transparent);
+  color: #fff;
+  box-shadow: inset 0 0 0 0.5px #ff3b30, 0 0 6px color-mix(in oklch, #ff3b30 50%, transparent);
+}
+.monet-cv-channelstrip-toggle.is-solo.is-active {
+  background: color-mix(in oklch, #ffcc00 75%, transparent);
+  color: #1a1400;
+  box-shadow: inset 0 0 0 0.5px #ffcc00, 0 0 6px color-mix(in oklch, #ffcc00 50%, transparent);
+}
+.monet-cv-channelstrip-toggle.is-rec.is-active {
+  background: color-mix(in oklch, #ff3b30 80%, transparent);
+  color: #fff;
+  box-shadow: inset 0 0 0 0.5px #ff453a, 0 0 7px color-mix(in oklch, #ff3b30 60%, transparent);
+}
+.monet-cv-channelstrip-body {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  height: 120px;
+}
+.monet-cv-channelstrip-fader.monet-slider.is-vertical {
+  width: 12px;
+  height: 120px;
+}
+.monet-cv-channelstrip-meter.monet-cv-meter.is-vertical { height: 120px; }
+.monet-cv-channelstrip-db {
+  font-size: 9px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.monet-cv-channelstrip-name {
+  max-width: 100%;
+  font-size: 10px;
+  color: var(--text-2);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.monet-cv-channelstrip.is-master .monet-cv-channelstrip-name { color: var(--text-1); font-weight: 600; }
+
+/* ─── Spectrum ─── */
+.monet-cv-spectrum {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  --accent: #6aa0ff;
+}
+.monet-cv-spectrum-plot {
+  position: relative;
+  height: 96px;
+  border-radius: var(--radius-control);
+  background:
+    linear-gradient(to top, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0)),
+    var(--glass-0);
+  box-shadow:
+    inset 0 0 0 0.5px var(--stroke-soft),
+    inset 0 1px 3px rgba(0, 0, 0, 0.32);
+  overflow: hidden;
+}
+.monet-cv-spectrum-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.monet-cv-spectrum-area {
+  fill: var(--fill);
+}
+.monet-cv-spectrum-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px color-mix(in oklch, var(--accent) 55%, transparent));
+}
+.monet-cv-spectrum-axis {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2px;
+  font-size: 9px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* density: shrink the vertical meters / strips in compact mode */
+[data-density="compact"] .monet-cv-meter.is-vertical,
+[data-density="compact"] .monet-cv-channelstrip-body,
+[data-density="compact"] .monet-cv-channelstrip-fader.monet-slider.is-vertical,
+[data-density="compact"] .monet-cv-channelstrip-meter.monet-cv-meter.is-vertical { height: 96px; }
+[data-density="compact"] .monet-cv-spectrum-plot { height: 80px; }
+
+/* --- creative-vector --- */
+/* ─── creative-vector: Pathfinder + AlignBar tool groups ─── */
+
+/* Pathfinder — shape-mode tiles + compound-path operation chips */
+.monet-cv-pathfinder {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.monet-cv-pathfinder-label {
+  margin: 0;
+}
+.monet-cv-pathfinder-label + .monet-cv-pathfinder-modes,
+.monet-cv-pathfinder-label + .monet-cv-pathfinder-ops {
+  margin-top: 2px;
+}
+.monet-cv-pathfinder-modes {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+/* glass shape-mode tile (extends .monet-iconbtn) */
+.monet-cv-pathfinder-mode {
+  width: 42px;
+  height: 30px;
+  border-radius: 5px;
+  background: var(--glass-1);
+  box-shadow: inset 0 0.5px 0 var(--hi-top);
+  color: var(--text-2);
+}
+.monet-cv-pathfinder-mode:hover {
+  background: var(--glass-2);
+  color: var(--text-1);
+}
+.monet-cv-pathfinder-mode.is-active {
+  color: var(--text-1);
+  background: var(--glass-3);
+  box-shadow: inset 0 0.5px 0 var(--hi-top);
+}
+.monet-cv-pathfinder-ops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+/* clickable operation chip (extends .monet-chip → a real <button>) */
+.monet-cv-pathfinder-op {
+  cursor: pointer;
+}
+.monet-cv-pathfinder-op:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* AlignBar — align / distribute toolbar (role=toolbar, roving tabindex) */
+.monet-cv-alignbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.monet-cv-alignbar.is-vertical {
+  flex-direction: column;
+  align-items: stretch;
+}
+.monet-cv-alignbar.is-labelled {
+  gap: 4px;
+  flex-wrap: wrap;
+}
+/* icon-only align button (extends .monet-iconbtn) */
+.monet-cv-alignbar-btn {
+  width: 30px;
+  height: 26px;
+  border-radius: 6px;
+}
+.monet-cv-alignbar.is-labelled .monet-cv-alignbar-btn {
+  width: auto;
+  cursor: pointer;
+}
+.monet-cv-alignbar-btn.is-active {
+  color: var(--text-1);
+  background: var(--glass-3);
+  box-shadow: inset 0 0.5px 0 var(--hi-top);
+}
+.monet-cv-alignbar-btn:focus-visible {
+  outline: 1.5px solid color-mix(in oklch, var(--accent) 70%, transparent);
+  outline-offset: 1px;
+}
+.monet-cv-alignbar-label {
+  font-size: 11px;
+}
+/* "align to" target — a labelled Select wrapper */
+.monet-cv-alignbar-relative {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-start: 8px;
+}
+.monet-cv-alignbar.is-vertical .monet-cv-alignbar-relative {
+  margin-inline-start: 0;
+  margin-top: 6px;
+}
+.monet-cv-alignbar-relative-label {
+  font-size: 10px;
+  color: var(--text-3);
+  white-space: nowrap;
+}

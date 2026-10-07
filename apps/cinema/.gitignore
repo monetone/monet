@@ -1,0 +1,21 @@
+node_modules/
+dist/
+*.log
+
+# Rust / wasm
+target/
+engine/pkg/
+engine/target/
+crates/**/target/
+src-tauri/target/
+
+# Tauri build-generated ACL schemas (regenerated on every build)
+src-tauri/gen/schemas/
+
+# Playwright e2e artifacts
+test-results/
+playwright-report/
+.playwright/
+
+# OS
+.DS_Store

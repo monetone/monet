@@ -1,0 +1,1166 @@
+/* ─────────────────────────────────────────────────────────────
+   Aperture Panel System — liquid glass tokens & primitives
+   ─────────────────────────────────────────────────────────────
+   Original panel chrome inspired by macOS Tahoe-style liquid glass:
+   layered translucency, soft inner highlights, generous backdrop blur,
+   no neon gradients. Per-app accents tint highlights only, never chrome.
+*/
+
+:root {
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter Display", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;
+
+  /* base desktop tone — dark, slightly cool, slightly warm in highlights */
+  --desktop-0: #0b0e14;
+  --desktop-1: #131722;
+  --desktop-2: #1a1f2c;
+
+  /* glass surfaces — three depths */
+  --glass-0: rgba(255, 255, 255, 0.04);   /* deep, behind toolbars */
+  --glass-1: rgba(255, 255, 255, 0.06);   /* panel body */
+  --glass-2: rgba(255, 255, 255, 0.09);   /* raised — toolbars, headers */
+  --glass-3: rgba(255, 255, 255, 0.13);   /* hover / pressed */
+
+  --stroke-soft: rgba(255, 255, 255, 0.06);
+  --stroke-medium: rgba(255, 255, 255, 0.10);
+  --stroke-strong: rgba(255, 255, 255, 0.16);
+
+  /* highlights — top inner light line that gives liquid glass its lift */
+  --hi-top: rgba(255, 255, 255, 0.22);
+  --hi-bottom: rgba(0, 0, 0, 0.35);
+
+  --text-1: rgba(255, 255, 255, 0.92);
+  --text-2: rgba(255, 255, 255, 0.62);
+  --text-3: rgba(255, 255, 255, 0.38);
+  --text-disabled: rgba(255, 255, 255, 0.22);
+
+  --radius-window: 14px;
+  --radius-panel: 10px;
+  --radius-control: 7px;
+  --radius-pill: 999px;
+
+  --shadow-window: 0 24px 80px -8px rgba(0, 0, 0, 0.55),
+                   0 8px 24px -4px rgba(0, 0, 0, 0.35),
+                   0 0 0 0.5px rgba(255, 255, 255, 0.08);
+
+  --blur-strong: blur(40px) saturate(180%);
+  --blur-medium: blur(24px) saturate(160%);
+  --blur-light: blur(14px) saturate(140%);
+
+  /* per-app accents — only used in highlights, never structural */
+  --accent-raster: oklch(0.78 0.14 200);   /* cyan */
+  --accent-vector: oklch(0.80 0.14 70);    /* amber */
+  --accent-audio:  oklch(0.74 0.16 305);   /* violet */
+  --accent-motion: oklch(0.75 0.18 350);   /* magenta */
+}
+
+/* ─── window shell ─── */
+.ap-window {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(120% 80% at 20% 0%, rgba(40, 50, 80, 0.45), transparent 60%),
+    radial-gradient(100% 80% at 90% 100%, rgba(80, 30, 60, 0.30), transparent 60%),
+    linear-gradient(180deg, var(--desktop-1), var(--desktop-0));
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text-1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-window);
+  box-shadow: var(--shadow-window);
+  isolation: isolate;
+}
+
+/* subtle desktop noise so glass has something to bend */
+.ap-window::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 30% 70%, rgba(120, 180, 255, 0.10), transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(255, 160, 200, 0.08), transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── title bar ─── */
+/* Round the title bar's own top corners — a child with backdrop-filter is not
+   clipped by the window's border-radius, so it must round itself. */
+.ap-window > .ap-titlebar {
+  border-radius: var(--radius-window) var(--radius-window) 0 0;
+}
+.ap-window--win > .ap-titlebar {
+  border-radius: 9px 9px 0 0;
+}
+.ap-titlebar {
+  position: relative;
+  z-index: 5;
+  height: 48px;
+  flex: 0 0 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: var(--blur-strong);
+  -webkit-backdrop-filter: var(--blur-strong);
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+
+.ap-tab-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  padding-left: 12px;
+  overflow: hidden;
+}
+.ap-doctab {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 38px;
+  padding: 0 18px 0 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.16s cubic-bezier(.2,.8,.2,1), opacity 0.16s ease;
+}
+.ap-doctab:hover { background: var(--glass-1); color: var(--text-1); }
+.ap-doctab:active { cursor: grabbing; }
+.ap-doctab.is-active {
+  position: relative;
+  background: var(--glass-2);
+  color: var(--text-1);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), 0 1px 2px rgba(0,0,0,0.3);
+}
+/* dragging: lift off the strip and follow the pointer */
+.ap-doctab.is-dragging {
+  z-index: 20;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.45), inset 0 0.5px 0 var(--hi-top);
+  background: var(--glass-2);
+  color: var(--text-1);
+  cursor: grabbing;
+}
+.ap-doctab-label,
+.ap-doctab > span:nth-child(2) {
+  position: relative;
+  top: 0;
+  transition: transform 0.18s cubic-bezier(.2,.8,.2,1);
+}
+/* selecting a tab nudges its title upward */
+.ap-doctab.is-active .ap-doctab-label,
+.ap-doctab.is-active > span:nth-child(2) {
+  transform: translateY(-4px);
+}
+.ap-doctab.is-active .ap-doctab-label::after,
+.ap-doctab.is-active > span:nth-child(2)::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -7px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.ap-doctab .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+}
+.ap-doctab.is-modified .dot { opacity: 1; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.ap-doctab .close {
+  width: 17px; height: 17px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 4px;
+  opacity: 0.5;
+  font-size: 11px;
+  margin-left: 2px;
+}
+.ap-doctab .close:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+
+.ap-titlebar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.ap-app-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  padding: 0 12px 0 8px;
+  border-radius: var(--radius-pill);
+  background: var(--glass-2);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-1);
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 0.5px 0 var(--hi-top);
+}
+.ap-app-pill .glyph {
+  width: 14px; height: 14px; border-radius: 4px;
+  background: var(--accent);
+  display: block;
+  box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.4);
+}
+
+/* ─── Windows chrome ─── */
+/* top row is a slim, darker system bar carrying the app menus + window controls */
+.ap-titlebar.is-win {
+  height: 36px;
+  flex: 0 0 36px;
+  padding: 0 0 0 12px;
+  gap: 8px;
+  background: var(--glass-0);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  border-bottom: none;
+}
+.ap-win-appicon {
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+  box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.45);
+}
+.ap-win-applabel {
+  font-size: 12px;
+  color: var(--text-1);
+  font-weight: 600;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  letter-spacing: 0.04em;
+}
+.ap-winmenus {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex: 0 0 auto;
+  margin-left: 6px;
+}
+.ap-winmenus .ap-menu {
+  padding: 3px 9px;
+  border-radius: 4px;
+}
+.ap-win-drag {
+  flex: 1 1 auto;
+  align-self: stretch;
+  -webkit-app-region: drag;
+}
+.ap-tab-row.is-win {
+  flex: 1;
+  padding-left: 0;
+  gap: 2px;
+  height: 100%;
+  align-items: flex-end;
+}
+.ap-doctab.is-win {
+  border-radius: 6px 6px 0 0;
+  height: 100%;
+  align-self: flex-end;
+  padding: 0 10px;
+}
+.ap-doctab.is-win.is-active {
+  background: var(--glass-1);
+  box-shadow: none;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+}
+/* glowing accent line along the tab's bottom edge — the line itself glows */
+.ap-doctab.is-win.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+/* The two-row titlebar uses the bottom-of-tab border as its active indicator;
+   drop the inline underline and keep the title vertically centered. */
+.ap-doctab.is-win.is-active .ap-doctab-label::after {
+  display: none;
+}
+.ap-doctab.is-win.is-active .ap-doctab-label {
+  transform: none;
+}
+.ap-winctrls {
+  display: flex;
+  align-items: stretch;
+  flex: 0 0 auto;
+  margin-left: auto;
+  height: 100%;
+}
+.ap-winctrl {
+  width: 46px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  padding: 0;
+}
+.ap-winctrl:hover { background: var(--glass-2); color: var(--text-1); }
+.ap-winctrl.is-close:hover { background: #e81123; color: #fff; }
+
+/* Windows window frame — squarer, mica-style flat top */
+.ap-window--win {
+  border-radius: 9px;
+}
+/* document-tab band — shares the toolbar material so it blends into the chrome */
+.ap-tabstrip-win {
+  flex: 0 0 42px;
+  height: 42px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 8px;
+  background: var(--glass-0);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  position: relative;
+  z-index: 4;
+}
+.ap-menustrip.is-win {
+  height: 26px;
+  flex: 0 0 26px;
+  background: rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+}
+.ap-menustrip.is-win .ap-menu {
+  padding: 3px 9px;
+  border-radius: 4px;
+}
+
+/* ─── menu strip ─── */
+.ap-menustrip {
+  height: 28px;
+  flex: 0 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px;
+  background: rgba(0, 0, 0, 0.18);
+  backdrop-filter: var(--blur-light);
+  border-bottom: 0.5px solid var(--stroke-soft);
+  font-size: 12px;
+  position: relative;
+  z-index: 4;
+}
+.ap-menu {
+  padding: 4px 10px;
+  border-radius: 5px;
+  color: var(--text-2);
+  cursor: default;
+}
+.ap-menu:hover { background: var(--glass-1); color: var(--text-1); }
+.ap-menu.is-open { background: var(--glass-2); color: var(--text-1); }
+
+/* ─── options bar (legacy — content reused inside Toolbar) ─ */
+.ap-optionsbar {
+  display: contents;
+}
+
+/* ─── main work area ─── */
+.ap-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── toolbar (relocatable strip) ───────────────────────── */
+.ap-toolbar {
+  position: relative;
+  display: flex;
+  background: var(--glass-0);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  flex: 0 0 auto;
+  z-index: 3;
+}
+.ap-toolbar--h {
+  height: 44px;
+  flex-direction: row;
+  align-items: stretch;
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+.ap-toolbar--v {
+  width: 48px;
+  flex-direction: column;
+  align-items: stretch;
+  border-right: 0.5px solid var(--stroke-soft);
+}
+.ap-toolbar.is-float {
+  position: absolute;
+  border-radius: 10px;
+  border: none !important;
+  background: var(--glass-1);
+  backdrop-filter: var(--blur-strong);
+  box-shadow:
+    0 20px 48px rgba(0,0,0,0.5),
+    0 4px 12px rgba(0,0,0,0.3),
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px var(--stroke-medium);
+  overflow: hidden;
+  z-index: 9;
+}
+.ap-toolbar.is-dragging { opacity: 0.5; }
+
+/* A horizontal-only toolbar (e.g. the options bar) parked in a vertical slot —
+   a tb column inside a side dock, or a left/right edge strip — keeps each
+   control group as a horizontal row, but stacks the groups vertically so the
+   lane stays narrow (just wide enough to fit the controls) and the neighbouring
+   panels keep their space instead of being squished to nothing. */
+[data-dock-col-kind="tb"]:is([data-side="left"],[data-side="right"]) > .ap-toolbar--h,
+.ap-tb-strip--v > .ap-toolbar--h {
+  width: 232px;
+  height: auto;
+  min-height: 44px;
+}
+[data-dock-col-kind="tb"]:is([data-side="left"],[data-side="right"]) > .ap-toolbar--h > .ap-toolbar-body,
+.ap-tb-strip--v > .ap-toolbar--h > .ap-toolbar-body {
+  flex-direction: column;
+  align-items: stretch;
+  align-content: flex-start;
+  gap: 12px;
+  padding: 10px;
+  overflow: visible;
+}
+[data-dock-col-kind="tb"]:is([data-side="left"],[data-side="right"]) > .ap-toolbar--h .group,
+.ap-tb-strip--v > .ap-toolbar--h .group {
+  height: auto;
+  width: 100%;
+  flex-wrap: wrap;
+  border-right: none;
+  padding-right: 0;
+  padding-bottom: 12px;
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+[data-dock-col-kind="tb"]:is([data-side="left"],[data-side="right"]) > .ap-toolbar--h .group:last-child,
+.ap-tb-strip--v > .ap-toolbar--h .group:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* ─── toolbar lanes — one edge can hold several stacked lanes ─── */
+/* Top/bottom: each lane is a horizontal row; lanes stack vertically.
+   Left/right: each lane is a vertical column; lanes sit side by side. */
+.ap-tb-lanes {
+  display: flex;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 3;
+}
+.ap-tb-lanes--h { flex-direction: column; }
+.ap-tb-lanes--v { flex-direction: row; }
+
+/* ─── toolbar strip — container for stacked toolbars on one edge ─── */
+.ap-tb-strip {
+  display: flex;
+  flex: 0 0 auto;
+  background: var(--glass-0);
+  position: relative;
+  z-index: 3;
+}
+.ap-tb-strip--h {
+  flex-direction: row;
+  align-items: stretch;
+  min-height: 44px;
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+.ap-tb-strip--h .ap-toolbar--h {
+  border-bottom: none;
+  /* Fill the full width of the docked strip and resize with it. Multiple
+     stacked toolbars share the width; the trailing flex spacer inside the
+     options bar then pushes its last group out to the far edge. */
+  flex: 1 1 0;
+  min-width: 0;
+  /* Grow taller (unbounded) when width is tight — groups wrap to new rows
+     rather than the bar capping out and squashing each control. */
+  height: auto;
+  min-height: 44px;
+}
+.ap-tb-strip--h .ap-toolbar--h > .ap-toolbar-body {
+  flex-wrap: wrap;
+  align-content: center;
+  row-gap: 8px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  overflow: visible;
+}
+/* Keep each control group intact and let it wrap as a whole unit. */
+.ap-tb-strip--h .ap-toolbar--h .ap-toolbar-body .group {
+  flex: 0 0 auto;
+  height: auto;
+  white-space: nowrap;
+}
+.ap-tb-strip--h .ap-toolbar--h + .ap-toolbar--h {
+  border-left: 0.5px solid var(--stroke-soft);
+}
+.ap-tb-strip--v {
+  flex-direction: row;
+  align-items: stretch;
+  min-width: 48px;
+  border-right: 0.5px solid var(--stroke-soft);
+}
+[data-tb-side="right"].ap-tb-strip--v {
+  border-right: none;
+  border-left: 0.5px solid var(--stroke-soft);
+}
+.ap-tb-strip--v .ap-toolbar--v {
+  border-right: none;
+  flex: 0 0 auto;
+}
+.ap-tb-strip--v .ap-toolbar--v + .ap-toolbar--v {
+  border-left: 0.5px solid var(--stroke-soft);
+}
+
+.ap-toolbar-grip {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  cursor: grab;
+  user-select: none;
+  background: transparent;
+  transition: background 0.12s, color 0.12s;
+}
+.ap-toolbar--h .ap-toolbar-grip { width: 14px; }
+.ap-toolbar--v .ap-toolbar-grip { height: 14px; }
+.ap-toolbar-grip:hover { background: var(--glass-1); color: var(--text-2); }
+.ap-toolbar-grip:active { cursor: grabbing; }
+
+.ap-toolbar-body {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+.ap-toolbar--h .ap-toolbar-body {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 0 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.ap-toolbar--v .ap-toolbar-body {
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0;
+}
+
+/* group separators inside an options-bar style toolbar */
+.ap-toolbar-body .group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 14px;
+  border-right: 0.5px solid var(--stroke-soft);
+  height: 100%;
+}
+.ap-toolbar-body .group:last-child { border-right: none; padding-right: 0; }
+
+/* ─── legacy tool rail (kept for non-Toolbar uses) ─────── */
+.ap-toolrail {
+  width: 48px;
+  flex: 0 0 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: var(--blur-medium);
+  border-right: 0.5px solid var(--stroke-soft);
+}
+.ap-tool {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  cursor: default;
+  position: relative;
+}
+.ap-tool:hover {
+  background: var(--glass-1);
+  color: var(--text-1);
+}
+.ap-tool.is-active {
+  background: var(--glass-3);
+  color: var(--text-1);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), 0 1px 3px rgba(0,0,0,0.3);
+}
+.ap-tool.is-active::after {
+  content: "";
+  position: absolute;
+  right: -1px; top: 50%;
+  transform: translateY(-50%);
+  width: 2px; height: 16px;
+  border-radius: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+/* horizontal orientation: indicator moves to bottom edge */
+.ap-tool[data-orient="h"].is-active::after {
+  right: auto; top: auto; transform: none;
+  left: 50%; bottom: -1px;
+  margin-left: -8px;
+  width: 16px; height: 2px;
+}
+.ap-tool .badge {
+  position: absolute;
+  bottom: 4px; right: 4px;
+  width: 4px; height: 4px;
+  border-bottom: 4px solid var(--text-3);
+  border-right: 4px solid transparent;
+}
+.ap-toolrail .ap-divider,
+.ap-divider[data-orient="v"] {
+  width: 26px; height: 0.5px;
+  background: var(--stroke-soft);
+  margin: 4px 0;
+  flex: 0 0 0.5px;
+}
+.ap-divider[data-orient="h"] {
+  width: 0.5px; height: 26px;
+  background: var(--stroke-soft);
+  margin: 0 4px;
+  flex: 0 0 0.5px;
+}
+
+/* ─── canvas area ─── */
+.ap-canvas {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  background:
+    repeating-conic-gradient(rgba(255,255,255,0.015) 0% 25%, transparent 0% 50%) 50% / 16px 16px,
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02), transparent 70%);
+}
+.ap-canvas-shell {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── dock area (panel column container) ─── */
+.ap-dock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.ap-dock--right { width: 320px; flex: 0 0 320px; border-left: 0.5px solid var(--stroke-soft); }
+.ap-dock--left  { width: 280px; flex: 0 0 280px; border-right: 0.5px solid var(--stroke-soft); }
+.ap-dock--bottom { height: 220px; flex: 0 0 220px; border-top: 0.5px solid var(--stroke-soft); }
+.ap-dock--top { height: 200px; flex: 0 0 200px; border-bottom: 0.5px solid var(--stroke-soft); }
+
+/* ─── splitter ─── */
+.ap-split {
+  flex: 0 0 1px;
+  background: var(--stroke-soft);
+  position: relative;
+  cursor: col-resize;
+  z-index: 2;
+}
+.ap-split.is-h { cursor: row-resize; }
+.ap-split::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  z-index: 1;
+}
+.ap-split:hover::after,
+.ap-split.is-dragging::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--accent, rgba(120,180,255,0.6));
+  box-shadow: 0 0 12px var(--accent, rgba(120,180,255,0.4));
+  transition: background 0.15s;
+}
+
+/* ─── panel ─── */
+.ap-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+  background: var(--glass-1);
+  backdrop-filter: var(--blur-strong);
+  -webkit-backdrop-filter: var(--blur-strong);
+}
+.ap-panel + .ap-panel {
+  border-top: 0.5px solid var(--stroke-soft);
+}
+
+/* ─── tab strip (inside panel) ─── */
+.ap-tabs {
+  display: flex;
+  align-items: stretch;
+  height: 32px;
+  flex: 0 0 32px;
+  padding: 0 4px 0 8px;
+  background: rgba(0, 0, 0, 0.16);
+  border-bottom: 0.5px solid var(--stroke-soft);
+  gap: 2px;
+  position: relative;
+}
+.ap-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 100%;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  border-radius: 6px 6px 0 0;
+  align-self: flex-end;
+  cursor: default;
+  letter-spacing: 0.02em;
+  position: relative;
+}
+.ap-tab:hover { color: var(--text-2); }
+.ap-tab.is-active {
+  color: var(--text-1);
+  background: var(--glass-1);
+  height: calc(100% + 1px);
+}
+.ap-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 10px; right: 10px;
+  top: 4px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  opacity: 0.85;
+}
+.ap-tab-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+  color: var(--text-3);
+}
+.ap-tab-actions .btn {
+  width: 22px; height: 22px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ap-tab-actions .btn:hover { background: var(--glass-2); color: var(--text-1); }
+
+/* ─── panel body ─── */
+.ap-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 12px;
+  position: relative;
+}
+.ap-panel-body.is-flush { padding: 0; }
+
+/* sublabel / row ─── */
+.ap-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 4px 0 8px;
+}
+.ap-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.ap-row .lbl { width: 70px; color: var(--text-3); font-size: 11px; }
+.ap-row .val { color: var(--text-1); font-family: var(--font-mono); font-size: 11px; }
+.ap-row .field {
+  flex: 1;
+  background: var(--glass-0);
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-1);
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── slider ─── */
+.ap-slider {
+  height: 4px;
+  background: var(--glass-0);
+  border-radius: 2px;
+  position: relative;
+  flex: 1;
+  box-shadow: inset 0 0.5px 0 rgba(0,0,0,0.3);
+}
+.ap-slider .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--accent);
+  opacity: 0.85;
+}
+.ap-slider .knob {
+  position: absolute;
+  top: 50%;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.65));
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5), inset 0 0.5px 0 rgba(255,255,255,0.9);
+}
+
+/* ─── chips / buttons ─── */
+.ap-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  height: 24px;
+  border-radius: var(--radius-control);
+  background: var(--glass-1);
+  color: var(--text-1);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: default;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  box-shadow: inset 0 0.5px 0 var(--hi-top);
+}
+.ap-chip:hover { background: var(--glass-2); }
+.ap-chip.is-active {
+  background: var(--glass-3);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), inset 0 0 0 0.5px var(--stroke-strong);
+}
+.ap-chip.is-accent {
+  background: color-mix(in oklch, var(--accent) 25%, transparent);
+  color: var(--text-1);
+  box-shadow: inset 0 0.5px 0 var(--hi-top), inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 50%, transparent);
+}
+
+.ap-iconbtn {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+}
+.ap-iconbtn:hover { background: var(--glass-1); color: var(--text-1); }
+.ap-iconbtn.is-active { background: var(--glass-3); color: var(--text-1); box-shadow: inset 0 0.5px 0 var(--hi-top); }
+
+/* ─── color swatch ─── */
+.ap-swatch {
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  display: inline-block;
+  box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.4), inset 0 0.5px 0 rgba(255,255,255,0.25);
+}
+
+/* ─── status bar ─── */
+.ap-statusbar {
+  height: 24px;
+  flex: 0 0 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 14px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-3);
+  background: rgba(14, 18, 24, 0.72);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-top: 0.5px solid var(--stroke-soft);
+  position: relative;
+  z-index: 2;
+}
+.ap-statusbar .grow { flex: 1; }
+
+/* ─── icon rail (collapsed panels) ─── */
+.ap-iconrail {
+  width: 40px;
+  flex: 0 0 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 4px;
+  background: rgba(255,255,255,0.025);
+  backdrop-filter: var(--blur-medium);
+  border-left: 0.5px solid var(--stroke-soft);
+}
+.ap-iconrail .ap-iconbtn { width: 30px; height: 30px; }
+
+/* ─── floating panel ─── */
+.ap-float {
+  position: absolute;
+  border-radius: var(--radius-panel);
+  background: var(--glass-1);
+  backdrop-filter: var(--blur-strong);
+  -webkit-backdrop-filter: var(--blur-strong);
+  box-shadow:
+    0 24px 48px -8px rgba(0,0,0,0.55),
+    0 4px 12px -2px rgba(0,0,0,0.3),
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px var(--stroke-medium);
+  overflow: hidden;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+/* slim move-bar at the top of a floating mini-dock */
+.ap-float-bar {
+  height: 18px;
+  flex: 0 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px 0 6px;
+  color: var(--text-3);
+  cursor: grab;
+  background: rgba(0,0,0,0.22);
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+.ap-float-bar:active { cursor: grabbing; }
+.ap-float-grip { display: inline-flex; align-items: center; color: var(--text-3); }
+.ap-float-bar .ap-iconbtn { color: var(--text-3); }
+.ap-float-bar .ap-iconbtn:hover { background: var(--glass-2); color: var(--text-1); }
+
+/* float-internal panels sit on the float's own glass — keep them light so we
+   don't stack blur-on-blur; the tab strips keep their dark fill. */
+.ap-float .ap-panel {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.ap-float-cols { border-radius: 0 0 var(--radius-panel) var(--radius-panel); overflow: hidden; }
+
+/* ─── directional dock widget (drag overlay) ─── */
+.ap-dockwidget {
+  position: absolute;
+  z-index: 95;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.ap-dw-cell {
+  position: absolute;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-1);
+  background: rgba(16, 21, 32, 0.92);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  box-shadow:
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px var(--stroke-strong),
+    0 6px 18px rgba(0, 0, 0, 0.55);
+  transition: background 0.1s, color 0.1s, transform 0.1s;
+}
+.ap-dw-cell.is-active {
+  background: var(--accent);
+  color: #0b0e14;
+  transform: scale(1.12);
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.4),
+    0 0 0 1.5px var(--accent),
+    0 8px 22px color-mix(in oklch, var(--accent) 55%, transparent);
+}
+
+/* ─── edge dock hints (drag overlay) ─── */
+.ap-edgehint {
+  position: absolute;
+  z-index: 88;
+  pointer-events: none;
+  border-radius: 4px;
+  background: color-mix(in oklch, white 8%, transparent);
+  transition: background 0.1s, box-shadow 0.1s;
+}
+.ap-edgehint.is-active {
+  background: color-mix(in oklch, var(--accent) 78%, transparent);
+  box-shadow: 0 0 18px color-mix(in oklch, var(--accent) 60%, transparent);
+}
+
+/* ─── snap zones (drag overlay) ─── */
+.ap-snaplayer {  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+.ap-snapzone {
+  position: absolute;
+  border-radius: 4px;
+  background: color-mix(in oklch, var(--accent) 22%, transparent);
+  box-shadow:
+    inset 0 0 0 1.5px var(--accent),
+    0 0 24px color-mix(in oklch, var(--accent) 40%, transparent);
+  backdrop-filter: var(--blur-light);
+}
+.ap-snaphint {
+  position: absolute;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #0b0e14;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ─── layer row (Photoshop-style) ─── */
+.ap-layer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--text-1);
+}
+.ap-layer:hover { background: var(--glass-1); }
+.ap-layer.is-selected {
+  background: color-mix(in oklch, var(--accent) 18%, transparent);
+  box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 40%, transparent);
+}
+.ap-layer .vis {
+  width: 14px; height: 14px;
+  color: var(--text-2);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.ap-layer .thumb {
+  width: 24px; height: 24px;
+  border-radius: 3px;
+  background: var(--glass-2);
+  flex: 0 0 24px;
+  box-shadow: inset 0 0 0 0.5px var(--stroke-soft);
+  position: relative;
+  overflow: hidden;
+}
+.ap-layer .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-layer .meta { font-family: var(--font-mono); font-size: 10px; color: var(--text-3); }
+
+/* ─── timeline row ─── */
+.ap-track {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  border-bottom: 0.5px solid var(--stroke-soft);
+}
+.ap-track-head {
+  width: 140px;
+  flex: 0 0 140px;
+  padding: 0 10px;
+  display: flex; align-items: center; gap: 8px;
+  border-right: 0.5px solid var(--stroke-soft);
+  font-size: 11px;
+  color: var(--text-1);
+  background: rgba(0,0,0,0.16);
+  height: 100%;
+}
+.ap-track-body {
+  flex: 1;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+.ap-clip {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 4px;
+  background: color-mix(in oklch, var(--accent) 35%, transparent);
+  box-shadow:
+    inset 0 0.5px 0 var(--hi-top),
+    inset 0 0 0 0.5px color-mix(in oklch, var(--accent) 70%, transparent);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-1);
+  overflow: hidden;
+}
+
+/* ─── waveform svg fills ─── */
+.ap-wave path { fill: color-mix(in oklch, var(--accent) 60%, transparent); }
+.ap-wave path.peak { fill: color-mix(in oklch, var(--accent) 90%, transparent); }
+
+/* ─── tiny separator ─── */
+.ap-vsep {
+  width: 0.5px;
+  height: 18px;
+  background: var(--stroke-soft);
+}
+
+/* scrollbar invisible */
+.ap-panel-body::-webkit-scrollbar,
+.ap-canvas::-webkit-scrollbar,
+.ap-window *::-webkit-scrollbar { display: none; }
+.ap-window * { scrollbar-width: none; }
+
+/* hover area for panel resize handles */
+.ap-grip-h {
+  position: absolute;
+  left: 0; right: 0; bottom: -3px;
+  height: 6px;
+  cursor: row-resize;
+  z-index: 3;
+}
+.ap-grip-v {
+  position: absolute;
+  top: 0; bottom: 0; right: -3px;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 3;
+}

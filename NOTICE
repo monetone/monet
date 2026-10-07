@@ -1,0 +1,35 @@
+Monet
+Copyright (c) 2026 Dal Rupnik and the Monet contributors
+
+This repository as a whole is licensed under the MIT License (see LICENSE).
+It bundles third-party code and data that retain their own licenses, listed
+below and in the per-app THIRD-PARTY-LICENSES.md files.
+
+Code and data
+
+- Lensfun lens profile database (CC-BY-SA-3.0) — adapted catalogs and
+  attribution in packages/monet-ui/packages/monet-photo/data/ and
+  apps/{vision,galerie}/public/ (LICENSE-LENSFUN, NOTICE-LENSFUN.md,
+  lensfun-attribution.json). The adapted catalogs remain under CC-BY-SA-3.0.
+- Phaser game engine (MIT) — bundled builds in apps/jouer/public/engines/,
+  license in apps/jouer/public/engines/LICENSE-PHASER.txt.
+- OpenJPEG (BSD-2-Clause) — apps/vision/public/LICENSE-OPENJPEG.
+- ONNX Runtime (MIT) and ONNX model files — registries with upstream,
+  SPDX license and checksums in apps/vision/public/THIRD-PARTY-LICENSES.md
+  and apps/galerie/public/THIRD-PARTY-LICENSES.md.
+- ISOcoated_v2_300_eci ICC profile — license beside the profile in
+  apps/vision/public/profiles/ and apps/galerie/public/profiles/.
+
+Test assets
+
+- Inter font (SIL Open Font License) — apps/vision/test-assets/fixtures/.
+- ag-psd and psd-tools PSD fixtures (MIT) — *-MIT.txt files under
+  packages/monet-ui/crates/monet-format/test-assets/fixtures/ and
+  apps/vision/test-assets/fixtures/.
+
+Not distributed
+
+Stable Diffusion 1.5 weights (CreativeML OpenRAIL-M, see
+apps/vision/public/licenses/) and other optional model weights are not part
+of this repository and must be installed separately; see
+apps/vision/public/models/MODELS.md.

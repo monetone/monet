@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- stroke-width, linecap (butt/round/square), dasharray, linejoin (round/miter/bevel) -->
+  <line x1="20" y1="30" x2="380" y2="30" stroke="#e0573a" stroke-width="2"/>
+  <line x1="20" y1="62" x2="380" y2="62" stroke="#3ac06a" stroke-width="10" stroke-linecap="round"/>
+  <line x1="20" y1="100" x2="380" y2="100" stroke="#4a9eff" stroke-width="6" stroke-dasharray="20 9"/>
+  <line x1="20" y1="135" x2="380" y2="135" stroke="#a855f7" stroke-width="6" stroke-dasharray="2 9" stroke-linecap="round"/>
+  <rect x="40" y="175" width="120" height="95" fill="none" stroke="#e0573a" stroke-width="11" stroke-linejoin="round"/>
+  <rect x="225" y="175" width="120" height="95" fill="none" stroke="#3ac06a" stroke-width="11" stroke-linejoin="miter"/>
+  <polyline points="55,270 95,185 165,270" fill="none" stroke="#222222" stroke-width="9" stroke-linejoin="bevel"/>
+</svg>

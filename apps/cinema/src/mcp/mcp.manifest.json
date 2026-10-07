@@ -1,0 +1,282 @@
+{
+  "app": "cinema",
+  "version": "0.1.0",
+  "tools": [
+    {
+      "name": "clip.duplicate",
+      "description": "Duplicate the selected clips immediately after themselves.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "clip.nudge",
+      "description": "Nudge the selected clips along the timeline by a frame delta.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "deltaFrames": {
+            "type": "number",
+            "description": "Frames to move (negative = left, positive = right)."
+          }
+        },
+        "required": [
+          "deltaFrames"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "clip.rippleDelete",
+      "description": "Ripple-delete the selected clips, closing the gaps they leave behind.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "clip.setSpeed",
+      "description": "Set the playback speed of the selected clips.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "speed": {
+            "type": "number",
+            "description": "Playback speed multiplier.",
+            "minimum": 0.1,
+            "maximum": 10
+          }
+        },
+        "required": [
+          "speed"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "clip.slip",
+      "description": "Slip the source in/out of the selected clips without moving them on the timeline.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "delta": {
+            "type": "number",
+            "description": "Frames to slip the source content (negative or positive)."
+          }
+        },
+        "required": [
+          "delta"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "clip.split",
+      "description": "Split clips at the playhead (razor). Cuts all tracks or just the active one.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "allTracks": {
+            "type": "boolean",
+            "description": "Split every track when true, only the active track when false.",
+            "default": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "edit.redo",
+      "description": "Redo the last undone edit.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "edit.selectAll",
+      "description": "Select every clip in the active sequence.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "edit.undo",
+      "description": "Undo the last edit.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "playback.goToEnd",
+      "description": "Move the playhead to the end of the sequence.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "playback.goToStart",
+      "description": "Move the playhead to the start of the sequence.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "playback.markIn",
+      "description": "Set the in point of the work area to the playhead.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "playback.markOut",
+      "description": "Set the out point of the work area to the playhead.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "playback.nextEdge",
+      "description": "Move the playhead to the next clip edge.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "playback.prevEdge",
+      "description": "Move the playhead to the previous clip edge.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "playback.step",
+      "description": "Step the playhead by a number of frames.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "delta": {
+            "type": "number",
+            "description": "Frames to step (negative = back, positive = forward)."
+          }
+        },
+        "required": [
+          "delta"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "playback.togglePlay",
+      "description": "Toggle play/pause of the timeline.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "project.new",
+      "description": "Create a new empty project, replacing the current one.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "sequence.new",
+      "description": "Add a new sequence to the project and make it active.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "source.addColorMatte",
+      "description": "Add a color-matte clip on the top video track at the playhead.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "description": "Matte color as a hex string (e.g. \"#1f2430\").",
+            "default": "#1f2430"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "source.addMediaFile",
+      "description": "Import a media file (video/audio/image) from an absolute filesystem path and place it on the timeline at the playhead (video on V1 + linked audio on A1).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Absolute path to the media file to import."
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "source.addTitle",
+      "description": "Add a title clip on the top video track at the playhead.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Title text shown on the clip.",
+            "default": "Title"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "track.addAudio",
+      "description": "Add an audio track to the active sequence.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "track.addVideo",
+      "description": "Add a video track to the active sequence.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    }
+  ]
+}
