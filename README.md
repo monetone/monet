@@ -1,135 +1,156 @@
-# Monet Core
+<p align="center">
+  <img src="docs/assets/monet-icon.png" alt="Monet icon" width="112">
+</p>
 
-Monet is a suite of seven desktop creative apps, built as one codebase. You can edit photos, draw vector illustrations, cut video, mix audio, make motion graphics, build 2D games, and catalog your photo library. Every app shares the same "liquid glass" look: a dark, translucent interface where panels float over your work.
+<h1 align="center">Monet</h1>
 
-This repository, [`monet`](https://github.com/monetone/monet), holds all seven apps plus everything they share: the design system, the rendering engine, the file format, and the automation layer.
+<p align="center">Seven desktop apps. One creative workspace.</p>
+
+Monet is an MIT-licensed suite for image editing, illustration, video, photography, audio, motion graphics and 2D games. The apps share a dark, translucent interface, reusable editing tools and a common foundation built with **Tauri 2, React, TypeScript and Rust**.
+
+This repository holds all seven apps, the Monet UI design system, rendering engines, document formats and local automation tools.
+
+![Monet Vision editing a landscape with a layered document and adjustment panels](site/shots/vision.webp)
 
 ## The apps
 
-Each app targets a well-known professional tool, so you know roughly what to expect:
+| App | Workspace |
+| --- | --- |
+| <img src="site/icons/vision.png" alt="Monet Vision app icon" width="28"> [**Vision**](apps/vision) | Raster image editing with layers, masks and adjustments |
+| <img src="site/icons/artisan.png" alt="Monet Artisan app icon" width="28"> [**Artisan**](apps/artisan) | Vector illustration with shapes, paths and typography |
+| <img src="site/icons/cinema.png" alt="Monet Cinema app icon" width="28"> [**Cinema**](apps/cinema) | Video editing with clips, tracks and titles |
+| <img src="site/icons/galerie.png" alt="Monet Galerie app icon" width="28"> [**Galerie**](apps/galerie) | Photo cataloging and RAW development |
+| <img src="site/icons/rythme.png" alt="Monet Rythme app icon" width="28"> [**Rythme**](apps/rythme) | Audio recording, editing and mixing |
+| <img src="site/icons/anime.png" alt="Monet Anime app icon" width="28"> [**Anime**](apps/anime) | Motion graphics and compositing |
+| <img src="site/icons/jouer.png" alt="Monet Jouer app icon" width="28"> [**Jouer**](apps/jouer) | 2D game and animation editing |
 
-| App | What it does | Comparable to |
-| --- | --- | --- |
-| **Vision** | Raster image editor: layers, masks, adjustments | Photoshop |
-| **Artisan** | Vector illustration: shapes, paths, typography | Illustrator |
-| **Cinema** | Non-linear video editor: clips, tracks, titles | Premiere Pro |
-| **Galerie** | Photo catalog and RAW develop: import, rate, adjust | Lightroom Classic |
-| **Jouer** | 2D game and animation editor | Unity (2D) |
-| **Rythme** | Digital audio workstation: recording, editing, mixing | Audition |
-| **Anime** | Motion graphics and compositing | After Effects |
+<table>
+  <tr>
+    <td width="50%">
+      <img src="site/shots/artisan.webp" alt="Monet Artisan showing a geometric vector poster and its layers" width="100%">
+      <p><strong>Artisan</strong> · Vector illustration</p>
+    </td>
+    <td width="50%">
+      <img src="site/shots/galerie.webp" alt="Monet Galerie displaying a photo catalog and photo metadata" width="100%">
+      <p><strong>Galerie</strong> · Photography</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="site/shots/cinema.webp" alt="Monet Cinema showing a video preview, editing timeline and color controls" width="100%">
+      <p><strong>Cinema</strong> · Video editing</p>
+    </td>
+    <td width="50%">
+      <img src="site/shots/rythme.webp" alt="Monet Rythme showing a multitrack audio session and mixer" width="100%">
+      <p><strong>Rythme</strong> · Audio production</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="site/shots/anime.webp" alt="Monet Anime showing a title composition, layers and animation timeline" width="100%">
+      <p><strong>Anime</strong> · Motion graphics</p>
+    </td>
+    <td width="50%">
+      <img src="site/shots/jouer.webp" alt="Monet Jouer showing a 2D game scene, scene hierarchy and object inspector" width="100%">
+      <p><strong>Jouer</strong> · Games and animation</p>
+    </td>
+  </tr>
+</table>
+
+## Build and run
+
+Install **Node.js 24** (pinned in [`.nvmrc`](.nvmrc)), **pnpm 11.1.3**, **Rust stable** and **wasm-pack**, plus the Tauri system prerequisites for your platform. On macOS, install the Xcode command-line tools.
+
+```sh
+git clone https://github.com/monetone/monet.git
+cd monet
+pnpm install
+pnpm build:libs
+pnpm build:engines
+pnpm dev:vision
+```
+
+`build:libs` builds the shared packages into `dist/` and compiles the format WASM module. `build:engines` builds the rendering engines used by Vision, Artisan, Cinema and Galerie. Run both before starting an app from a clean checkout.
+
+Each development command launches a native Tauri window and its Vite server. Apps have separate ports so you can run them side by side:
+
+| Command | Port |
+| --- | --- |
+| `pnpm dev:vision` | 1420 |
+| `pnpm dev:artisan` | 1421 |
+| `pnpm dev:cinema` | 1422 |
+| `pnpm dev:jouer` | 1423 |
+| `pnpm dev:rythme` | 1424 |
+| `pnpm dev:anime` | 1425 |
+| `pnpm dev:galerie` | 1426 |
+
+### Release builds
+
+After the setup above, build one app or the whole suite:
+
+```sh
+pnpm --filter monet-vision run tauri build
+pnpm tauri:build
+```
+
+Bundles are written to each app's `src-tauri/target/release/bundle/` directory by default. Keep the engine build step when building Artisan: its Tauri build hook only builds the frontend.
+
+### Workspace commands
+
+Run these from the repository root:
+
+| Command | Purpose |
+| --- | --- |
+| `pnpm build:libs` | Build the shared `@monet-ui/*` packages |
+| `pnpm build:engines` | Build all four app rendering engine outputs |
+| `pnpm build:web` | Build every app's frontend |
+| `pnpm typecheck` | Run workspace TypeScript checks |
+| `pnpm lint` | Run workspace ESLint checks where defined |
+| `pnpm test` | Run workspace unit suites and documentation tests |
+| `pnpm mcp:codegen` | Regenerate the apps' MCP command manifests |
+| `pnpm mcp:check` | Check that generated MCP manifests match their source |
+| `pnpm collab:server` | Start the collaboration relay |
+
+Native Rust and end-to-end checks are defined in the individual apps; `pnpm test` runs the unit and documentation suites.
 
 ## Shared foundations
 
-The apps are seven faces of one product. They share:
-
-- **One design system.** [Monet UI](packages/monet-ui) is vendored in full inside this repo (no git submodule). Every button, panel and window in every app comes from it.
-- **One rendering engine.** Vision, Artisan and Galerie share a single Rust engine, compiled to WebAssembly (a binary format browsers and webviews can run at near-native speed), at [packages/engine](packages/engine). Cinema has its own engine at [apps/cinema/engine](apps/cinema/engine). Anime, Jouer and Rythme need no engine.
-- **One file format.** The universal `.monet` project file format, shared by the apps.
-- **Built-in automation.** Every app runs a local MCP server (Model Context Protocol, a standard way for AI agents to control software), so an agent can drive the live desktop app.
-
-## Try it
-
-You need:
-
-- **Node.js 20 or newer** (this repo pins 24 via `.nvmrc`) — the JavaScript runtime
-- **pnpm 11.1.3** — the package manager; run `corepack enable` to get it
-- **Rust stable with `cargo`** — builds the native app shells
-- **wasm-pack** — builds the Rust/WebAssembly engines
-- **Tauri prerequisites for your platform** — on macOS, the Xcode command-line tools
-
-Then:
-
-```bash
-pnpm install        # installs everything and builds the shared UI libraries
-pnpm build:libs     # rebuilds the shared Monet UI packages into dist/
-pnpm build:engines  # builds the Rust/WASM engines for artisan, cinema, galerie, vision
-pnpm dev:vision     # opens Vision as a native desktop window
-```
-
-Swap `dev:vision` for `dev:anime`, `dev:artisan`, `dev:cinema`, `dev:galerie`, `dev:jouer` or `dev:rythme` to run a different app.
-
-## For developers
-
-### Developing an app
-
-`pnpm dev:<app>` runs the app's Tauri dev mode: it starts a Vite dev server and opens the native window. Each app gets its own port so two apps can run side by side (every interop feature is a two-app feature):
-
-| App | Port |
-| --- | --- |
-| vision | 1420 |
-| artisan | 1421 |
-| cinema | 1422 |
-| jouer | 1423 |
-| rythme | 1424 |
-| anime | 1425 |
-| galerie | 1426 |
-
-### Building release bundles
-
-```bash
-pnpm tauri:build      # builds release bundles for all seven apps (long Rust release compiles)
-# or one app:
-pnpm --filter monet-vision run tauri build
-```
-
-Bundles land in each app's `src-tauri/target/release/bundle/`.
-
-### Workspace scripts
-
-| Script | Effect |
-| --- | --- |
-| `pnpm build:libs` | Build all `@monet-ui/*` packages (topological order) |
-| `pnpm build:engines` | Build the Rust/WASM engines (artisan, cinema, galerie, vision) |
-| `pnpm build:web` | `vite build` every app's frontend |
-| `pnpm typecheck` | `tsc --noEmit` across the workspace |
-| `pnpm lint` | ESLint across packages that define it |
-| `pnpm test` | Every workspace package's `test:unit` suite (7 apps + 10 `@monet-ui` packages), then the docs tests |
-| `pnpm mcp:codegen` | Regenerate each app's MCP command manifest |
-| `pnpm mcp:check` | Fail if any app's generated MCP manifest has drifted |
-| `pnpm tauri:build` | Native release bundle for all seven apps |
-| `pnpm collab:server` | Run the realtime collaboration server |
+- **Monet UI.** Reusable React controls, design tokens, dockable panels and native Tauri integration live in [packages/monet-ui](packages/monet-ui). The full source is included in this repository.
+- **Rendering.** Vision, Artisan and Galerie use [monet-render-engine](packages/engine), a shared Rust engine compiled to WebAssembly. Cinema has a separate [rendering engine](apps/cinema/engine).
+- **Document formats.** Shared Rust and TypeScript models and codecs support Monet containers, timeline documents and the `.monetgfx` raster/vector graphics format. See [the engine and format guide](docs/merged-engine-and-format.md).
+- **Automation.** Every app exposes a local [Model Context Protocol server](docs/mcp.md) so compatible clients can inspect and operate the live app.
+- **Durable saves.** Shared [atomic save helpers](docs/durable-save.md) protect the previous document while a replacement is written.
+- **Collaboration.** [Yjs-based sessions and a WebSocket relay](docs/realtime-collaboration.md) provide shared document and presence infrastructure.
 
 ## Repository layout
 
-```
-monet/
-├── apps/
-│   ├── anime/     Monet Anime   — motion graphics & compositing studio (After Effects-class)
-│   ├── artisan/   Monet Artisan — vector illustration studio (Illustrator-class)
-│   ├── cinema/    Monet Cinema  — non-linear video editor (Premiere-class)
-│   ├── galerie/   Monet Galerie — photo catalog & RAW develop studio (Lightroom Classic-class)
-│   ├── jouer/     Monet Jouer   — 2D game & animation editor (Unity-class)
-│   ├── rythme/    Monet Rythme  — digital audio workstation (Audition-class)
-│   └── vision/    Monet Vision  — raster image editor (Photoshop-class)
-├── docs/          design notes and how-to guides (see below)
-├── packages/
-│   ├── engine/    monet-render-engine — the merged raster + vector Rust/WASM engine
-│   └── monet-ui/  Shared Monet UI design system (vendored in full — no submodule)
-│       └── packages/
-│           ├── monet-core/      design tokens, CSS, primitives
-│           ├── monet-react/     React components + Tauri integration
-│           ├── monet-collab/    Yjs collaboration substrate + presence
-│           ├── monet-color/     color management, color spaces, LUTs
-│           ├── monet-db/        TS bridge to the shared monet-db SQLite crate
-│           ├── monet-format/    the universal .monet project file format
-│           ├── monet-imageio/   raster/swatch codecs, PDF & SVG export
-│           ├── monet-mcp/       MCP server core, Tauri bridge, codegen
-│           ├── monet-photo/     develop math: tone curves, LUTs, histograms
-│           ├── monet-scopes/    waveform monitor, vectorscope
-│           └── monet-timeline/  timeline data model + editing operations
-└── scripts/       repo-level scripts (collaboration server, site build)
+```text
+apps/                     Seven Tauri + Vite + React apps
+packages/engine/          Shared raster and vector Rust/WASM engine
+packages/monet-ui/
+  packages/               Shared TypeScript and React packages
+  crates/                 Shared Rust UI, format, database and MCP crates
+docs/                     Architecture and workflow guides
+site/                     Project site and app screenshots
+scripts/                  Repository tooling and collaboration relay
 ```
 
-Every app consumes the Monet UI packages via `workspace:*`. The Rust side of each app (`apps/*/src-tauri`) depends on the shared `monet-ui` crate at `packages/monet-ui/crates/monet-ui` by path.
+JavaScript packages use pnpm `workspace:*` dependencies. Each app's `src-tauri/` is a standalone Cargo workspace and depends on shared Rust crates by path.
 
-## Learn more
+## Contributing
 
-- [docs/mcp.md](docs/mcp.md) — how the per-app MCP servers work and how to add commands
-- [docs/durable-save.md](docs/durable-save.md) — why saves are atomic and how to keep them that way
-- [docs/merged-engine-and-format.md](docs/merged-engine-and-format.md) — the shared rendering engine and the `.monet` format
-- [docs/c2pa-signing.md](docs/c2pa-signing.md) — content credentials (C2PA) signing
-- [docs/realtime-collaboration.md](docs/realtime-collaboration.md) — the collaboration substrate and server
+Bug reports, focused improvements, tests and documentation are welcome. Use the [issue tracker](https://github.com/monetone/monet/issues) to describe a problem or discuss a larger change, and read [AGENTS.md](AGENTS.md) for project conventions.
+
+Run the checks relevant to your change before opening a pull request. For shared code, include the affected apps; for MCP command changes, regenerate the manifests and run `pnpm mcp:check`.
+
+Useful guides:
+
+- [MCP commands and code generation](docs/mcp.md)
+- [Durable document saves](docs/durable-save.md)
+- [Merged rendering engine and graphics format](docs/merged-engine-and-format.md)
+- [Content Credentials and C2PA signing](docs/c2pa-signing.md)
+- [Realtime collaboration](docs/realtime-collaboration.md)
 
 ## License
 
-MIT. See [LICENSE](LICENSE) and [NOTICE](NOTICE) for details, including bundled third-party code.
+Monet is licensed under [MIT](LICENSE). See [NOTICE](NOTICE) for bundled third-party code and attribution.
