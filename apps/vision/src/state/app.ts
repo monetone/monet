@@ -9069,20 +9069,26 @@ export async function chooseUnsavedAction(names: string[], verb: "close" | "quit
   return confirm(discardMsg) ? "discard" : "cancel";
 }
 
-/** Save every dirty document. A cancelled or failed save aborts the close. */
+/** Save every dirty document. Output copies and edits made while saving must
+ *  not count as permission to discard the current editable document. */
 async function saveDirtyDocuments(): Promise<boolean> {
   const ids = store.state.documents.filter((d) => store.docDirty(d.id)).map((d) => d.id);
   for (const id of ids) {
     if (!store.docDirty(id)) continue;
     if (!await saveDocumentForClose(id)) return false;
   }
-  return true;
+  return store.dirtyDocNames().length === 0;
 }
 
 async function saveDocumentForClose(id: number): Promise<boolean> {
   try {
     if (store.state.activeDocId !== id) store.activateDoc(id);
-    return await saveDocument();
+    if (!await saveDocument()) return false;
+    if (store.docDirty(id)) {
+      notify(`“${store.docName(id) ?? "The document"}” still has unsaved changes and was kept open. Save a Vision project to preserve your editable work.`);
+      return false;
+    }
+    return true;
   } catch (e) {
     reportSave(e);
     return false;
@@ -9093,14 +9099,6 @@ async function saveDocumentForClose(id: number): Promise<boolean> {
 async function discardRecoveryFor(ids: readonly number[]) {
   for (const id of ids) dropRecoverySnapshot(id);
   await flushRecoveryDrops();
-}
-
-async function releaseRecoveryLock() {
-  if (!documentRecoveryEnabled()) return;
-  try {
-    const dir = await recoveryFolder();
-    await removeRecoveryFile(dir, "session.lock");
-  } catch { /* the next launch treats a dead owner as a crash */ }
 }
 
 /** Quit or close the window: Save writes every dirty document first, Don't
@@ -9114,10 +9112,13 @@ async function resolveDirtyWorkspace(verb: "close" | "quit"): Promise<boolean> {
   if (choice === "save") {
     if (!await saveDirtyDocuments()) return false;
     await flushRecoveryDrops();
+    // Another tab can change while its saved recovery snapshot is removed.
+    // Keep recovery ownership until the process exits; the next launch can
+    // reclaim the lock once its recorded owner is no longer alive.
+    return store.dirtyDocNames().length === 0;
   } else {
     await discardRecoveryFor(ids);
   }
-  await releaseRecoveryLock();
   return true;
 }
 
@@ -9173,6 +9174,7 @@ export async function closeDocumentTab(id: number, discard = false): Promise<boo
     if (choice === "save") {
       if (!await saveDocumentForClose(id)) return false;
       await flushRecoveryDrops();
+      if (store.docDirty(id)) return false;
     } else {
       dropRecoverySnapshot(id);
       await flushRecoveryDrops();
