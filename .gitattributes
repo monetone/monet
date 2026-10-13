@@ -1,0 +1,2 @@
+# The vendored ONNX runtime is byte-pinned to the installed package.
+apps/vision/public/ort/ort-wasm-simd-threaded.jsep.mjs -text

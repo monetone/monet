@@ -81,7 +81,8 @@ jobs:
         if: github.event_name == 'pull_request'
         run: node .github/scripts/verify-changed-coverage.mjs "${{ github.event.pull_request.base.sha }}" apps/vision/coverage/coverage-summary.json
       - name: Full locked engine tests
-        run: cargo test --locked --workspace --manifest-path packages/engine/Cargo.toml
+        # Keep wall-clock performance assertions from competing with other tests.
+        run: cargo test --locked --workspace --manifest-path packages/engine/Cargo.toml -- --test-threads=1
 
   pr-product-smoke:
     name: PR/product-smoke

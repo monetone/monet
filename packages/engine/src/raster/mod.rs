@@ -4241,7 +4241,7 @@ impl Engine {
         // Engine, invalidating the state captured below. Flat preview exports
         // remain allowed once the exact source-derived preview is current.
         if !self.restore_rejected_imported_photoshop_edit() {
-            return Err(JsValue::from_str(&self.last_edit_error));
+            return Err(project_load_js_error(&self.last_edit_error));
         }
         let visible: Vec<bool> = self.layers.iter().map(|l| l.visible).collect();
         let solo = std::mem::take(&mut self.solo);
@@ -7220,6 +7220,7 @@ impl Engine {
 impl Engine {
     #[wasm_bindgen(constructor)]
     pub fn new(w: u32, h: u32) -> Engine {
+        #[cfg(target_arch = "wasm32")]
         console_error_panic_hook::set_once();
         let (w, h) = clamp_dims(w, h);
         let mut e = Engine::empty(w, h);
@@ -7243,6 +7244,7 @@ impl Engine {
     // Build a document from an encoded image (png/jpeg/webp/…) as a single layer.
     #[wasm_bindgen(js_name = fromImage)]
     pub fn from_image(bytes: &[u8]) -> Result<Engine, JsValue> {
+        #[cfg(target_arch = "wasm32")]
         console_error_panic_hook::set_once();
         if photoshop_header(bytes).is_some_and(|header| header.mode != 3) {
             return Engine::from_format(bytes);
@@ -7272,6 +7274,7 @@ impl Engine {
         big_endian: bool,
         header: u32,
     ) -> Result<Engine, JsValue> {
+        #[cfg(target_arch = "wasm32")]
         console_error_panic_hook::set_once();
         let layout = codecs::PhotoshopRaw { width, height, channels, interleaved, depth, big_endian, header };
         let dynimg = codecs::decode_photoshop_raw(bytes, &layout).map_err(|e| JsValue::from_str(&e))?;
@@ -7339,6 +7342,7 @@ impl Engine {
     /// which develops the file's own composite. (#461)
     #[wasm_bindgen(js_name = fromImageLayers)]
     pub fn from_image_layers(bytes: &[u8]) -> Result<Engine, JsValue> {
+        #[cfg(target_arch = "wasm32")]
         console_error_panic_hook::set_once();
         let Some(found) = tiff_image_source_data(bytes) else {
             return Engine::from_image(bytes);
@@ -7413,6 +7417,7 @@ impl Engine {
     // Import a Photoshop .psd (flattened composite) as a new document.
     #[wasm_bindgen(js_name = fromPsd)]
     pub fn from_psd(bytes: &[u8]) -> Result<Engine, JsValue> {
+        #[cfg(target_arch = "wasm32")]
         console_error_panic_hook::set_once();
         let header = photoshop_header(bytes);
         // Non-RGB files must use the same layered parser as `from_format` so
@@ -7445,6 +7450,7 @@ impl Engine {
     // that supersedes the flattened `fromPsd` for .psd, and adds .psb/.xcf.
     #[wasm_bindgen(js_name = fromFormat)]
     pub fn from_format(bytes: &[u8]) -> Result<Engine, JsValue> {
+        #[cfg(target_arch = "wasm32")]
         console_error_panic_hook::set_once();
         let header = photoshop_header(bytes);
         if header.is_some_and(|header| header.mode != 3)
@@ -7493,6 +7499,7 @@ impl Engine {
     /// highlight headroom for Camera Raw to recover (#443).
     #[wasm_bindgen(js_name = fromRawDemosaic)]
     pub fn from_raw_demosaic(bytes: &[u8], demosaic: u8) -> Result<Engine, JsValue> {
+        #[cfg(target_arch = "wasm32")]
         console_error_panic_hook::set_once();
         let demosaic = RawDemosaic::from_code(demosaic).ok_or_else(|| {
             JsValue::from_str(&format!("unknown RAW demosaic method {demosaic} (0 = Bilinear, 1 = Adaptive)"))
@@ -7658,12 +7665,12 @@ impl Engine {
         // rejected by a void-returning engine entrypoint before exposing bytes
         // or leaving the caller with a mutated preview.
         if !self.restore_rejected_imported_photoshop_edit() {
-            return Err(JsValue::from_str(&self.last_edit_error));
+            return Err(project_load_js_error(&self.last_edit_error));
         }
         self.imported_photoshop_source
             .as_ref()
             .map(|source| source.bytes.clone())
-            .ok_or_else(|| JsValue::from_str("document has no preserved non-RGB Photoshop source"))
+            .ok_or_else(|| project_load_js_error("document has no preserved non-RGB Photoshop source"))
     }
 
     pub fn convert_imported_photoshop_to_rgb(&mut self) -> bool {
@@ -16175,6 +16182,7 @@ impl Engine {
     #[cfg(feature = "codecs-image")]
     #[wasm_bindgen(js_name = loadGraphicsContainer)]
     pub fn load_graphics_container(bytes: &[u8]) -> Result<Engine, JsValue> {
+        #[cfg(target_arch = "wasm32")]
         console_error_panic_hook::set_once();
         // Errors flow as String (load_graphics_container_impl) and become a
         // JsValue only here at the wasm boundary — a JsValue's Drop aborts on
@@ -30148,6 +30156,15 @@ self.layers[self.active].mask.to_vec()
     /// over a Grayscale, CMYK, or Lab document and calling it saved drops the
     /// mode. Refuse instead of emitting a silent RGB file. (#520)
     fn refuse_non_rgb_flat_export(&mut self, format: &str) -> Result<(), JsValue> {
+        // A contained import is a read-only RGB preview, with the exact source
+        // retained separately. Its flat exports are copies, never editable
+        // non-RGB saves. Reconcile rejected edits before encoding that preview.
+        if self.imported_photoshop_read_only() {
+            if !self.restore_rejected_imported_photoshop_edit() {
+                return Err(project_load_js_error(&self.last_edit_error));
+            }
+            return Ok(());
+        }
         if self.mode == 0 {
             return Ok(());
         }
@@ -32077,6 +32094,7 @@ self.layers[self.active].mask.to_vec()
 
     #[wasm_bindgen(js_name = loadProject)]
     pub fn load_project(bytes: &[u8]) -> Result<Engine, JsValue> {
+        #[cfg(target_arch = "wasm32")]
         console_error_panic_hook::set_once();
         if bytes.len() < 24 || &bytes[0..4] != b"MVSN" {
             return Err(project_load_js_error("not a Monet Vision project"));
@@ -59422,6 +59440,14 @@ mod imported_photoshop_containment {
                 assert_eq!(engine.imported_photoshop_source_mode(), mode as u8);
                 assert_eq!(engine.imported_photoshop_source_depth(), depth as u8);
                 assert_eq!(engine.imported_photoshop_source_is_psb(), psb);
+                let before = atomic_document_state(&engine);
+                let document_mode = engine.doc_mode();
+                let preview = engine.export_png();
+                assert!(preview.is_ok(), "mode {mode}, depth {depth}, psb {psb}");
+                assert_eq!(preview.unwrap().get(..8), Some(&b"\x89PNG\r\n\x1a\n"[..]));
+                assert_eq!(atomic_document_state(&engine), before);
+                assert_eq!(engine.doc_mode(), document_mode);
+                assert!(engine.imported_photoshop_read_only());
                 assert_eq!(
                     engine.export_imported_photoshop_original().unwrap(),
                     bytes,
@@ -59746,9 +59772,13 @@ mask: layer.mask.to_vec(),
         // add_layer has a history boundary but no composite. This deliberately
         // leaves the central source restore pending until a host/export boundary.
         engine.add_layer("must not leak into export");
-        let isolated = engine
-            .export_layer_png(id)
-            .expect("a source-derived flat layer preview remains exportable");
+        let isolated = engine.export_layer_png(id);
+        assert!(
+            isolated.is_ok(),
+            "a source-derived flat layer preview remains exportable: {}",
+            engine.last_edit_error
+        );
+        let isolated = isolated.unwrap();
         assert_eq!(isolated.get(..8), Some(&b"\x89PNG\r\n\x1a\n"[..]));
         assert_eq!(engine.layer_count(), layer_count);
         assert_eq!(engine.output, output);
@@ -59776,6 +59806,100 @@ mask: layer.mask.to_vec(),
         assert_eq!(engine.output, output);
         assert_eq!(engine.undo_depth(), 0);
         assert_eq!(engine.last_edit_error(), IMPORTED_PHOTOSHOP_READ_ONLY);
+    }
+
+    #[test]
+    fn flat_preview_copies_reconcile_rejection_and_preserve_the_source_document() {
+        let bytes = flattened_photoshop(9, 8, true);
+        let mut engine = Engine::from_format(&bytes).expect("Lab preview imports");
+        let before = atomic_document_state(&engine);
+        let exports: [fn(&mut Engine) -> Result<Vec<u8>, JsValue>; 6] = [
+            Engine::export_png,
+            |e| e.export_jpeg(90),
+            Engine::export_tiff,
+            Engine::export_webp,
+            |e| e.export_scaled_png(2.0),
+            |e| e.export_scaled_jpeg(2.0, 90),
+        ];
+        for export in exports {
+            engine.add_layer("must not leak into preview copy");
+            let copy = export(&mut engine);
+            assert!(copy.is_ok(), "{}", engine.last_edit_error);
+            assert!(!copy.unwrap().is_empty());
+            assert_eq!(atomic_document_state(&engine), before);
+            assert_eq!(engine.doc_mode(), 3);
+            assert!(engine.imported_photoshop_read_only());
+            assert_eq!(engine.export_imported_photoshop_original().unwrap(), bytes);
+            assert_eq!(engine.last_edit_error(), IMPORTED_PHOTOSHOP_READ_ONLY);
+        }
+    }
+
+    #[test]
+    fn editable_non_rgb_documents_still_refuse_rgb_flat_exports() {
+        let exports: [fn(&mut Engine) -> Result<Vec<u8>, JsValue>; 6] = [
+            Engine::export_png,
+            |e| e.export_jpeg(90),
+            Engine::export_tiff,
+            Engine::export_webp,
+            |e| e.export_scaled_png(2.0),
+            |e| e.export_scaled_jpeg(2.0, 90),
+        ];
+        for mode in [1, 7, 9] {
+            let bytes = flattened_photoshop(mode, 8, false);
+            let mut engine = Engine::from_format(&bytes).expect("non-RGB preview imports");
+            assert!(engine.edit_imported_photoshop());
+            assert!(!engine.imported_photoshop_read_only());
+            assert_ne!(engine.doc_mode(), 0);
+            let before = atomic_document_state(&engine);
+            for export in exports {
+                assert!(export(&mut engine).is_err());
+                assert!(engine.last_edit_error.contains("cannot be written as an RGB"));
+                assert_eq!(atomic_document_state(&engine), before);
+            }
+        }
+
+        let bytes = flattened_photoshop(9, 8, false);
+        let mut converted = Engine::from_format(&bytes).expect("Lab preview imports");
+        assert!(converted.convert_imported_photoshop_to_rgb());
+        converted.set_mode(3);
+        assert_eq!(converted.doc_mode(), 3);
+        assert!(!converted.imported_photoshop_read_only());
+        assert!(converted.export_png().is_err());
+    }
+
+    #[test]
+    fn failed_source_restore_refuses_preview_and_exact_exports_without_releasing_source() {
+        let exports: [fn(&mut Engine) -> Result<Vec<u8>, JsValue>; 8] = [
+            Engine::export_png,
+            |e| e.export_jpeg(90),
+            Engine::export_tiff,
+            Engine::export_webp,
+            |e| e.export_scaled_png(2.0),
+            |e| e.export_scaled_jpeg(2.0, 90),
+            |e| e.export_layer_png(e.active_layer_id()),
+            Engine::export_imported_photoshop_original,
+        ];
+        for export in exports {
+            let bytes = flattened_photoshop(9, 8, false);
+            let mut engine = Engine::from_format(&bytes).expect("Lab preview imports");
+            engine.add_layer("arms pending rejection");
+            let invalid = b"invalid retained source".to_vec();
+            engine.imported_photoshop_source.as_mut().unwrap().bytes = invalid.clone();
+
+            assert!(export(&mut engine).is_err());
+            assert!(engine.last_edit_error.contains("source preview restore failed"));
+            assert!(engine.imported_photoshop_read_only());
+            assert_eq!(engine.imported_photoshop_source.as_ref().unwrap().bytes, invalid);
+            assert_eq!(engine.undo_depth(), 0);
+            // A repeated call must not encode the fallback 1x1 document either.
+            assert!(export(&mut engine).is_err());
+        }
+    }
+
+    #[test]
+    fn exact_source_export_without_a_retained_source_returns_an_error() {
+        let mut engine = Engine::new(2, 1);
+        assert!(engine.export_imported_photoshop_original().is_err());
     }
 
     #[test]
@@ -78440,6 +78564,20 @@ mod plane_vs_canvas_regressions {
         let mut l = enlarged();
         l.filter_lighting_effects(100.0, 100.0, 60.0, 1.0, 0.2, 1.0, 1.0, 1.0, 1.0, 0);
         assert_eq!(l.layers[l.active].pixels.len(), 100 * 100 * 4);
+
+        let mut placed = enlarged();
+        let id = placed.active_layer_id();
+        let before = placed.layers[placed.active].pixels.to_vec();
+        assert!(matches!(
+            placed.convert_layer_profile(id, 1, &[], PROFILE_SRGB, &[], 1, true),
+            Ok(true)
+        ));
+        assert_ne!(placed.layers[placed.active].pixels.as_ref(), before.as_slice());
+        placed.stamp_image_rgba16(60, 60, 1, 1, &[0, 65535, 0, 65535]);
+        let rect = placed.plane_rect(placed.active).expect("preserved plane");
+        let at = checked_plane_index(rect, 60, 60, 4).expect("stamp lies on the plane");
+        assert_eq!(&placed.layers[placed.active].pixels[at..at + 4], &[0, 65535, 0, 65535]);
+        assert_active_plane_valid(&placed);
     }
 
     type PlaneSweepOp = (&'static str, fn(&mut Engine));
@@ -78507,6 +78645,7 @@ mod plane_vs_canvas_regressions {
         export_xmp();
         assign_profile(0);
         convert_to_profile(0, 0, false);
+        convert_layer_profile(2, 1, &[], PROFILE_SRGB, &[], 1, true);
         mode_profile_name();
         mode_profile_icc();
         mode_profile_error();
@@ -78848,6 +78987,7 @@ mod plane_vs_canvas_regressions {
         set_history_source();
         has_history_source();
         stamp_image(0, 0, 0, 0, &[]);
+        stamp_image_rgba16(60, 60, 1, 1, &[0, 65535, 0, 65535]);
         fill_selection(0, 0, 0, 0);
         fill_blend(0, 0, 0, 0, 0);
         fill_blend_preserve(0, 0, 0, 0, 0);
@@ -79483,7 +79623,7 @@ mod plane_vs_canvas_regressions {
             accounted, exported,
             "every wasm export must be swept or explicitly excluded"
         );
-        assert_eq!(PLANE_SWEEP_OPS.len(), 725);
+        assert_eq!(PLANE_SWEEP_OPS.len(), 727);
         assert_eq!(PLANE_SWEEP_EXCLUDED.len(), 66);
     }
 
