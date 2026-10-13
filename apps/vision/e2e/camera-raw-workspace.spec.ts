@@ -1,5 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
-import { gotoApp, newScene, composite, tinyCfaDng, tinyDcp, tinyLinearDng } from "./helpers";
+import { gotoApp as loadApp, newScene, composite, tinyCfaDng, tinyDcp, tinyLinearDng } from "./helpers";
+
+// These cases replace the pristine launch document with a small scene or RAW.
+// Keep the same document lifecycle without first compositing a discarded megapixel blank.
+const gotoApp = (page: Page) => loadApp(page, { w: 256, h: 192 });
 
 // ── Filter ▸ Camera Raw Filter… — develop workspace (Phase 2) ───────
 // The workspace previews on a scratch proxy engine (never the live document),
@@ -108,7 +112,7 @@ const cameraRawDevelopState = (page: Page): Promise<CameraRawDevelopState> =>
 const canvasChk = async (page: Page) => (await cameraRawDevelopState(page)).checksum;
 
 /** Wait for a real develop and two consecutive identical frame/pixel snapshots. */
-async function waitForDevelopFrame(page: Page, after = -1): Promise<CameraRawDevelopState> {
+async function waitForDevelopFrame(page: Page, after = -1, timeout = 15_000): Promise<CameraRawDevelopState> {
   let previous: CameraRawDevelopState | undefined;
   await expect.poll(async () => {
     const current = await cameraRawDevelopState(page);
@@ -117,7 +121,7 @@ async function waitForDevelopFrame(page: Page, after = -1): Promise<CameraRawDev
       && previous.checksum === current.checksum;
     previous = current;
     return stable;
-  }, { timeout: 15_000 }).toBe(true);
+  }, { timeout }).toBe(true);
   if (!previous) throw new Error("Camera Raw develop did not produce a stable frame");
   return previous;
 }
@@ -1770,10 +1774,11 @@ test("the Basic panel's Auto Tone adjusts the preview from its tonal distributio
   await newScene(page);
   await stageRaw(page, tinyLinearDng(51, 48, 36), "auto-tone.dng");
   const dialog = await expectRawWorkspace(page);
-  await expect.poll(() => canvasChk(page), { timeout: 5000 }).toBeGreaterThan(0);
-  const before = await canvasChk(page);
+  const before = await waitForDevelopFrame(page, -1, 5000);
+  expect(before.checksum).toBeGreaterThan(0);
   await dialog.locator("[data-mv-cr-auto-tone]").click();
-  await expect.poll(() => canvasChk(page), { timeout: 5000 }).not.toBe(before); // auto tone re-developed
+  const after = await waitForDevelopFrame(page, before.frame, 5000);
+  expect(after.checksum).not.toBe(before.checksum); // auto tone re-developed
   await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
@@ -1983,7 +1988,6 @@ test("a matrix-only DCP changes RAW colors, responds to Amount, and survives a p
       pixels: Array.from(mv.engine.engine.export_composite_rgba16() as Uint16Array),
     };
   });
-  await page.reload();
   await gotoApp(page);
   const reopened = await page.evaluate(async (bytes) => {
     const mv = (window as any).__mv;

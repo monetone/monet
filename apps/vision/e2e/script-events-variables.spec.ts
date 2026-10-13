@@ -24,7 +24,9 @@ const history = (page: Page) => page.evaluate(() => {
   return { depth: mv.engine.engine.undo_depth(), last: mv.engine.engine.history_labels().at(-1) };
 });
 
-test.beforeEach(async ({ page }) => { await gotoApp(page); });
+// These cases exercise document/event lifecycles; their actual image and
+// replacement fixtures establish the pixels they assert.
+test.beforeEach(async ({ page }) => { await gotoApp(page, { w: 256, h: 192 }); });
 
 test("Script Events Manager stages edits until Done and plays bindings on Open, Export and Close only", async ({ page }) => {
   await page.evaluate(() => {

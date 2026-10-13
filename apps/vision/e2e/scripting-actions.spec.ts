@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { gotoApp, newScene, composite } from "./helpers";
 
-test.beforeEach(async ({ page }) => { await gotoApp(page); });
+// Scripts create their own canvases; keep the initial blank small so its
+// composite work leaves the worker's unchanged idle budget available to run.
+test.beforeEach(async ({ page }) => { await gotoApp(page, { w: 256, h: 192 }); });
 
 test("scripting console runs against the vision API", async ({ page }) => {
   const r = await page.evaluate(async () => {
@@ -25,6 +27,21 @@ test("scripting reports errors instead of throwing", async ({ page }) => {
   const err = await page.evaluate(async () => await (window as any).__mv.runScript("vision.nope.totallyMissing();"));
   expect(typeof err).toBe("string");
   expect(err.length).toBeGreaterThan(0);
+});
+
+test("scripting reads cannot extend the absolute runtime budget", async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const mv = (window as any).__mv;
+    const error = await mv.runScript("for (;;) { await vision.read.width(); }");
+    const nextError = await mv.runScript('vision.newDoc(46, 47, "after-runtime-budget");');
+    return { error, nextError, w: mv.engine.engine.width(), h: mv.engine.engine.height() };
+  });
+  expect(result).toEqual({
+    error: "Script exceeded the 30000 ms runtime budget",
+    nextError: "",
+    w: 46,
+    h: 47,
+  });
 });
 
 test("actions: record and replay a macro", async ({ page }) => {

@@ -107,11 +107,11 @@ jobs:
       - run: pnpm --filter monet-vision run engine:build:release
       - run: pnpm --filter monet-vision exec playwright install --with-deps chromium webkit
       - name: Vision feature regressions
-        run: pnpm --filter monet-vision exec playwright test e2e/feature-regressions.spec.ts --project=chromium
+        run: pnpm --filter monet-vision exec playwright test e2e/feature-regressions.spec.ts --project=chromium --workers=50%
       - name: Vision WebKit parity smoke
-        run: pnpm --filter monet-vision exec playwright test e2e/webkit-smoke.spec.ts --project=webkit
+        run: pnpm --filter monet-vision exec playwright test e2e/webkit-smoke.spec.ts --project=webkit --workers=50%
       - name: Production-CSP smoke
-        run: pnpm --filter monet-vision exec playwright test --project=desktop
+        run: pnpm --filter monet-vision exec playwright test --project=desktop --workers=50%
       - name: Artisan raster regressions
         run: pnpm --filter monet-artisan run e2e:raster
       - name: Artisan SVG regressions
@@ -152,7 +152,8 @@ jobs:
       - run: pnpm run build:libs
       - run: pnpm --filter monet-vision run engine:build:release
       - run: pnpm --filter monet-vision exec playwright install --with-deps chromium
-      - run: pnpm --filter monet-vision exec playwright test --project=chromium --shard=${{ matrix.shard }}
+      # Private Ubuntu runners have two cores; leave one for browser and Vite work.
+      - run: pnpm --filter monet-vision exec playwright test --project=chromium --shard=${{ matrix.shard }} --workers=50%
       - name: Upload Playwright traces on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -187,7 +188,8 @@ jobs:
   merge-full-desktop-release:
     name: Merge/full — desktop CSP + release
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    runs-on: macos-14
+    # Keep macOS checks schedulable during hosted arm64 capacity constraints.
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -222,7 +224,7 @@ jobs:
       matrix:
         include:
           - platform: macOS
-            runner: macos-14
+            runner: macos-15-intel
           - platform: Windows
             runner: windows-2022
     steps:

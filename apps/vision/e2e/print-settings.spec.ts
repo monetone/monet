@@ -13,7 +13,7 @@ import { gotoApp } from "./helpers";
 interface PrintJob { css: string; w: number; h: number; center: number[] }
 
 async function printDoc(page: Page) {
-  await gotoApp(page);
+  await gotoApp(page, { w: 300, h: 200 });
   await page.evaluate(() => {
     localStorage.setItem("mv.rulerUnit", "in"); // Top/Left and the print size read in inches
     const mv = (window as any).__mv;

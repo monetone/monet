@@ -16,16 +16,16 @@ export async function chooseOption(select: Locator, valueOrLabel: string) {
 }
 
 /** Load the app and explicitly create the document these workspace tests use. */
-export async function gotoApp(page: Page) {
+export async function gotoApp(page: Page, initialSize = { w: 1280, h: 800 }) {
   await page.goto("/");
   await page.waitForFunction(() => {
     const mv = (window as any).__mv;
     return mv && mv.engine && mv.store;
   }, null, { timeout: 30_000 });
-  await page.evaluate(() => {
+  await page.evaluate(({ w, h }) => {
     const mv = (window as any).__mv;
-    if (!mv.store.state.documents.length) mv.store.newDocument(1280, 800, "Untitled.psd", "white", 1, { pristineBlank: true });
-  });
+    if (!mv.store.state.documents.length) mv.store.newDocument(w, h, "Untitled.psd", "white", 1, { pristineBlank: true });
+  }, initialSize);
 }
 
 /** Create a fresh structured document (gradient bg + colored stripes) so
