@@ -15,8 +15,9 @@ import { gotoApp } from "./helpers";
 
 // Build a large doc with an opaque background layer + a small text layer,
 // returns { w, h, bg, txt } (layer ids) with the text layer active.
-const SETUP = `(mv, E) => {
+const SETUP = `(mv) => {
   mv.store.newDocument(1280, 800, "perf");
+  const E = mv.engine.e;
   // paint the background layer opaque so moves reveal/cover real pixels
   E.select_all(); E.fill_selection(40, 60, 90, 255); E.select_none();
   const bg = mv.store.state.activeLayerId;

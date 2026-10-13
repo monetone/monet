@@ -48,7 +48,7 @@ session.setSelection(selectedIds);
 ## Run the sync backend
 
 ```bash
-pnpm collab:server            # ws://localhost:1234 (PORT/HOST overridable), in-memory
+pnpm collab:server            # ws://127.0.0.1:1234 (PORT/HOST overridable)
 ```
 
 In **Artisan**, collaboration turns on with `VITE_COLLAB=1` or a `?room=<id>` URL

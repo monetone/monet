@@ -164,7 +164,8 @@ describe("Edit ▸ Menus… hiding (#239)", () => {
   );
 
   it("re-reads the hidden set whenever the dialog's shortcut write lands", () => {
-    expect(appSource).toContain('import { NO_HIDDEN, buildPhotoshopMenus, imageModeCheckedIds, loadHiddenMenuCommands } from "./ui/psMenus";');
+    const imports = appSource.match(/import \{([^}]+)\} from "\.\/ui\/psMenus";/)?.[1].split(",").map((name) => name.trim());
+    expect(imports).toEqual(expect.arrayContaining(["NO_HIDDEN", "buildPhotoshopMenus", "imageModeCheckedIds", "loadHiddenMenuCommands"]));
     expect(appSource).toContain("const hiddenMenuCommands = useMemo(() => loadHiddenMenuCommands(), [keyboardShortcuts]);");
   });
 

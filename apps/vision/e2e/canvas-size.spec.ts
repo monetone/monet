@@ -16,8 +16,8 @@ async function openCanvasSize(page: Page, width = OW, height = OH) {
   await gotoApp(page);
   await page.evaluate(({ w, h }) => {
     const mv = (window as any).__mv;
-    const E = mv.engine.engine;
     mv.store.newDocument(w, h, "canvas-size", "white", 1, { resolutionPpi: 100 });
+    const E = mv.engine.e;
     E.select_all(); E.fill_selection(255, 0, 0, 255); E.select_none();
     mv.engine.commit();
     mv.store.markActiveSaved();
@@ -39,11 +39,11 @@ async function setField(page: Page, sel: string, v: number) {
 }
 const dims = (page: Page): Promise<{ w: number; h: number }> =>
   page.evaluate(() => ({ w: (window as any).__mv.engine.engine.width(), h: (window as any).__mv.engine.engine.height() }));
-/** ARGB pick at a doc pixel → {a,r}. */
+/** Packed RGBA pick at a doc pixel → {a,r}. */
 const pick = (page: Page, x: number, y: number): Promise<{ a: number; r: number }> =>
   page.evaluate(({ x, y }) => {
     const v = (window as any).__mv.engine.engine.pick_color(x, y) >>> 0;
-    return { a: (v >>> 24) & 255, r: (v >>> 16) & 255 };
+    return { a: v & 255, r: (v >>> 24) & 255 };
   }, { x, y });
 
 test("the dialog shows W/H, a Relative toggle (off), and a 3×3 anchor (centre default)", async ({ page }) => {

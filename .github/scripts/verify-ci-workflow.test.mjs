@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const workflow = readFileSync(new URL("../workflows/ci.yml", import.meta.url), "utf8");
@@ -7,6 +9,7 @@ const rootPackage = JSON.parse(readFileSync(new URL("../../package.json", import
 const monetFormatPackage = JSON.parse(readFileSync(new URL("../../packages/monet-ui/packages/monet-format/package.json", import.meta.url), "utf8"));
 const workspaceEvents = "if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'";
 const mergeEvents = "if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'";
+const binaryEvents = "if: github.event_name == 'workflow_dispatch' && inputs.packaged_smoke";
 
 function jobSection(job, nextJob) {
   return workflow.slice(workflow.indexOf(`  ${job}:`), workflow.indexOf(`  ${nextJob}:`));
@@ -29,6 +32,19 @@ test("monet-format WASM build uses a portable crate-relative output path", () =>
   assert.doesNotMatch(command, /\$\(/);
 });
 
+test("Artisan engine builds use a portable path to the app's generated bindings", () => {
+  const pkg = JSON.parse(readFileSync(new URL("../../apps/artisan/package.json", import.meta.url), "utf8"));
+  const crate = fileURLToPath(new URL("../../packages/engine/", import.meta.url));
+  const expected = fileURLToPath(new URL("../../apps/artisan/engine/pkg", import.meta.url));
+  for (const script of ["engine:build", "engine:build:release"]) {
+    const command = pkg.scripts[script];
+    assert.doesNotMatch(command, /\$PWD|\$\(/);
+    const output = command.match(/--out-dir (\S+)/)?.[1];
+    assert.ok(output, `${script} must specify its generated output directory`);
+    assert.equal(resolve(crate, output), expected, `${script} must write the bindings the app imports`);
+  }
+});
+
 test("root test aggregate includes recursive units and documentation contracts", () => {
   const command = rootPackage.scripts?.test ?? "";
   assert.match(command, /pnpm -r --if-present run test:unit/);
@@ -43,8 +59,20 @@ test("workspace static builds all app engines before monorepo typecheck", () => 
   assert.ok(typecheck > engines, "workspace static must generate all ignored @engine packages before root typecheck");
 });
 
-test("workspace static checks Artisan MCP manifest drift", () => {
-  assert.match(jobSection("pr-static", "pr-unit"), /pnpm --filter monet-artisan run mcp:check/);
+test("workspace static checks all seven app MCP manifests", () => {
+  assert.match(jobSection("pr-static", "pr-unit"), /run: pnpm run mcp:check/);
+  assert.match(rootPackage.scripts["mcp:check"], /pnpm -r --if-present run mcp:check/);
+  for (const app of ["anime", "artisan", "cinema", "galerie", "jouer", "rythme", "vision"]) {
+    const pkg = JSON.parse(readFileSync(new URL(`../../apps/${app}/package.json`, import.meta.url), "utf8"));
+    assert.ok(pkg.scripts["mcp:check"], `${app} must participate in the root MCP gate`);
+  }
+});
+
+test("all CI Node installations use the contributor default in .nvmrc", () => {
+  const version = readFileSync(new URL("../../.nvmrc", import.meta.url), "utf8").trim();
+  const installs = [...workflow.matchAll(/node-version: (\d+)/g)].map((match) => match[1]);
+  assert.ok(installs.length > 0, "CI must install Node");
+  assert.ok(installs.every((installed) => installed === version), "CI must test the documented Node version");
 });
 
 test("workspace static checks run for pull requests, main pushes, and manual dispatches", () => {
@@ -74,7 +102,7 @@ test("changed-file coverage ratchet runs only when a pull-request base SHA exist
 test("workflow exposes PR, main-push, and manual runs without retired dedicated lanes", () => {
   assert.match(workflow, /pull_request: \{\}/);
   assert.match(workflow, /push:\n\s+branches: \[main\]/);
-  assert.match(workflow, /workflow_dispatch: \{\}/);
+  assert.match(workflow, /workflow_dispatch:\n\s+inputs:\n\s+packaged_smoke:/);
   assert.doesNotMatch(workflow, /schedule:|nightly-dedicated-host|release-oracle/);
 });
 
@@ -120,6 +148,21 @@ test("hosted source gate validates an exact main or release ancestor", () => {
   assert.match(job, /git merge-base --is-ancestor "\$requested" "origin\/main"/);
   assert.match(job, /refs\/remotes\/origin\/release/);
   assert.match(job, /validated_sha=%s/);
+});
+
+test("packaged binary jobs require an explicit manual request while source gates remain unconditional", () => {
+  assert.match(workflow, /packaged_smoke:\n\s+description:[^\n]+\n\s+type: boolean\n\s+required: false\n\s+default: false/);
+  for (const [jobName, nextJob] of [
+    ["self-hosted-source", "merge-full-packaged-smoke-preflight"],
+    ["merge-full-packaged-smoke-preflight", "merge-full-packaged-smoke-macos"],
+    ["merge-full-packaged-smoke-macos", "merge-full-packaged-smoke-windows"],
+    ["merge-full-packaged-smoke-windows", ""],
+  ]) {
+    const job = nextJob ? jobSection(jobName, nextJob) : workflow.slice(workflow.indexOf(`  ${jobName}:`));
+    assert.match(job, exact(binaryEvents));
+  }
+  const sourceJobs = workflow.slice(workflow.indexOf("  pr-static:"), workflow.indexOf("  self-hosted-source:"));
+  assert.doesNotMatch(sourceJobs, /inputs\.packaged_smoke|continue-on-error:/);
 });
 
 for (const [jobName, nextJob, prerequisite, environment] of [

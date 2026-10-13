@@ -57,11 +57,13 @@ export function clampGuidePos(o: GuideOrientation, p: number, docW: number, docH
   return Math.max(0, Math.min(max, Math.round(p)));
 }
 
-/** Normalize untrusted/project guide payloads into bounded, immutable data. */
+/** Normalize untrusted/project guide payloads into bounded, immutable data.
+ *  Runtime/project guides can lie outside the canvas after a geometry edit;
+ *  explicit document bounds are only for entry that must stay on-canvas. */
 export function normalizeGuides(
   value: unknown,
-  docW = Number.MAX_SAFE_INTEGER,
-  docH = Number.MAX_SAFE_INTEGER,
+  docW?: number,
+  docH?: number,
 ): Guide[] {
   if (!Array.isArray(value)) return [];
   const guides: Guide[] = [];
@@ -71,7 +73,9 @@ export function normalizeGuides(
     if ((raw.o !== "h" && raw.o !== "v") || typeof raw.p !== "number" || !Number.isFinite(raw.p)) continue;
     guides.push({
       o: raw.o,
-      p: clampGuidePos(raw.o, raw.p, docW, docH),
+      p: docW !== undefined && docH !== undefined
+        ? clampGuidePos(raw.o, raw.p, docW, docH)
+        : Math.max(-Number.MAX_SAFE_INTEGER, Math.min(Number.MAX_SAFE_INTEGER, Math.round(raw.p))),
       color: typeof raw.color === "string" && GUIDE_COLOR.test(raw.color)
         ? raw.color.toLowerCase()
         : DEFAULT_GUIDE_COLOR,

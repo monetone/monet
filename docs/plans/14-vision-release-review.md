@@ -1,5 +1,13 @@
 # Vision — release-readiness code review (2026-09-22)
 
+> **Historical review of `c76beb42`, not the current release verdict.** The
+> findings below record the September 22 source audit. Subsequent changes have
+> addressed parts of it, including native export, raw-byte atomic saving and
+> Camera Raw sidecar ownership checks. The blocker totals and issue links are
+> preserved as historical evidence; validate any remaining finding against the
+> current code and tests. See [source and binary release requirements](../open-source-release.md)
+> for the current release process.
+
 A code review of every Monet Vision feature area at `c76beb42`, to decide whether Vision can ship. Twenty-one area reviewers read each feature from its menu entry or tool through `state/app.ts` and `store.ts` into the engine; one refute-first verifier per area then tried to disprove every finding; a synthesis pass merged duplicates and set the fix order. **No builds, test suites or native runs were part of this pass** (see [What this review could not establish](#what-this-review-could-not-establish)).
 
 ## Verdict: no-go

@@ -1,7 +1,8 @@
 # Lightroom Classic reference screenshots
 
-18 JPEG screenshots of Adobe Lightroom Classic's Develop module and chrome,
-captured 2026-09-18 (commit `85a7550c`, ~1.2 MB total).
+Private reference captures of Adobe Lightroom Classic's Develop module and
+chrome are excluded from public source. The original set contained 18 JPEGs,
+captured 2026-09-18 (~1.2 MB total).
 
 ## What they are for
 
@@ -10,10 +11,11 @@ Develop-parity reference for **Galerie** (the Lightroom Classic-style app) and
 inventory, slider ranges, labels, and defaults when implementing or auditing a
 panel.
 
-They are **third-party UI captures of Adobe's product**, kept only as a local
-reference so a parity check does not need the app open. Do not ship them, embed
-them in the apps, or publish them — and do not copy Adobe's artwork or icons
-from them; the reference is the layout and behaviour, not the pixels.
+They are **third-party UI captures of Adobe's product**, kept privately for local
+reference. Do not add them to Git, ship them, embed them in the apps, or publish
+them. Do not copy Adobe's artwork or icons from them; the reference is the layout
+and behaviour, not the pixels. The filenames below describe the private reference
+set, not files included in this repository.
 
 ## Covered
 

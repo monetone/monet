@@ -6605,7 +6605,7 @@ export async function imageProcessor(opts: ImageProcessorOptions): Promise<numbe
           await writeBatchOutput(subDir, filename, out, IMAGE_PROCESSOR_MIME[save.format]);
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
-          throw new Error(message.startsWith("Could not save") ? message : `Could not save ${filename}: ${message}`);
+          throw new Error(message.startsWith("Could not save") ? message : `Could not save ${filename}: ${message}`, { cause: e });
         }
       }
       processed++;
@@ -7400,11 +7400,12 @@ async function openAutomationInput(bytes: Uint8Array, file: Pick<File, "name" | 
   const suppress = _batchOpenSuppress?.dialogs;
   const sha256 = await cameraRawSha256(bytes);
   // A native input opens like File ▸ Open: from its path, with its sidecar's settings.
-  const sessionId = await openCameraRaw(bytes, file.name, {
+  const opened = openCameraRaw(bytes, file.name, {
     sha256,
     lastModified: file.lastModified,
     ...(path ? { originalPath: path, ...await readNativeRawSidecar(path, file.name, bytes, sha256) } : {}),
   }, path, !suppress);
+  const sessionId = typeof opened === "string" ? opened : await opened;
   if (typeof sessionId !== "string") return sessionId;
   if (suppress) {
     // Develop with the source's own recipe (its sidecar/defaults) instead of

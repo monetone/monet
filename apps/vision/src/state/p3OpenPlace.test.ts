@@ -6,7 +6,7 @@
 // #515 doc.new opens a tab and reports the de-duplicated title.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const tauri = vi.hoisted(() => ({ enabled: true, invoke: vi.fn(async () => new ArrayBuffer(0)) }));
+const tauri = vi.hoisted(() => ({ enabled: true, invoke: vi.fn(async (..._args: unknown[]) => new ArrayBuffer(0)) }));
 const decodeAvifMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@engine", () => ({
@@ -65,7 +65,7 @@ class TestImageData {
   constructor(public data: Uint8ClampedArray, public width: number, public height: number) {}
 }
 
-function pngChunk(type: string, data: Uint8Array): Uint8Array {
+function pngChunk(type: string, data: Uint8Array): Uint8Array<ArrayBuffer> {
   const out = new Uint8Array(12 + data.length);
   const view = new DataView(out.buffer);
   view.setUint32(0, data.length);
@@ -75,7 +75,7 @@ function pngChunk(type: string, data: Uint8Array): Uint8Array {
 }
 
 /** iCCP whose name matches a built-in profile. The deflate payload is empty, so detection uses the name. */
-function pngNamed(name: string): Uint8Array {
+function pngNamed(name: string): Uint8Array<ArrayBuffer> {
   const named = new TextEncoder().encode(name);
   const data = new Uint8Array(named.length + 2);
   data.set(named, 0);
@@ -87,7 +87,7 @@ function pngNamed(name: string): Uint8Array {
   return out;
 }
 
-function tgaPixel(): Uint8Array {
+function tgaPixel(): Uint8Array<ArrayBuffer> {
   const bytes = new Uint8Array(21);
   bytes[2] = 2;
   bytes[12] = 1;
@@ -111,7 +111,7 @@ function installSvgDom(png: Uint8Array): void {
     width: 0,
     height: 0,
     getContext: () => ({ drawImage() {} }),
-    toBlob: (cb: (blob: Blob | null) => void) => { cb(new Blob([png])); },
+    toBlob: (cb: (blob: Blob | null) => void) => { cb(new Blob([new Uint8Array(png)])); },
   };
   vi.stubGlobal("document", { createElement: () => canvas, body: { appendChild() {} } });
 }

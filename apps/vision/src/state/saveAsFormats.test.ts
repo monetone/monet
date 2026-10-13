@@ -321,6 +321,25 @@ describe("Save As reaches every format the app can encode", () => {
       });
     });
 
+    it.each([[0, 8], [0, 16], [1, 8], [1, 16]])("keeps transparent mode %s depth %s dirty when exporting Photoshop Raw", async (mode, depth) => {
+      answer({ photoshopRaw: { interleaved: false, bigEndian: false, header: 64 } });
+      openFlatDoc(1, "source.png", 72, {
+        doc_mode: () => mode, doc_depth: () => depth,
+        layer_has_transparency: () => true,
+        export_photoshop_raw: () => PS_RAW,
+      });
+      const id = store.state.activeDocId;
+      const name = store.activeName();
+      dialog.target = "/out/scan.raw";
+
+      expect(await saveDocumentAs()).toBe(true);
+
+      expect(written()).toEqual([["/out/scan.raw", PS_RAW]]);
+      expect(store.activePath()).toBeNull();
+      expect(store.activeName()).toBe(name);
+      expect(store.docDirty(id)).toBe(true);
+    });
+
     it("writes nothing when the options dialog is cancelled", async () => {
       answer(null);
       const { jp2, raw } = encoders();

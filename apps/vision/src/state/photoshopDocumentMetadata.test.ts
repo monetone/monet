@@ -7,6 +7,7 @@ vi.mock("@engine", () => ({
 
 import { DEFAULT_DOCUMENT_RESOLUTION_PPI } from "./docPresets";
 import { Store, type AppSnapshot } from "./store";
+import { decodeProjectEnvelope, encodeProjectEnvelope } from "./projectEnvelope";
 
 function setup() {
   const raster = { set_resolution_ppi: vi.fn(), set_guides: vi.fn() };
@@ -80,5 +81,28 @@ describe("Photoshop document metadata handoff", () => {
     expect(store.state.notes[0]).toMatchObject({ x: 150, y: 100 });
     expect(store.state.colorSamplers[0]).toEqual({ x: 199, y: 149 });
     expect(raster.set_guides).toHaveBeenLastCalledWith(new Float32Array([0, 150, 1, 100]));
+  });
+
+  it("preserves off-canvas guides through a canvas resize and saved project metadata", () => {
+    const { store, raster, internals } = setup();
+    internals.set({ doc: { width: 800, height: 600, name: "Canvas" } });
+    store.addGuide("v", 700, "#33aaff");
+    store.addGuide("h", 450, "#ff0000");
+
+    internals.set({ doc: { width: 400, height: 300, name: "Canvas" } });
+    store.remapDocSpaceAnnotations(1, 1);
+    expect(store.state.guides[0].p).toBe(700);
+    store.remapDocSpaceAnnotations(1, 1, 0, -500);
+    expect(store.state.guides.map(({ o, p }) => [o, p])).toEqual([["v", 700], ["h", -50]]);
+    expect(raster.set_guides).toHaveBeenLastCalledWith(new Float32Array([0, 700, 1, -50]));
+
+    const encoded = encodeProjectEnvelope(new Uint8Array([1]), [], {
+      colorProfileAssigned: true, guides: store.state.guides,
+    });
+    const reopened = setup();
+    reopened.internals.set({ doc: { width: 400, height: 300, name: "Reopened" } });
+    reopened.store.setGuides(decodeProjectEnvelope(encoded)!.document.guides);
+    expect(reopened.store.state.guides).toEqual(store.state.guides);
+    expect(reopened.raster.set_guides).toHaveBeenLastCalledWith(new Float32Array([0, 700, 1, -50]));
   });
 });

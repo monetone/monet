@@ -10,6 +10,12 @@ Monet is an MIT-licensed suite for image editing, illustration, video, photograp
 
 This repository holds all seven apps, the Monet UI design system, rendering engines, document formats and local automation tools.
 
+**Development preview.** The apps have different levels of completeness and are
+still being tested. File compatibility, native integration and some editing
+workflows have known gaps. Work on copies of valuable documents and keep backups.
+See [current scope and release requirements](docs/open-source-release.md) before
+using a source build for production work.
+
 ![Monet Vision editing a landscape with a layered document and adjustment panels](site/shots/vision.webp)
 
 ## The apps
@@ -59,12 +65,12 @@ This repository holds all seven apps, the Monet UI design system, rendering engi
 
 ## Build and run
 
-Install **Node.js 24** (pinned in [`.nvmrc`](.nvmrc)), **pnpm 11.1.3**, **Rust stable** and **wasm-pack**, plus the Tauri system prerequisites for your platform. On macOS, install the Xcode command-line tools.
+Install **Node.js 24** (pinned in [`.nvmrc`](.nvmrc)), **pnpm 11.1.3**, **Rust stable** and **wasm-pack 0.13.1**, plus the [Tauri system prerequisites](https://v2.tauri.app/start/prerequisites/) for your platform. On macOS, install the Xcode command-line tools. Detailed setup is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```sh
 git clone https://github.com/monetone/monet.git
 cd monet
-pnpm install
+pnpm install --frozen-lockfile
 pnpm build:libs
 pnpm build:engines
 pnpm dev:vision
@@ -140,6 +146,9 @@ JavaScript packages use pnpm `workspace:*` dependencies. Each app's `src-tauri/`
 ## Contributing
 
 Bug reports, focused improvements, tests and documentation are welcome. Use the [issue tracker](https://github.com/monetone/monet/issues) to describe a problem or discuss a larger change, and read [AGENTS.md](AGENTS.md) for project conventions.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup and targeted checks. Report
+vulnerabilities privately using [SECURITY.md](SECURITY.md).
 
 Run the checks relevant to your change before opening a pull request. For shared code, include the affected apps; for MCP command changes, regenerate the manifests and run `pnpm mcp:check`.
 

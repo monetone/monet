@@ -101,8 +101,8 @@ test("seeded edits preserve isolated per-document undo, redo, and reopen state",
         case 5: {
           const id = active();
           mv.store.beginHistory(`Seed effect ${step}`);
-          engine.set_layer_effect(id, 9, new Float32Array([1, 0, 0.65, (step & 1), 0.25, 1 - (step & 1), 2, 1]));
-          mv.engine.commit();
+          engine.set_layer_effect(id, 9, new Float32Array([1, 0, 0.65, (step & 1), 0.25, 1 - (step & 1), 2 + step, 1]));
+          mv.store.commitHistory();
           break;
         }
         case 6:

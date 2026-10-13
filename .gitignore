@@ -44,6 +44,9 @@ packages/monet-ui/pnpm-lock.yaml
 # icon generation scratch (round 1 samplers)
 icon-lab/
 
+# Private third-party UI reference captures must not enter public source history.
+docs/lightroom-classic/*.jpeg
+
 # Agent tooling runtime state (Claude Code, OMX, OMC, OMO)
 .claude/
 .omx/

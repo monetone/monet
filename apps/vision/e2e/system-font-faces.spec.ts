@@ -155,7 +155,9 @@ test("Avenir Book and Roman are distinct picks that render differently", async (
   const barStyle = page.locator(".mv-tt-style").getByRole("combobox", { name: "Font style", exact: true });
 
   const checksums: number[] = [];
-  for (const [label, face] of [["Book", "Avenir-Book"], ["Roman", "Avenir-Roman"]]) {
+  // Book is initially displayed through the family's implicit default. Start
+  // with Roman so both picks change the value and write an explicit identity.
+  for (const [label, face] of [["Roman", "Avenir-Roman"], ["Book", "Avenir-Book"]]) {
     await pick(page, panelStyle, "Font style", label);
     await expect(barStyle).toHaveText(label);
     const spec = await layerSpec(page, id);

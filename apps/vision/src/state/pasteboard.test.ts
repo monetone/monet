@@ -192,9 +192,8 @@ describe("Store Paste ← system pasteboard", () => {
       clipboard_geometry: vi.fn(() => [2, 2, 3, 4, 0]),
       clipboard_pixels: vi.fn(() => pixels),
     });
-    const target = fakeEngine({
-      install_clipboard: vi.fn(() => true),
-    });
+    const installClipboard = vi.fn((..._args: unknown[]) => true);
+    const target = fakeEngine({ install_clipboard: installClipboard });
     const { board } = fakePasteboard([fakeItem({ [PASTEBOARD_PNG]: OUR_PNG })]);
     const client = { onCommit: null, engine: source, e: source, docGen: 1, commit: vi.fn(), sync: vi.fn(), onEditError: vi.fn() };
     const store = new Store(client as never);
@@ -204,8 +203,8 @@ describe("Store Paste ← system pasteboard", () => {
     client.engine = target;
     client.e = target;
     await store.paste();
-    expect(target.install_clipboard).toHaveBeenCalledTimes(1);
-    const installed = target.install_clipboard.mock.calls[0];
+    expect(installClipboard).toHaveBeenCalledTimes(1);
+    const installed = installClipboard.mock.calls[0];
     expect(installed.slice(0, 5)).toEqual([2, 2, 3, 4, 0]);
     expect(installed[5]).toEqual(pixels);
     expect(target.set_clipboard_from_image).not.toHaveBeenCalled();

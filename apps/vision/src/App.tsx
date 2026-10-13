@@ -2295,7 +2295,9 @@ function Editor({ platform }: { platform: Platform }) {
         kind, target, digit, at: Date.now(), timer: 0,
         engineInstance: engine.engine,
         docGen: engine.docGen,
-        endPropertyEdit: propertyEngine ? () => propertyEngine.end_prop_edit() : null,
+        endPropertyEdit: propertyEngine ? () => {
+          if (engine.engine === propertyEngine) propertyEngine.end_prop_edit();
+        } : null,
       };
       pending.timer = window.setTimeout(() => {
         if (pendingDigit === pending) clearPendingDigit();

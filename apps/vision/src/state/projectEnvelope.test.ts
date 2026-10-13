@@ -393,7 +393,7 @@ describe("Vision project envelope", () => {
       colorProfileAssigned: true,
       guides: [
         { o: "v", p: 13, color: "#aabbcc" },
-        { o: "h", p: 0, color: "#33aaff" },
+        { o: "h", p: -4, color: "#33aaff" },
         { o: "v", p: 20, color: "#33aaff" },
       ],
     });

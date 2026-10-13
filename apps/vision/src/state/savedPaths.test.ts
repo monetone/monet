@@ -103,7 +103,7 @@ function setupStore(docs: ReturnType<typeof seedDoc>[]) {
   internal.activeDocId = docs[0].id;
   // The active document's live state lives in the reactive snapshot, not its
   // own DocEntry (see activateDoc/captureActiveView) — mirror that here.
-  internal.set({ savedPaths: docs[0].savedPaths, documents: docs.map(({ id, name, dirty }) => ({ id, name, dirty })) });
+  internal.set({ savedPaths: docs[0].savedPaths, documents: docs.map(({ id, name, dirty, savedPath }) => ({ id, name, dirty, hasFile: !!savedPath })) });
   return { store, internal, client };
 }
 

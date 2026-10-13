@@ -77,6 +77,18 @@ describe("parseGuidePosition", () => {
 });
 
 describe("normalizeGuides", () => {
+  it("keeps signed off-canvas positions when runtime or saved guides have no canvas bounds", () => {
+    const guides: Guide[] = [
+      { o: "v", p: 700, color: "#33aaff" },
+      { o: "h", p: -50, color: "#ff0000" },
+    ];
+    expect(normalizeGuides(guides)).toEqual(guides);
+    expect(cloneGuides(guides)).toEqual(guides);
+    expect(normalizeGuides(guides, 400, 300)).toEqual([
+      { ...guides[0], p: 400 }, { ...guides[1], p: 0 },
+    ]);
+  });
+
   it("normalizes positions and colors while rejecting malformed guides", () => {
     expect(normalizeGuides([
       { o: "v", p: 123.6, color: "#AABBCC" },

@@ -426,7 +426,7 @@ describe("Blur Gallery replay command", () => {
 });
 
 describe("action recorder preview checkpoints", () => {
-  it("rolls transient steps back and commits exactly one accepted step", () => {
+  it("rolls transient steps back and commits exactly one accepted step", async () => {
     const baseline = vi.fn();
     const transient = vi.fn();
     const accepted = vi.fn();
@@ -446,7 +446,7 @@ describe("action recorder preview checkpoints", () => {
       actions.stop();
     }
 
-    actions.play();
+    await actions.play();
     expect(baseline).toHaveBeenCalledOnce();
     expect(transient).not.toHaveBeenCalled();
     expect(accepted).toHaveBeenCalledOnce();

@@ -1,13 +1,16 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { createElement } from "react";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
 
 // The brush options bar must expose Spacing and Flow Pressure — both fields are
 // already pushed to the engine by store.syncBrush, so the controls have to drive
 // store.setBrush, not local component state.
 //
 // App.tsx reaches the WASM engine, Tauri and the DOM through state/app, so
-// state/app is stubbed and React's hooks are driven by hand (the discipline of
-// ./panelInventory.test.ts): the app shell renders far enough to hand back its
-// toolbar registry, and the real options bar renders from there.
+// state/app is stubbed. The shell is rendered through React so every hook,
+// including external-store subscriptions, has a real dispatcher. Its returned
+// element tree is captured without mounting the native dock/canvas children;
+// the real options bar renders from the shell's toolbar registry.
 const stub = vi.hoisted(() => {
   const slots: Array<{ current: any }> = [];
   let cursor = 0;
@@ -15,7 +18,7 @@ const stub = vi.hoisted(() => {
   const record = (name: string) => (...args: unknown[]) => { calls.push([name, ...args]); };
   const state = new Proxy({} as Record<string, any>, { get: (t, p: string) => (p in t ? t[p] : []) });
   return {
-    calls, record, state,
+    calls, record, state, rendering: false,
     reset() { slots.length = 0; cursor = 0; calls.length = 0; for (const k of Object.keys(state)) delete state[k]; },
     put(patch: Record<string, unknown>) { Object.assign(state, patch); },
     slot(initial: unknown) { const i = cursor++; return (slots[i] ??= { current: initial }); },
@@ -26,12 +29,13 @@ vi.mock("react", async () => {
   const real = await vi.importActual<typeof import("react")>("react");
   return {
     ...real,
-    useRef: (initial: unknown) => stub.slot(initial),
-    useMemo: (fn: () => unknown) => fn(),
-    useCallback: (fn: unknown) => fn,
+    useRef: (initial: unknown) => stub.rendering ? real.useRef(initial) : stub.slot(initial),
+    useMemo: (fn: () => unknown, deps: unknown[]) => stub.rendering ? real.useMemo(fn, deps) : fn(),
+    useCallback: (fn: (...args: any[]) => unknown, deps: unknown[]) => stub.rendering ? real.useCallback(fn, deps) : fn,
     useContext: () => ({ open: stub.record("openDialog"), close: () => {}, current: null, arg: null }),
     useEffect: () => {},
     useState: (initial: unknown) => {
+      if (stub.rendering) return real.useState(initial);
       const s = stub.slot(typeof initial === "function" ? (initial as () => unknown)() : initial);
       return [s.current, (next: unknown) => {
         s.current = typeof next === "function" ? (next as (p: unknown) => unknown)(s.current) : next;
@@ -71,6 +75,22 @@ vi.mock("../state/app", () => new Proxy({} as Record<string, unknown>, {
 const { App } = await import("../App");
 
 type El = { type: any; props: Record<string, any>; ref?: any };
+const renderers: ReactTestRenderer[] = [];
+function disposeRenders() { act(() => { for (const renderer of renderers.splice(0)) renderer.unmount(); }); }
+afterEach(disposeRenders);
+
+/** Shallow capture with React's dispatcher; native children stay unmounted. */
+function renderWithHooks(component: () => unknown): unknown {
+  let output: unknown;
+  function Capture() {
+    stub.rendering = true;
+    try { output = component(); } finally { stub.rendering = false; }
+    return null;
+  }
+  act(() => { renderers.push(create(createElement(Capture))); });
+  return output;
+}
+
 function walk(node: unknown, out: El[] = []): El[] {
   if (Array.isArray(node)) { for (const n of node) walk(n, out); return out; }
   const el = node as El | null;
@@ -91,6 +111,7 @@ const BRUSH = {
 
 /** Renders the real options bar for `tool` out of the app shell's toolbar registry. */
 function mountOptionsBar(patch: Record<string, unknown> = {}) {
+  disposeRenders();
   stub.reset();
   stub.put({
     doc: { width: 64, height: 48 }, documents: [{ id: 1, name: "Untitled" }], activeDocId: 1, activeLayerId: 3, tool: "brush", mode: 0, depth: 8, zoom: 1,
@@ -100,10 +121,10 @@ function mountOptionsBar(patch: Record<string, unknown> = {}) {
     history: ["Brush"], historyIndex: 1, historyStates: 50, historyOptions: {},
     ...patch,
   });
-  const toasts = App() as unknown as El;
+  const toasts = renderWithHooks(App) as El;
   const provider = walk(toasts.props.children).find((e) => typeof e.type === "function")!; // DialogProvider
   const editor = walk(provider.props.children).find((e) => e.type?.name === "Editor")!;
-  const dock = walk(editor.type(editor.props)).find((e) => e.props.toolbarDefs)!;
+  const dock = walk(renderWithHooks(() => editor.type(editor.props))).find((e) => e.props.toolbarDefs)!;
   const bar = dock.props.toolbarDefs.options.render("horizontal") as El;
   return walk(bar.type(bar.props));
 }

@@ -24,6 +24,8 @@ function fakeEngine() {
     stamped: null as null | { x: number; y: number; w: number; h: number },
     width: () => 160,
     height: () => 120,
+    has_clipboard: () => true,
+    clipboard_profile: () => 0,
     begin_history_transaction() {
       if (depth !== null) return false;
       depth = e.undo.length;
@@ -92,7 +94,7 @@ function setup() {
     vanishingPointPlanes: defaultVanishingPointPlanes(160, 120),
     vanishingPointActivePlane: 0,
     vanishingPointSource: { x: 3, y: 4 },
-    documents: [{ id: 1, name: "doc-1", dirty: false }, { id: 2, name: "doc-2", dirty: false }],
+    documents: [{ id: 1, name: "doc-1", dirty: false, hasFile: false }, { id: 2, name: "doc-2", dirty: false, hasFile: false }],
   });
   return { store, engine, client, internal };
 }

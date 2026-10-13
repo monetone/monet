@@ -9,14 +9,15 @@ import { chooseOption, gotoApp } from "./helpers";
 // pixels into the destination working space and is undoable.
 
 async function runCommand(page: Page, label: string) {
-  await page.waitForFunction((needle) => {
+  const commandSuffix = ` ▸ ${label}…`;
+  await page.waitForFunction((suffix) => {
     const items = (window as any).__mv.commandPalette?.items ?? [];
-    return items.some((i: any) => i.label.includes(needle));
-  }, label, { timeout: 5000 });
-  await page.evaluate((needle) => {
+    return items.some((i: any) => i.label.endsWith(suffix));
+  }, commandSuffix, { timeout: 5000 });
+  await page.evaluate((suffix) => {
     const items = (window as any).__mv.commandPalette.items;
-    items.find((i: any) => i.label.includes(needle)).run();
-  }, label);
+    items.find((i: any) => i.label.endsWith(suffix)).run();
+  }, commandSuffix);
 }
 
 async function colorDoc(page: Page): Promise<number> {

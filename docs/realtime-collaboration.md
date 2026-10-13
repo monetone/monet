@@ -47,7 +47,11 @@ Shipped:
   hooks; users see each other's cursor (in world coords, correct under pan/zoom)
   and selection.
 - **Sync backend** — `scripts/collab-server.mjs` (in-memory y-websocket-compatible
-  relay), run with `pnpm collab:server`.
+  relay), run with `pnpm collab:server`. It listens on `127.0.0.1:1234` by default.
+  Set `HOST` to an explicit network address and `COLLAB_TOKEN` to a shared secret
+  for remote clients; startup refuses network listeners without a token. Clients
+  supply the secret through `CollabOptions.token`. Use a TLS reverse proxy for
+  remote connections, so the token and document updates travel over `wss://`.
 - **Apps wired** — collaboration is now integrated into **four of the five apps in §1's table**,
   all opt-in via `VITE_COLLAB=1` or `?room=…`, each via a small per-app
   `src/collab/index.ts` `startCollab(store)` over the shared `CollabStoreAdapter`:
@@ -104,7 +108,8 @@ be done; the `OpLog` substrate itself is unit-tested.
 - **Durable backend (was GAP 4).** `scripts/collab-server.mjs` now PERSISTS each
   room's Yjs state to `COLLAB_DATA/<room>.bin` (debounced) and reloads it on the
   next join, so a late-joiner reconstructs the document even after every client
-  left; and enforces optional token AUTH (`COLLAB_TOKEN` ↔ `CollabOptions.token`).
+  left; and enforces token AUTH (`COLLAB_TOKEN` ↔ `CollabOptions.token`) for network
+  listeners. Loopback development can run without a token.
   Verified end-to-end (write → all clients leave → new client reconstructs the
   doc; tokenless connection rejected).
 - **Canonical CRDT in Rust (was GAP 1) — built, then removed.** A

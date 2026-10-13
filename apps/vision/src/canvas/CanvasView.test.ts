@@ -102,8 +102,13 @@ vi.mock("../state/app", async () => {
 
 let root: Root;
 let host: HTMLElement;
-let store: import("../state/store").Store;
 let viewport: HTMLElement;
+
+// Transform the app-sized component graph before starting per-test deadlines.
+// A cold dynamic import inside beforeEach can outlive that hook under load and
+// leave its unfinished mount racing the next test's fixture.
+const { CanvasView } = await import("./CanvasView");
+const { store } = await import("../state/app") as unknown as { store: import("../state/store").Store };
 
 const names = () => calls.map((c) => c.name);
 const lastCall = (name: string) => [...calls].reverse().find((c) => c.name === name);
@@ -122,8 +127,6 @@ async function mount(panes: number[] = []): Promise<void> {
       }),
       set: (target, k: string, v) => { target[k] = v; return true; },
     })) as never;
-  const { CanvasView } = await import("./CanvasView");
-  ({ store } = await import("../state/app") as unknown as { store: import("../state/store").Store });
   host = document.createElement("div");
   document.body.appendChild(host);
   root = createRoot(host);

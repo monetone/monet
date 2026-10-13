@@ -214,10 +214,12 @@ export function imageModeCheckedIds(mode: number, depth: number, duotone: boolea
 
 /** Edit ▸ Undo names the step it will reverse ("Undo Brush"). An empty label
  *  leaves the blueprint title alone. Only the exact item "Undo" is renamed. */
-export function nameUndoItem(items: { label?: unknown; items?: unknown[] }[], undoLabel: string): void {
+type UndoMenuItem = { label?: unknown; items?: UndoMenuItem[] };
+
+export function nameUndoItem(items: UndoMenuItem[], undoLabel: string): void {
   if (!undoLabel) return;
   const titled = `Undo ${undoLabel}`;
-  const walk = (list: { label?: unknown; items?: unknown[] }[]) => {
+  const walk = (list: UndoMenuItem[]) => {
     for (const item of list) {
       if (item.label === "Undo") item.label = titled;
       if (Array.isArray(item.items)) walk(item.items);

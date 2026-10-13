@@ -18,7 +18,7 @@
     "build:engines": "pnpm --filter monet-artisan run engine:build:release && pnpm --filter monet-cinema run engine:build:release && pnpm --filter monet-vision run engine:build:release && pnpm --filter monet-galerie run engine:build:release",
     "typecheck": "pnpm -r --if-present run typecheck",
     "lint": "pnpm -r --if-present run lint",
-    "test": "pnpm -r --if-present run test:unit && pnpm run test:docs",
+    "test": "pnpm -r --if-present run test:unit && pnpm run test:docs && pnpm run test:tooling",
     "mcp:codegen": "pnpm -r --if-present run mcp:codegen",
     "mcp:check": "pnpm -r --if-present run mcp:check",
     "verify:release": "pnpm --filter monet-vision run verify:release",
@@ -32,7 +32,8 @@
     "dev:rythme": "pnpm --filter monet-rythme run tauri dev",
     "dev:vision": "pnpm --filter monet-vision run tauri dev",
     "collab:server": "node scripts/collab-server.mjs",
-    "test:docs": "node --test docs/*.test.mjs"
+    "test:docs": "node --test docs/*.test.mjs",
+    "test:tooling": "node --test scripts/*.test.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.1.0",

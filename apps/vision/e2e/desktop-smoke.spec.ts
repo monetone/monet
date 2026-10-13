@@ -551,8 +551,8 @@ test("Canvas Size anchor + Relative grow the canvas under CSP", async ({ page })
   await gotoApp(page);
   await page.evaluate(() => {
     const mv = (window as any).__mv;
-    const E = mv.engine.engine;
     mv.store.newDocument(200, 160, "canvas-csp");
+    const E = mv.engine.e;
     E.select_all(); E.fill_selection(0, 200, 0, 255); E.select_none();
     mv.engine.commit();
   });
@@ -572,7 +572,7 @@ test("Canvas Size anchor + Relative grow the canvas under CSP", async ({ page })
   const d = await page.evaluate(() => ({ w: (window as any).__mv.engine.engine.width(), h: (window as any).__mv.engine.engine.height() }));
   expect(d.w).toBe(300);
   expect(d.h).toBe(200);
-  const grown = await page.evaluate(() => ((window as any).__mv.engine.engine.pick_color(250, 180) >>> 0 >>> 24) & 255);
+  const grown = await page.evaluate(() => ((window as any).__mv.engine.e.pick_color(250, 180) >>> 0) & 255);
   expect(grown).toBe(0); // new bottom-right area is transparent
 });
 

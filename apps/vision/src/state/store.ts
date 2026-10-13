@@ -3579,7 +3579,7 @@ export class Store {
     const guides = normalizeGuides(this.snap.guides.map((guide) => ({
       ...guide,
       p: guide.o === "v" ? guide.p * scaleX + dx : guide.p * scaleY + dy,
-    })), this.snap.doc.width, this.snap.doc.height);
+    })));
     this.set({
       guides,
       notes: this.snap.notes.map((note) => ({ ...note, x: mapX(note.x), y: mapY(note.y) })),

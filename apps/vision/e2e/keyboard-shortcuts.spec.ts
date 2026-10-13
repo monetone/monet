@@ -615,8 +615,11 @@ test("spring-loaded shortcuts distinguish taps from holds and persist Tools pref
   const enabled = page.getByRole("checkbox", { name: "Spring-loaded Tool Shortcuts" });
   const delay = page.getByRole("slider", { name: "Spring-loaded shortcut timing" });
   await expect(enabled).toBeChecked();
-  await expect(delay).toHaveValue("200");
-  await delay.fill("500");
+  await expect(delay).toHaveAttribute("aria-valuenow", "200");
+  await delay.press("PageUp");
+  await delay.press("PageUp");
+  await delay.press("PageUp");
+  await expect(delay).toHaveAttribute("aria-valuenow", "500");
   await page.getByRole("button", { name: "OK" }).click();
 
   await page.evaluate(() => (window as any).__mv.store.setTool("brush"));
@@ -649,7 +652,8 @@ test("spring-loaded shortcuts distinguish taps from holds and persist Tools pref
   await page.keyboard.press("ControlOrMeta+KeyK");
   await page.getByText("Tools", { exact: true }).click();
   await enabled.check();
-  await delay.fill("200");
+  await delay.press("Home");
+  await expect(delay).toHaveAttribute("aria-valuenow", "200");
   await page.getByRole("button", { name: "OK" }).click();
   expect(await page.evaluate(() => localStorage.getItem("mv.springLoadedTools"))).toBeNull();
 });

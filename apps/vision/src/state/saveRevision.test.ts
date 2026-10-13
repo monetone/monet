@@ -46,7 +46,7 @@ function setupStore(seed: Array<Partial<SeedDocument> & Pick<SeedDocument, "id">
   internal.activeDocId = docs[0]?.id ?? 0;
   internal.set({
     activeDocId: internal.activeDocId,
-    documents: docs.map(({ id, name, dirty }) => ({ id, name, dirty })),
+    documents: docs.map(({ id, name, dirty, savedPath }) => ({ id, name, dirty, hasFile: !!savedPath })),
   });
   const activate = (id: number) => {
     internal.activeDocId = id;
@@ -106,7 +106,7 @@ describe("revision-aware document saves", () => {
     internal.activeDocId = 1;
     internal.set({
       activeDocId: 1,
-      documents: docs.map(({ id, name, dirty }) => ({ id, name, dirty })),
+      documents: docs.map(({ id, name, dirty }) => ({ id, name, dirty, hasFile: false })),
     });
 
     expect(store.mutateDocEngine(1, () => { activeTransaction = false; return true; })).toBe(true);

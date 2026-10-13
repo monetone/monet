@@ -148,9 +148,9 @@ function plainPixelLayer(layer: FlatLayerFacts): boolean {
 }
 
 /** True only when `ext` can hold this document exactly: one plain visible pixel
- *  layer, RGB, no extra channels, at a depth the format stores. JPEG also
- *  refuses transparency. Grayscale, CMYK, and Lab are not a fit: the flat
- *  encoders write RGB(A), and an in-place save would replace the source and
+ *  layer, RGB (or Grayscale for Photoshop Raw), no extra channels, at a depth
+ *  the format stores. JPEG and Photoshop Raw refuse transparency. CMYK and Lab
+ *  are not a fit: the flat encoders write RGB(A), and an in-place save would replace the source and
  *  clear the dirty flag. Anything else must Save As a project (or be an export
  *  copy) instead. (#520, #546) */
 export function documentFitsFlatFormat(facts: FlatDocumentFacts, ext: string): boolean {
@@ -159,6 +159,8 @@ export function documentFitsFlatFormat(facts: FlatDocumentFacts, ext: string): b
   if (facts.frameCount > 1) return false;
   if (facts.layerCount !== 1 || !facts.layer || !plainPixelLayer(facts.layer)) return false;
   if (facts.extraChannels > 0) return false;
+  if (normalized === "raw") return !facts.layer.hasTransparency
+    && (facts.mode === 0 || facts.mode === 1) && (facts.depth === 8 || facts.depth === 16);
   if (facts.mode !== 0) return false;
   if (normalized === "jpg" || normalized === "jpeg" || normalized === "gif") {
     if (facts.depth !== 8) return false;

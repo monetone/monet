@@ -409,8 +409,8 @@ test("Upright on an image with no straight lines says so and changes nothing", a
   await gotoApp(page);
   await page.evaluate(() => {
     const mv = (window as any).__mv;
-    const E = mv.engine.engine;
     mv.store.newDocument(96, 64, "flat");
+    const E = mv.engine.e;
     E.select_all(); E.fill_selection(128, 128, 128, 255); E.select_none();
     mv.engine.commit();
   });
@@ -1810,11 +1810,11 @@ test("the Highlights clip readout toggles an on-preview clipping overlay", async
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
-test("Profile offers the DNG's embedded profile and a loaded .dcp, renders it, and keeps it through save and reopen (#446)", async ({ page }) => {
+test("Camera Raw offers the embedded profile and rejects malformed or camera-mismatched DCP files (#446)", async ({ page }) => {
   await gotoApp(page);
   await newScene(page);
   await stageRaw(page, tinyLinearDng(7), "profiled.dng");
-  let dialog = await expectRawWorkspace(page);
+  const dialog = await expectRawWorkspace(page);
   await dialog.getByText("Profile & Calibration", { exact: true }).click();
   const menu = () => dialog.getByRole("combobox", { name: "Camera Profile" });
   const amount = () => dialog.getByRole("slider", { name: "Amount" });
@@ -1834,12 +1834,32 @@ test("Profile offers the DNG's embedded profile and a loaded .dcp, renders it, a
   await expect(warning()).toContainText("can't be used as a camera profile");
   await load("Other Camera.dcp", tinyDcp("Another Camera", "Other Camera Look", 90));
   await expect(warning()).toContainText("made for Another Camera, so it isn't offered for this image");
-  await load("E2E Hue.dcp", tinyDcp("Vision E2E", "E2E Hue Shift", 90));
+  await menu().click();
+  await expect(page.getByRole("option", { name: "Other Camera Look" })).toHaveCount(0);
+  await page.getByRole("option", { name: "Camera Default", exact: true }).click();
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("a loaded DCP changes Camera Raw pixels and survives a project reopen (#446)", async ({ page }) => {
+  await gotoApp(page);
+  await newScene(page);
+  await stageRaw(page, tinyLinearDng(7), "profiled.dng");
+  let dialog = await expectRawWorkspace(page);
+  await dialog.getByText("Profile & Calibration", { exact: true }).click();
+  const menu = () => dialog.getByRole("combobox", { name: "Camera Profile" });
+  const amount = () => dialog.getByRole("slider", { name: "Amount" });
+  const warning = () => dialog.locator("[data-mv-cr-profile-warning]");
+  const chooser = page.waitForEvent("filechooser");
+  await dialog.locator("[data-mv-cr-load-profile]").click();
+  await (await chooser).setFiles({
+    name: "E2E Hue.dcp", mimeType: "application/octet-stream",
+    buffer: Buffer.from(tinyDcp("Vision E2E", "E2E Hue Shift", 90)),
+  });
   await expect(warning()).toHaveCount(0);
 
   const cameraDefault = await waitForDevelopFrame(page);
   await menu().click();
-  await expect(page.getByRole("option", { name: "Other Camera Look" })).toHaveCount(0);
   await page.getByRole("option", { name: "E2E Hue Shift" }).click();
   const profiled = await waitForDevelopFrame(page, cameraDefault.frame);
   expect(profiled.checksum).not.toBe(cameraDefault.checksum); // the render changed, not just the recipe
@@ -1856,7 +1876,6 @@ test("Profile offers the DNG's embedded profile and a loaded .dcp, renders it, a
 
   // A fresh launch (no profile tables in the engine) finds it again in the library.
   const reopen = async () => {
-    await page.reload();
     await gotoApp(page);
     await page.evaluate(() => (window as any).__mv.store.cameraRawProfilesReady);
     await page.evaluate((bytes) => {
@@ -1876,14 +1895,46 @@ test("Profile offers the DNG's embedded profile and a loaded .dcp, renders it, a
   expect((await waitForDevelopFrame(page, reopened.frame)).checksum).not.toBe(reopened.checksum);
   await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("a missing Camera Raw profile keeps its choice and warns after project reopen (#446)", async ({ page }) => {
+  await gotoApp(page);
+  await newScene(page);
+  await stageRaw(page, tinyLinearDng(7), "profiled.dng");
+  let dialog = await expectRawWorkspace(page);
+  await dialog.getByText("Profile & Calibration", { exact: true }).click();
+  const chooser = page.waitForEvent("filechooser");
+  await dialog.locator("[data-mv-cr-load-profile]").click();
+  await (await chooser).setFiles({
+    name: "E2E Hue.dcp", mimeType: "application/octet-stream",
+    buffer: Buffer.from(tinyDcp("Vision E2E", "E2E Hue Shift", 90)),
+  });
+  await dialog.getByRole("combobox", { name: "Camera Profile" }).click();
+  await page.getByRole("option", { name: "E2E Hue Shift" }).click();
+  await dialog.locator("[data-mv-cr-open-object]").click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const saved = await page.evaluate(() => {
+    const mv = (window as any).__mv;
+    const id = mv.store.state.activeDocId as number;
+    return { bytes: Array.from(mv.store.saveProjectForDoc(id) as Uint8Array), profile: mv.store.cameraRawSourceForDoc(id)?.recipe.profile };
+  });
+  expect(saved.profile).toMatchObject({ id: "custom", name: "E2E Hue Shift", digest: expect.stringMatching(/^[0-9A-F]{32}$/) });
 
   // Without the profile the choice stays, rendered as Camera Default, and says how to fix it.
   await page.evaluate(() => new Promise((resolve) => { indexedDB.deleteDatabase("mv.cameraRawProfiles").onsuccess = resolve; }));
-  await reopen();
+  await gotoApp(page);
+  await page.evaluate(() => (window as any).__mv.store.cameraRawProfilesReady);
+  await page.evaluate((bytes) => {
+    const mv = (window as any).__mv;
+    mv.store.openProject(new Uint8Array(bytes), "profiled.mvision");
+    mv.store.requestCameraRawEdit();
+  }, saved.bytes);
+  dialog = await expectRawWorkspace(page);
+  await dialog.getByText("Profile & Calibration", { exact: true }).click();
   await expect(page.getByText("The camera profile “E2E Hue Shift” isn't installed, so layers using it show Camera Default", { exact: false })).toBeVisible();
-  await expect(menu()).toContainText("E2E Hue Shift (missing)");
-  await expect(warning()).toContainText("“E2E Hue Shift” isn't installed — showing Camera Default. Load it with Load Profile…");
-  await expect(amount()).toHaveAttribute("aria-disabled", "true");
+  await expect(dialog.getByRole("combobox", { name: "Camera Profile" })).toContainText("E2E Hue Shift (missing)");
+  await expect(dialog.locator("[data-mv-cr-profile-warning]")).toContainText("“E2E Hue Shift” isn't installed — showing Camera Default. Load it with Load Profile…");
+  await expect(dialog.getByRole("slider", { name: "Amount" })).toHaveAttribute("aria-disabled", "true");
   await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });

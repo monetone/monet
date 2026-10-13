@@ -1,13 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createElement } from "react";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
 
 // Guards VIS-WS-04: Actions, Properties and the Measurement Log are real dock
 // panels, not a strip inside History and a modal over the canvas.
 //
 // App.tsx and Panels.tsx reach the WASM engine, Tauri and the DOM through
-// state/app, so state/app is stubbed and React's hooks are driven by hand (the
-// discipline of ./dialogs/common.test.ts): the app shell renders far enough to
-// hand back its real dock registry and menu tree, and each panel renders for
-// real and runs its own handlers.
+// state/app, so that boundary is stubbed. The app shell renders through React's
+// real hook dispatcher without mounting native dock/canvas children. Panels
+// retain the small synchronous harness used by ./dialogs/common.test.ts so
+// their returned controls and event handlers can be inspected directly.
 const stub = vi.hoisted(() => {
   const slots: Array<{ current: any }> = [];
   const effects: Array<() => void> = [];
@@ -25,7 +27,7 @@ const stub = vi.hoisted(() => {
   // render without this test having to model the whole store.
   const state = new Proxy({} as Record<string, any>, { get: (t, p: string) => (p in t ? t[p] : []) });
   return {
-    calls, record, state, effects, engine,
+    calls, record, state, effects, engine, rendering: false,
     reset() {
       slots.length = 0; cursor = 0; calls.length = 0; effects.length = 0;
       for (const k of Object.keys(state)) delete state[k];
@@ -42,20 +44,22 @@ vi.mock("react", async () => {
   const real = await vi.importActual<typeof import("react")>("react");
   return {
     ...real,
-    useRef: (initial: unknown) => stub.slot(initial),
+    useRef: (initial: unknown) => stub.rendering ? real.useRef(initial) : stub.slot(initial),
     // Deps-aware, like React: a memo only recomputes when a dep changes
     // identity, so a test can see what a panel re-reads per render.
-    useMemo: (fn: () => unknown, deps?: unknown[]) => {
+    useMemo: (fn: () => unknown, deps: unknown[]) => {
+      if (stub.rendering) return real.useMemo(fn, deps);
       const s = stub.slot(null) as { current: { deps?: unknown[]; value: unknown } | null };
       const stale = !s.current || !deps || !s.current.deps
         || deps.length !== s.current.deps.length || deps.some((d, i) => !Object.is(d, s.current!.deps![i]));
       if (stale) s.current = { deps, value: fn() };
       return s.current!.value;
     },
-    useCallback: (fn: unknown) => fn,
+    useCallback: (fn: (...args: any[]) => unknown, deps: unknown[]) => stub.rendering ? real.useCallback(fn, deps) : fn,
     useContext: () => ({ open: stub.record("openDialog"), close: stub.record("closeDialog"), current: typeof stub.state.dialogName === "string" ? stub.state.dialogName : null, arg: null }),
     useEffect: (fn: () => void) => { stub.effects.push(fn); },
     useState: (initial: unknown) => {
+      if (stub.rendering) return real.useState(initial);
       const s = stub.slot(typeof initial === "function" ? (initial as () => unknown)() : initial);
       return [s.current, (next: unknown) => {
         s.current = typeof next === "function" ? (next as (p: unknown) => unknown)(s.current) : next;
@@ -145,6 +149,22 @@ const { FX } = await import("../state/effects");
 const { MeasurementRows, DialogProvider } = await import("./Dialogs");
 
 type El = { type: any; props: Record<string, any>; ref?: any };
+const renderers: ReactTestRenderer[] = [];
+function disposeRenders() { act(() => { for (const renderer of renderers.splice(0)) renderer.unmount(); }); }
+afterEach(disposeRenders);
+
+/** Shallow capture with React's dispatcher; native children stay unmounted. */
+function renderWithHooks(component: () => unknown): unknown {
+  let output: unknown;
+  function Capture() {
+    stub.rendering = true;
+    try { output = component(); } finally { stub.rendering = false; }
+    return null;
+  }
+  act(() => { renderers.push(create(createElement(Capture))); });
+  return output;
+}
+
 function walk(node: unknown, out: El[] = []): El[] {
   if (Array.isArray(node)) { for (const n of node) walk(n, out); return out; }
   const el = node as El | null;
@@ -188,12 +208,13 @@ function mount(component: () => unknown, patch: Record<string, unknown> = {}) {
 
 /** Renders the app shell down to the dock, and hands back what it configured. */
 function mountShell(patch: Record<string, unknown> = {}) {
+  disposeRenders();
   stub.reset();
   stub.put({ ...baseState(), ...patch });
-  const toasts = App() as unknown as El;
+  const toasts = renderWithHooks(App) as El;
   const provider = walk(toasts.props.children).find((e) => typeof e.type === "function")!; // DialogProvider
   const editor = walk(provider.props.children).find((e) => e.type?.name === "Editor")!;
-  const dock = walk(editor.type(editor.props)).find((e) => e.props.panels)!;
+  const dock = walk(renderWithHooks(() => editor.type(editor.props))).find((e) => e.props.panels)!;
   const ref = dock.ref ?? dock.props.ref;
   const openPanel = (id: string) => { stub.calls.push(["openPanel", id]); };
   ref.current = { openPanel, closePanel: () => {}, getLayout: () => ({}) };

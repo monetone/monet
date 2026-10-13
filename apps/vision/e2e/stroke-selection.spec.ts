@@ -110,7 +110,11 @@ test("stroking a marquee paints its outline with the foreground colour", async (
 // ── UI: the Stroke dialog ──────────────────────────────────────────
 test("the Edit ▸ Stroke… menu opens a dialog whose OK strokes the selection", async ({ page }) => {
   await setup(page);
-  await page.evaluate(() => { (window as any).__mv.engine.engine.select_rect(40, 30, 80, 60, 0); });
+  await page.evaluate(() => {
+    const mv = (window as any).__mv;
+    mv.engine.e.select_rect(40, 30, 80, 60, 0);
+    mv.engine.commit();
+  });
   expect((await pixel(page, 40, 60))[1]).toBeGreaterThan(200); // edge white before
   await openMenu(page, "Edit");
   expect(await clickMenuItem(page, "Stroke…")).toBe(true);

@@ -48,7 +48,7 @@ function setupStore(docs: ReturnType<typeof seedDoc>[]) {
     vanishingPointPlanes: docs[0].vanishingPointPlanes.map((p) => ({ ...p, quad: [...p.quad] })),
     vanishingPointActivePlane: docs[0].vanishingPointActivePlane,
     vanishingPointSource: docs[0].vanishingPointSource,
-    documents: docs.map(({ id, name, dirty }) => ({ id, name, dirty })),
+    documents: docs.map(({ id, name, dirty, savedPath }) => ({ id, name, dirty, hasFile: !!savedPath })),
   });
   return { store, internal, client };
 }

@@ -155,7 +155,9 @@ test("a command-line job naming no saved action exits 2, lists the saved ones an
 test("an unattended batch answers every prompt itself, collects alerts and restores alert and confirm", async ({ page }) => {
   await gotoApp(page);
   const prompts: string[] = [];
+  const errors: string[] = [];
   page.on("dialog", (d) => { prompts.push(d.message()); void d.dismiss(); });
+  page.on("console", (m) => { if (m.type() === "error" && m.text().includes("The action stopped before it finished.")) errors.push(m.text()); });
   const result = await settle<Record<string, unknown>>(page, `
     const E = () => mv.engine.engine;
     // Record first: an untouched boot document is replaced by the next New,
@@ -192,9 +194,14 @@ test("an unattended batch answers every prompt itself, collects alerts and resto
       });
   `);
   expect(result).toEqual({
-    paused: 2, pausedAlerts: [], pausedPixel: [55, 215, 225], // the modal invert was applied
-    halted: 1, haltedAlerts: ["Halt"],
+    paused: 2,
+    pausedAlerts: Array(2).fill("Check the colours\n\nContinue playing this action?"),
+    pausedPixel: [55, 215, 225], // the modal invert was applied
+    halted: 0, haltedAlerts: ["Halt"],
     restored: true,
   });
   expect(prompts).toEqual([]);
+  expect(errors).toHaveLength(1);
+  expect(errors[0]).toContain("c.png");
+  expect(errors[0]).toContain("The action stopped before it finished.");
 });

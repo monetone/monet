@@ -130,7 +130,7 @@ describe("#543 playback reports a stop", () => {
     const id = actions.save("Halted");
     actions.insertStop(id, "halt", false);
     expect(actions.insertMenuItem(id, "deselect")).toBe(true);
-    (engine.engine as { deselect: ReturnType<typeof vi.fn> }).deselect.mockImplementation(() => order.push("after"));
+    (engine.engine as unknown as { deselect: ReturnType<typeof vi.fn> }).deselect.mockImplementation(() => order.push("after"));
     expect(await actions.playNamed(id)).toBe(false);
     expect(order).toEqual(["before"]);
   });
@@ -287,7 +287,7 @@ describe("#542 desktop playback uses the native dialog", () => {
     const id = actions.save("Pause");
     actions.insertStop(id, "hold", true);
     expect(actions.insertMenuItem(id, "deselect")).toBe(true);
-    (engine.engine as { deselect: ReturnType<typeof vi.fn> }).deselect.mockImplementation(() => order.push("after"));
+    (engine.engine as unknown as { deselect: ReturnType<typeof vi.fn> }).deselect.mockImplementation(() => order.push("after"));
     // Playback imports plugin-dialog `confirm` (aliased ask). Insert Stop uses `ask`.
     dialog.confirm.mockResolvedValueOnce(false);
     expect(await actions.playNamed(id)).toBe(false);

@@ -79,7 +79,7 @@ describe("layer colour labels are per document (#144)", () => {
     };
     internal.docs = [seedDoc(1), seedDoc(2)];
     internal.activeDocId = 1;
-    internal.set({ documents: internal.docs.map(({ id, name, dirty }) => ({ id, name, dirty })) });
+    internal.set({ documents: internal.docs.map(({ id, name, dirty, savedPath }) => ({ id, name, dirty, hasFile: !!savedPath })) });
 
     store.setLayerColorLabel(3, "red"); // doc 1's third layer
     store.activateDoc(2);

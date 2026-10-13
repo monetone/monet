@@ -160,6 +160,28 @@ function flatFacts(patch: Partial<FlatDocumentFacts> = {}, layer: Partial<FlatLa
 }
 
 describe("a flat raster save fits only a plain pixel layer (#546)", () => {
+  it("preserves grayscale at 8 or 16 bits only in Photoshop Raw", () => {
+    for (const depth of [8, 16]) {
+      const grayscale = flatFacts({ mode: 1, depth });
+      expect(documentFitsFlatFormat(grayscale, "raw")).toBe(true);
+      expect(saveAsIsCopy("raw", documentFitsFlatFormat(grayscale, "raw"))).toBe(false);
+      for (const ext of ["png", "tif", "jp2"]) expect(documentFitsFlatFormat(grayscale, ext), ext).toBe(false);
+    }
+    expect(documentFitsFlatFormat(flatFacts({ mode: 1, depth: 32 }), "raw")).toBe(false);
+    for (const mode of [2, 3, 4]) expect(documentFitsFlatFormat(flatFacts({ mode }), "raw")).toBe(false);
+    expect(documentFitsFlatFormat(flatFacts({ mode: 1 }, { hasMask: true }), "raw")).toBe(false);
+    expect(documentFitsFlatFormat(flatFacts({ mode: 1, extraChannels: 1 }), "raw")).toBe(false);
+  });
+
+  it("treats Photoshop Raw as an export copy when RGB or grayscale has transparency", () => {
+    for (const mode of [0, 1]) for (const depth of [8, 16]) {
+      const transparent = flatFacts({ mode, depth }, { hasTransparency: true });
+      const fits = documentFitsFlatFormat(transparent, "raw");
+      expect(fits, `mode ${mode}, depth ${depth}`).toBe(false);
+      expect(saveAsIsCopy("raw", fits)).toBe(true);
+    }
+  });
+
   it("accepts an 8-bit opaque PNG, JPEG, or GIF", () => {
     for (const ext of ["png", "jpg", "jpeg", "gif"]) {
       expect(documentFitsFlatFormat(flatFacts(), ext), ext).toBe(true);

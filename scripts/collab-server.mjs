@@ -11,13 +11,15 @@
 //     client has disconnected (the room is dropped from memory but the file
 //     remains and is reloaded on the next join). Set COLLAB_DATA="" to disable.
 //   • AUTH — if COLLAB_TOKEN is set, a connection must present ?token=<it> (the
-//     CollabSession `token` option). Unset = open (dev default, logged once).
+//     CollabSession `token` option). A token is required for network listeners;
+//     unauthenticated development is restricted to loopback IP addresses.
 //
-// Env: PORT (1234), HOST (0.0.0.0), COLLAB_TOKEN (""), COLLAB_DATA (".collab-data").
+// Env: PORT (1234), HOST (127.0.0.1), COLLAB_TOKEN (""), COLLAB_DATA (".collab-data").
 
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
+import { isIP } from "node:net";
 import { WebSocketServer } from "ws";
 import * as Y from "yjs";
 import * as syncProtocol from "y-protocols/sync";
@@ -26,15 +28,20 @@ import * as encoding from "lib0/encoding";
 import * as decoding from "lib0/decoding";
 
 const PORT = Number(process.env.PORT || 1234);
-const HOST = process.env.HOST || "0.0.0.0";
-const TOKEN = process.env.COLLAB_TOKEN || "";
+const HOST = process.env.HOST || "127.0.0.1";
+const TOKEN = (process.env.COLLAB_TOKEN || "").trim();
 const DATA_DIR = process.env.COLLAB_DATA ?? ".collab-data";
 const PERSIST_DEBOUNCE_MS = 800;
 const MESSAGE_SYNC = 0;
 const MESSAGE_AWARENESS = 1;
 
+const isLoopback = HOST === "::1" || (isIP(HOST) === 4 && HOST.split(".")[0] === "127");
+if (!isLoopback && !TOKEN) {
+  throw new Error("[collab] COLLAB_TOKEN is required when HOST is not a loopback IP address.");
+}
+
 if (DATA_DIR) fs.mkdirSync(DATA_DIR, { recursive: true });
-if (!TOKEN) console.warn("[collab] COLLAB_TOKEN unset — accepting all connections (dev mode).");
+if (!TOKEN) console.warn("[collab] COLLAB_TOKEN unset — accepting loopback connections only (dev mode).");
 
 /** name -> { doc, awareness, conns:Set<ws>, persistTimer } */
 const rooms = new Map();
@@ -185,6 +192,8 @@ wss.on("connection", (conn, req) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`monet collab sync server → ws://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}`);
+  const address = server.address();
+  const displayHost = HOST.includes(":") ? `[${HOST}]` : HOST;
+  console.log(`monet collab sync server → ws://${displayHost}:${address.port}`);
   console.log(`[collab] auth: ${TOKEN ? "token required" : "open"} · persistence: ${DATA_DIR || "disabled"}`);
 });

@@ -557,7 +557,7 @@ mod tests {
     #[test]
     fn cli_job_parses_a_script_run() {
         let job = cli_job(&paths(&["-psn_0_1", "--run-script", SCRIPT])).unwrap().unwrap();
-        assert_eq!(job.script.as_deref(), Some(SCRIPT));
+        assert_eq!(job.script, Some(Path::new(env!("CARGO_MANIFEST_DIR")).join("src").join("main.rs").to_string_lossy().into_owned()));
         assert_eq!(job.action, None);
     }
 
@@ -573,9 +573,9 @@ mod tests {
             Ok(Some(CliJob {
                 script: None,
                 action: Some("Default Actions/Invert".into()),
-                batch: Some(DIR.into()),
+                batch: Some(Path::new(env!("CARGO_MANIFEST_DIR")).join("src").to_string_lossy().into_owned()),
                 destination: "folder".into(),
-                dest: Some(OUT.into()),
+                dest: Some(Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures").to_string_lossy().into_owned()),
                 format: Some("jpeg".into()),
                 template: Some("{name}".into()),
                 serial: Some("7".into()),
