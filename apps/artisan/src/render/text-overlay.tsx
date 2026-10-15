@@ -1,22 +1,37 @@
 // ─────────────────────────────────────────────────────────────
-// render/fallback-overlay — SVG for what the Rust canvas can't do (hybrid)
+// render/fallback-overlay — SVG for what the Rust canvas can't decode
 // ─────────────────────────────────────────────────────────────
-// In raster mode the Rust/WASM engine paints plain vector content; items it
-// doesn't rasterize faithfully yet — TEXT (needs the browser font engine), and
-// items with live EFFECTS or a MASK — are rendered here in SVG, positioned with
-// their world transform and layered over the canvas. The engine skips these
-// exact items (see render.rs `has_svg_fallback`), so nothing is double-drawn.
-//
-// Caveat: the SVG layer composites above the whole canvas, so a fallback item
-// that should sit *behind* plain content can appear on top — corrected once the
-// Rust renderer rasterizes effects/masks directly.
+// In raster mode the Rust engine paints shapes, text, groups, effects, masks,
+// and base64 PNG images. This overlay draws only the remainder (an image the
+// PNG rasterizer cannot decode) so those pixels have one owner. Painting an
+// effect or mask here as well would composite it above the whole canvas.
 
 import { Fragment } from "react";
 import { Mat, type Document, type Item, type Matrix } from "../engine";
 import { ItemNode } from "./item-node";
 
+function rustPaints(it: Item): boolean {
+  if (it.type === "image") {
+    const comma = it.href.indexOf(",");
+    if (comma < 0) return false;
+    const header = it.href.slice(0, comma).toLowerCase();
+    return header.includes("base64") && header.includes("image/png");
+  }
+  return (
+    it.type === "rect" ||
+    it.type === "ellipse" ||
+    it.type === "polygon" ||
+    it.type === "star" ||
+    it.type === "line" ||
+    it.type === "path" ||
+    it.type === "compound" ||
+    it.type === "text" ||
+    it.type === "group"
+  );
+}
+
 function needsSvg(it: Item): boolean {
-  return it.type === "text" || (it.effects?.length ?? 0) > 0 || (it.mask?.length ?? 0) > 0;
+  return !rustPaints(it);
 }
 
 function collect(items: Item[], parent: Matrix, out: { item: Item; world: Matrix }[]) {

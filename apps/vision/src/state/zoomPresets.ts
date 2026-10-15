@@ -27,6 +27,36 @@ export function fillZoom(vw: number, vh: number, dw: number, dh: number): number
   return clampZoom(Math.max(vw / dw, vh / dh));
 }
 
+/** Axis-aligned box of a `dw`×`dh` document after Rotate View and pixel aspect.
+ *  Rotation is about the content centre, so the displayed width is
+ *  `dw·par·|cos| + dh·|sin|` and the height is `dw·par·|sin| + dh·|cos|`.
+ *  Angle 0 and par 1 return the raw document size. */
+export function orientedDocSize(dw: number, dh: number, angleDeg: number, par: number): { w: number; h: number } {
+  const rad = (angleDeg * Math.PI) / 180;
+  const c = Math.abs(Math.cos(rad));
+  const s = Math.abs(Math.sin(rad));
+  const px = dw * (par > 0 ? par : 1);
+  return { w: px * c + dh * s, h: px * s + dh * c };
+}
+
+/** Fit a rotated, non-square-pixel document inside the viewport and centre it.
+ *  The zoom fits the oriented box; the pan is the unrotated content centre,
+ *  which also centres the rotated AABB because rotation is about that centre.
+ *  Angle 0 and par 1 match `fitZoom` plus the historical centred pan. */
+export function fitOrientedView(
+  vw: number, vh: number, dw: number, dh: number, angleDeg: number, par: number, margin = 0.9,
+): { zoom: number; panX: number; panY: number } {
+  if (dw <= 0 || dh <= 0 || vw <= 0 || vh <= 0) return { zoom: 1, panX: 0, panY: 0 };
+  const box = orientedDocSize(dw, dh, angleDeg, par);
+  const zoom = fitZoom(vw, vh, box.w, box.h, margin);
+  const aspect = par > 0 ? par : 1;
+  return {
+    zoom,
+    panX: (vw - dw * zoom * aspect) / 2,
+    panY: (vh - dh * zoom) / 2,
+  };
+}
+
 /** Fit an inclusive canvas-space rect [minx,miny,maxx,maxy] inside the viewport
  *  and centre it: the zoom fits the rect (with the same margin as fitZoom), the
  *  pan places the rect's centre at the viewport centre. `setZoom` draws canvas

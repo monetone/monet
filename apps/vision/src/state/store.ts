@@ -36,7 +36,7 @@ import { roundedRectVertices } from "./roundRectShape";
 import { arrowheadPolygon } from "./arrowhead";
 import { decodeDuotoneSpec, duotoneLutF32, normalizeDuotoneInks, type DuotoneInk, type DuotoneInks, type Overprints } from "./duotone";
 import { DEFAULT_SWATCHES, addSwatchTo, removeSwatchAt, parseSwatches } from "@monet-ui/monet-color";
-import { DEFAULT_TIMELINE, upsertKey, sampleTimeline, timelineLayerIds, type TimelineState, type TimelineKey } from "./timeline";
+import { DEFAULT_TIMELINE, cloneTimeline, clampPlayhead, upsertKey, sampleTimeline, timelineLayerIds, type TimelineState, type TimelineKey } from "./timeline";
 import { DEFAULT_BRUSH_PRESETS, defaultBrushPresetName, addBrushPresetTo, removeBrushPresetAt, parseBrushPresets, brushPresetNavigationIndex, type BrushPreset } from "./brushPresets";
 import { DEFAULT_TOOL_PRESETS, defaultToolPresetName, addToolPresetTo, removeToolPresetAt, parseToolPresets, type ToolPreset } from "./toolPresets";
 import { GRADIENT_PRESETS, defaultGradientPresetName, addGradientPresetTo, removeGradientPresetAt, parseGradientPresets, gradientForeignOf, stopFromHex, toGradientValue, type GradientForeign, type GradientPreset } from "./gradientPresets";
@@ -60,8 +60,8 @@ import { pathBounds, pathTransformMatrix, transformAnchors, transformHandles, tr
 import type { SamOutput, SamParams } from "./selectAndMask";
 import { svgToPng } from "./svg";
 import type { SelRect } from "./selectionInfo";
-import { fitRectView } from "./zoomPresets";
-import { matchedView, type DocView, type PlacedView } from "./viewTransform";
+import { fitZoom, orientedDocSize } from "./zoomPresets";
+import { matchedView, panToShow, type DocView, type PlacedView } from "./viewTransform";
 import { spotHealDabs } from "./spotHeal";
 import { defaultLiquify, liquifyReduce } from "./liquify";
 import { clonePlanes, movePlaneHandle, resolvePlanes, tearOffPlane, uvRectQuad, warpQuadToQuad, type VanishingPlane, type VanishingRect } from "../canvas/vanishingPoint";
@@ -401,6 +401,9 @@ interface DocEntry extends VariableData {
    *  globally it was dropped on every tab switch, and the dialog then built a
    *  second ink layer on a document that already had one (#492). */
   duotone: DuotoneDoc | null;
+  /** Timeline panel state travels with the document. The playhead is not a key. */
+  timeline: TimelineState;
+  playhead: number;
   /** The generation settings that produced this document ("Generate Similar" re-rolls). */
   genMeta?: GenerateOpts;
   /** Original camera source + canonical non-destructive recipe for RAW-backed documents. */
@@ -940,6 +943,7 @@ export interface AppSnapshot {
   artboardOrientation: Orientation;
   swatches: string[]; // Swatches panel: saved foreground colours (#rrggbb)
   timeline: TimelineState; // Timeline panel: keyframe motion (opacity + layer offset)
+  playhead: number; // seconds; clamped into the active document's duration
   brushPresets: BrushPreset[]; // Brushes panel: saved brush settings snapshots
   activeBrushPreset: number; // selected settings preset; -1 until one is applied
   toolPresets: ToolPreset[]; // Tool Presets: saved tool + brush + foreground snapshots
@@ -1446,6 +1450,7 @@ const initial: AppSnapshot = {
   artboardOrientation: "landscape",
   swatches: [...DEFAULT_SWATCHES],
   timeline: { ...DEFAULT_TIMELINE },
+  playhead: 0,
   brushPresets: [...DEFAULT_BRUSH_PRESETS],
   activeBrushPreset: -1,
   toolPresets: [...DEFAULT_TOOL_PRESETS],
@@ -3870,7 +3875,7 @@ export class Store {
     if (!id) return;
     const e = this.engine.e;
     const off = e.layer_offset(id);
-    const key: TimelineKey = { layerId: id, t: Math.max(0, t), opacity: e.layer_opacity(id), dx: off[0] ?? 0, dy: off[1] ?? 0 };
+    const key: TimelineKey = { layerId: id, t: clampPlayhead(t, this.snap.timeline.durationS), opacity: e.layer_opacity(id), dx: off[0] ?? 0, dy: off[1] ?? 0 };
     this.set({ timeline: { ...this.snap.timeline, keys: upsertKey(this.snap.timeline.keys, key) } });
   }
   timelineDeleteKey(i: number) {
@@ -3880,7 +3885,16 @@ export class Store {
     this.set({ timeline: { ...this.snap.timeline, fps: Math.max(1, Math.min(60, Math.round(fps))) } });
   }
   timelineSetDuration(durationS: number) {
-    this.set({ timeline: { ...this.snap.timeline, durationS: Math.max(0.1, Math.min(60, durationS)) } });
+    const next = Math.max(0.1, Math.min(60, durationS));
+    // Shortening the duration moves the playhead inside it. Keys past the new
+    // end stay — Restore / a later lengthening still has them.
+    this.set({
+      timeline: { ...this.snap.timeline, durationS: next },
+      playhead: clampPlayhead(this.snap.playhead, next),
+    });
+  }
+  timelineSetPlayhead(t: number) {
+    this.set({ playhead: clampPlayhead(t, this.snap.timeline.durationS) });
   }
   /** Bake the keyframe animation into the frame list (restoring each layer's
    *  live opacity/offset afterwards) so Export GIF / Export Video renders the
@@ -4666,6 +4680,8 @@ export class Store {
     a.vanishingPointActivePlane = this.snap.vanishingPointActivePlane;
     a.vanishingPointSource = this.snap.vanishingPointSource;
     a.duotone = this.snap.duotone;
+    a.timeline = cloneTimeline(this.snap.timeline);
+    a.playhead = this.snap.playhead;
   }
 
   /** Finalize transient edits before a document switch. Camera Raw runs this
@@ -4826,6 +4842,8 @@ export class Store {
       vanishingPointActivePlane: 0,
       vanishingPointSource: null,
       duotone: null,
+      timeline: { ...DEFAULT_TIMELINE, keys: [] },
+      playhead: 0,
       cameraRaw: null,
       cameraRawLayerId: null,
     };
@@ -4870,6 +4888,8 @@ export class Store {
       // The inks belong to the document they were set on; left in place they
       // made the next opened file save as that document's Duotone.
       duotone: null,
+      timeline: { ...DEFAULT_TIMELINE, keys: [] },
+      playhead: 0,
     });
     this.applyBlendGamma(eng); // before the first blit, so it shows the right blend
     this.engine.activate(eng);
@@ -6243,6 +6263,8 @@ export class Store {
       // Layer ids are per engine, so this is the document's own record — another
       // document's duotone layer id would aim the ink edit at the wrong layer.
       duotone: target.duotone,
+      timeline: cloneTimeline(target.timeline),
+      playhead: clampPlayhead(target.playhead ?? 0, cloneTimeline(target.timeline).durationS),
       quickMask: false, // resynced from the target engine by activate() below
       channelTarget: null, // channel targeting is per document (it is a mask-buffer state)
     });
@@ -6355,6 +6377,8 @@ export class Store {
         maskView: "off",
         quickMask: false,
         photoshopPreview: null,
+        timeline: { ...DEFAULT_TIMELINE, keys: [] },
+        playhead: 0,
       });
       this.notifyVectorFontTargetsChanged();
       this.onDocumentEvent?.("closeDocument");
@@ -10260,7 +10284,15 @@ export class Store {
       this.requestFit();
       return;
     }
-    const { zoom, panX, panY } = fitRectView(vw, vh, b[0], b[1], b[2], b[3]);
+    const rw = b[2] - b[0] + 1;
+    const rh = b[3] - b[1] + 1;
+    const angle = this.snap.rotationAngle;
+    const par = this.snap.pixelAspectCorrection ? this.snap.pixelAspect : 1;
+    const box = orientedDocSize(rw, rh, angle, par);
+    const zoom = fitZoom(vw, vh, box.w, box.h);
+    const cx = (b[0] + b[2] + 1) / 2;
+    const cy = (b[1] + b[3] + 1) / 2;
+    const { panX, panY } = panToShow(zoom, angle, par, this.snap.doc.width, this.snap.doc.height, { x: cx, y: cy }, vw / 2, vh / 2);
     this.setZoom(zoom, panX, panY);
   }
   requestFit() {

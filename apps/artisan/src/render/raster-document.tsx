@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { IO } from "../engine";
 import { useEditorState } from "../state/store-context";
 import { EngineClient, engineReady, initEngine } from "../engine-rs/EngineClient";
+import { documentForRaster } from "./raster-scene";
 
 export function RasterDocument({ width, height }: { width: number; height: number }) {
   const state = useEditorState();
@@ -44,8 +45,8 @@ export function RasterDocument({ width, height }: { width: number; height: numbe
   useEffect(() => {
     const c = clientRef.current;
     if (!ready || !c) return;
-    c.setDocument(IO.serializeDocument(state.doc));
-  }, [ready, state.doc]);
+    c.setDocument(IO.serializeDocument(documentForRaster(state.doc, state.editingTextId)));
+  }, [ready, state.doc, state.editingTextId]);
 
   // Resize / re-view / repaint on any view, size, or document change.
   useEffect(() => {

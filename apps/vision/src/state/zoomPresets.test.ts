@@ -1,7 +1,7 @@
 // Unit tests for the Zoom preset math. Engine-free (node); the options-bar buttons
 // + canvas application are covered by e2e/zoom-presets.spec.ts.
 import { describe, it, expect } from "vitest";
-import { clampZoom, fitZoom, fillZoom, fitRectView } from "./zoomPresets";
+import { clampZoom, fitZoom, fillZoom, fitRectView, fitOrientedView, orientedDocSize } from "./zoomPresets";
 
 describe("clampZoom", () => {
   it("clamps to [0.02, 32]", () => {
@@ -62,5 +62,37 @@ describe("fitRectView", () => {
   it("uses inclusive bounds (a single-pixel rect spans 1, not 0)", () => {
     const { zoom } = fitRectView(800, 800, 5, 5, 5, 5); // 1×1 content
     expect(zoom).toBe(32); // clamped max — a tiny rect zooms all the way in
+  });
+});
+
+describe("fitOrientedView", () => {
+  it("matches fitZoom and a centred pan when the view is unrotated and square-pixel", () => {
+    const view = fitOrientedView(900, 600, 300, 300, 0, 1);
+    expect(view.zoom).toBeCloseTo(fitZoom(900, 600, 300, 300), 5);
+    expect(view.panX).toBeCloseTo((900 - 300 * view.zoom) / 2, 5);
+    expect(view.panY).toBeCloseTo((600 - 300 * view.zoom) / 2, 5);
+  });
+
+  it("fits the rotated bounding box of a square document", () => {
+    const box = 100 * Math.SQRT2;
+    const view = fitOrientedView(1000, 1000, 100, 100, 45, 1);
+    expect(orientedDocSize(100, 100, 45, 1).w).toBeCloseTo(box, 5);
+    expect(view.zoom).toBeCloseTo(fitZoom(1000, 1000, box, box), 5);
+    expect(view.panX).toBeCloseTo((1000 - 100 * view.zoom) / 2, 5);
+    expect(view.panY).toBeCloseTo(view.panX, 5);
+  });
+
+  it("swaps the fitted axes at 90 degrees", () => {
+    const view = fitOrientedView(900, 600, 200, 100, 90, 1);
+    expect(view.zoom).toBeCloseTo(fitZoom(900, 600, 100, 200), 5);
+    expect(view.panX).toBeCloseTo((900 - 200 * view.zoom) / 2, 5);
+    expect(view.panY).toBeCloseTo((600 - 100 * view.zoom) / 2, 5);
+  });
+
+  it("fits the pixel-aspect width and centres the unstretched document", () => {
+    const view = fitOrientedView(1000, 800, 100, 100, 0, 2);
+    expect(view.zoom).toBeCloseTo(fitZoom(1000, 800, 200, 100), 5);
+    expect(view.panX).toBeCloseTo((1000 - 100 * view.zoom * 2) / 2, 5);
+    expect(view.panY).toBeCloseTo((800 - 100 * view.zoom) / 2, 5);
   });
 });

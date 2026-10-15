@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 const engineModule = vi.hoisted(() => ({
@@ -20,6 +22,7 @@ vi.mock("@engine", () => ({
   },
 }));
 
+import { sampleDisplayLut } from "@monet-ui/monet-color";
 import { EngineClient, changedRect, initEngine } from "./EngineClient";
 
 describe("EngineClient", () => {
@@ -674,5 +677,103 @@ describe("EngineClient", () => {
     expect(client.channelHistogram("r")).toEqual(new Array(256).fill(0));
     expect(client.channelHistogramBars("lab-a", 4)).toEqual([0, 0, 0, 0]);
     expect(client.allChannelHistograms(4)).toEqual({ r: [0, 0, 0, 0], g: [0, 0, 0, 0], b: [0, 0, 0, 0] });
+  });
+
+  it("times composite, the display copy, and putImageData as three phases", () => {
+    const client = new EngineClient();
+    const w = 8, h = 8;
+    const pixels = new Uint8Array(client.mem.buffer, 0, w * h * 4);
+    pixels.fill(7);
+    const putImageData = vi.fn();
+    const ctx = {
+      createImageData: (cw: number, ch: number) => ({ width: cw, height: ch, data: new Uint8ClampedArray(cw * ch * 4) }),
+      putImageData,
+    };
+    client.setCanvas({ width: 0, height: 0, getContext: () => ctx } as unknown as HTMLCanvasElement);
+    const composite = vi.fn();
+    client.engine = { composite, output_ptr: () => 0, width: () => w, height: () => h } as unknown as typeof client.engine;
+    client.width = w;
+    client.height = h;
+    const lut = new Uint8Array(2 * 2 * 2 * 3);
+    for (let i = 0; i < lut.length; i += 3) lut.set([0, 255, 255], i);
+    lut.set([255, 0, 0], 0);
+    const displayLut = vi.fn(() => lut);
+    (client.engine as { display_lut: typeof displayLut }).display_lut = displayLut;
+    client.setDisplayProfile(2, true, null, null);
+    const compensate = vi.spyOn(client, "displayCompensate");
+    putImageData.mockClear();
+    composite.mockClear();
+
+    const timing = client.measurePresentation(3);
+
+    expect(composite).toHaveBeenCalledTimes(3);
+    expect(compensate).not.toHaveBeenCalled();
+    expect(putImageData).toHaveBeenCalledTimes(3);
+    expect(composite.mock.invocationCallOrder[0]).toBeLessThan(putImageData.mock.invocationCallOrder[0]);
+    const presented = putImageData.mock.calls[0][0] as { data: Uint8ClampedArray };
+    const once = sampleDisplayLut(lut, 2, 7, 7, 7);
+    const twice = sampleDisplayLut(lut, 2, once[0], once[1], once[2]);
+    expect(once).not.toEqual([7, 7, 7]);
+    expect(twice).not.toEqual(once);
+    expect([presented.data[0], presented.data[1], presented.data[2], presented.data[3]]).toEqual([...once, 7]);
+    expect(timing).toMatchObject({
+      width: w,
+      height: h,
+      iterations: 3,
+      samples: 2,
+      surface: "attached",
+      colorTransform: "lut",
+    });
+    let sum = 0;
+    for (let i = 0; i < presented.data.length; i++) sum += presented.data[i];
+    expect(timing.copiedByteSum).toBe(sum);
+    for (const ms of [timing.cold.engineMs, timing.cold.copyColorMs, timing.cold.presentMs, timing.engineMs, timing.copyColorMs, timing.presentMs]) {
+      expect(ms).toBeGreaterThanOrEqual(0);
+      expect(Number.isFinite(ms)).toBe(true);
+    }
+  });
+
+  it("presents on a document canvas when the view has not mounted", () => {
+    const client = new EngineClient();
+    const w = 4, h = 2;
+    new Uint8Array(client.mem.buffer, 0, w * h * 4).fill(3);
+    const putImageData = vi.fn();
+    const ctx = {
+      createImageData: (cw: number, ch: number) => ({ width: cw, height: ch, data: new Uint8ClampedArray(cw * ch * 4) }),
+      putImageData,
+    };
+    const previous = globalThis.document;
+    globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ctx }) } as unknown as Document;
+    client.engine = { composite: vi.fn(), output_ptr: () => 0, width: () => w, height: () => h } as unknown as typeof client.engine;
+    client.width = w;
+    client.height = h;
+    try {
+      expect(client.hasPresentationSurface()).toBe(false);
+      const timing = client.measurePresentation(1);
+      expect(timing.surface).toBe("document");
+      expect(timing.samples).toBe(1);
+      expect(timing.copiedByteSum).toBe(w * h * 4 * 3);
+      expect(putImageData).toHaveBeenCalledOnce();
+    } finally {
+      globalThis.document = previous;
+    }
+  });
+
+  it("refuses a presentation measurement before the engine exists", () => {
+    expect(() => new EngineClient().measurePresentation()).toThrow("Engine not ready");
+  });
+});
+
+describe("presentation timing is the scripted blit", () => {
+  const app = readFileSync(fileURLToPath(new URL("../state/app.ts", import.meta.url)), "utf8");
+  const ops = app.slice(app.indexOf("function visionOps()"), app.indexOf("export function runScript"));
+  const reads = app.slice(app.indexOf("function visionReads()"), app.indexOf("function visionOps()"));
+
+  it("runs measurePresentation from measureFrame and only reads the stored split", () => {
+    expect(ops).toContain("engine.measurePresentation(");
+    expect(ops).toContain("engine.hasPresentationSurface()");
+    expect(reads).toContain("frameTiming: () => frameTimingResult");
+    expect(reads).not.toContain("measurePresentation");
+    expect(reads).not.toMatch(/engine\.commit\(|\.set\(|store\.(?!state)[a-z]/);
   });
 });

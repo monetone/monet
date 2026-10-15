@@ -22,6 +22,7 @@ import { LAYER_KIND } from "../state/engineContracts";
 import { isBrushTipCursor } from "../state/preferencePanes";
 import { TOOL_DEFS } from "../state/toolRail";
 import { cssFont, variationSettings } from "../text/spec";
+import { caretIndexAt, pointTypeCaretXs } from "../text/raster";
 import { nearestSamplerIndex } from "@monet-ui/monet-color";
 import { nearestNoteIndex } from "../state/notes";
 import { denormalizePath } from "../state/customShapes";
@@ -41,7 +42,7 @@ import { singleRowRect, singleColumnRect } from "../state/lineMarquee";
 import { fixedRatioRect, fixedSizeRect } from "../state/marqueeStyle";
 import { frameIsValid } from "../state/frameTool";
 import { overlayLines } from "../state/cropOverlay";
-import { fitZoom, fillZoom } from "../state/zoomPresets";
+import { fillZoom, fitOrientedView, orientedDocSize } from "../state/zoomPresets";
 import { quickMaskPixel } from "../state/quickMaskOverlay";
 import { selectionPreviewPixel } from "../state/selectionPreview";
 import { nearPoint, canClose, polygonArrays } from "../state/polyLasso";
@@ -467,7 +468,9 @@ export function CanvasView({ paneDocId, floatHost = false, onBoundary, onOverlay
     ctx.imageSmoothingEnabled = false;
     for (let ty = 0; ty < 3; ty++) {
       for (let tx = 0; tx < 3; tx++) {
-        ctx.drawImage(src, x0, y0, x1 - x0, y1 - y0, tx * w + x0, ty * h + y0, x1 - x0, y1 - y0);
+        const dx = tx * w + x0, dy = ty * h + y0, dw = x1 - x0, dh = y1 - y0;
+        ctx.clearRect(dx, dy, dw, dh);
+        ctx.drawImage(src, x0, y0, dw, dh, dx, dy, dw, dh);
       }
     }
   }, []);
@@ -518,6 +521,17 @@ export function CanvasView({ paneDocId, floatHost = false, onBoundary, onOverlay
       setPreview(null);
       store.setSelectionDragRect(null);
     }
+    // The Pen's anchors live in a ref the store does not redraw. A tab switch
+    // has already swapped `penAnchors` / `penPath`; put those on the ref or
+    // Enter closes the previous document's path on this one.
+    const anchors = store.state.penAnchors.slice();
+    const path = store.state.penPath.slice();
+    penAnchorRef.current = anchors;
+    penRef.current = path;
+    setPenAnchorPath(anchors.length ? anchors : null);
+    setPenPts(path.length ? path : null);
+    curveRef.current = [];
+    setCurveAnchors(null);
   }, [activeDocId]);
   const ready = useStore((s) => s.ready);
   const fitNonce = useStore((s) => s.fitNonce);
@@ -560,20 +574,53 @@ export function CanvasView({ paneDocId, floatHost = false, onBoundary, onOverlay
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
-    let fitted = !isPane;
+    // Neither view starts fitted. A 0×0 viewport (cold Home, before layout)
+    // only publishes the size. The first positive viewport with a positive
+    // document fits. The main view allows one more fit if that size changes
+    // before two frames have passed, then locks so a later window resize does
+    // not throw away the user's zoom. A pane fits once.
+    let fitted = false;
+    let fittedW = -1;
+    let fittedH = -1;
+    let locked = false;
+    let raf1 = 0;
+    let raf2 = 0;
+    const armLock = () => {
+      if (isPane || locked || raf1) return;
+      raf1 = requestAnimationFrame(() => {
+        raf1 = 0;
+        raf2 = requestAnimationFrame(() => { raf2 = 0; locked = true; });
+      });
+    };
     const publish = () => {
       const w = Math.round(el.clientWidth), h = Math.round(el.clientHeight);
       store.setViewport(w, h, paneDocId);
-      const size = fitted || !w || !h ? null : store.docSize(paneDocId!);
-      if (!size) return;
+      if (!w || !h) return;
+      const snap = store.state;
+      const size = paneDocId !== undefined ? store.docSize(paneDocId) : { w: snap.doc.width, h: snap.doc.height };
+      if (!size || size.w <= 0 || size.h <= 0) return;
+      if (isPane) {
+        if (fitted) return;
+      } else if (locked || (fitted && w === fittedW && h === fittedH)) {
+        return;
+      }
+      const angle = paneDocId !== undefined ? (snap.paneViews[paneDocId]?.rotationAngle ?? 0) : snap.rotationAngle;
+      const par = snap.pixelAspectCorrection ? snap.pixelAspect : 1;
+      const view = fitOrientedView(w, h, size.w, size.h, angle, par);
       fitted = true;
-      const z = fitZoom(w, h, size.w, size.h);
-      store.setZoom(z, (w - size.w * z) / 2, (h - size.h * z) / 2, paneDocId);
+      fittedW = w;
+      fittedH = h;
+      store.setZoom(view.zoom, view.panX, view.panY, paneDocId);
+      if (!isPane) armLock();
     };
     publish();
     const ro = new ResizeObserver(publish);
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- a view never changes kind
   }, []);
 
@@ -585,8 +632,8 @@ export function CanvasView({ paneDocId, floatHost = false, onBoundary, onOverlay
   useLayoutEffect(() => {
     if ((isPane && !floatHost) || passive || !docW || !docH || !viewportRef.current) return;
     const vp = viewportRef.current.getBoundingClientRect();
-    const z = fitZoom(vp.width, vp.height, docW, docH);
-    store.setZoom(z, (vp.width - docW * z) / 2, (vp.height - docH * z) / 2, paneDocId);
+    const view = fitOrientedView(vp.width, vp.height, docW, docH, rotationAngle, parX);
+    store.setZoom(view.zoom, view.panX, view.panY, paneDocId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitNonce]);
 
@@ -594,8 +641,13 @@ export function CanvasView({ paneDocId, floatHost = false, onBoundary, onOverlay
   useLayoutEffect(() => {
     if ((isPane && !floatHost) || passive || !zoomCmd || !docW || !docH || !viewportRef.current) return;
     const vp = viewportRef.current.getBoundingClientRect();
-    const z = zoomCmd.mode === "fill" ? fillZoom(vp.width, vp.height, docW, docH) : 1;
-    store.setZoom(z, (vp.width - docW * z) / 2, (vp.height - docH * z) / 2, paneDocId);
+    if (zoomCmd.mode === "fill") {
+      const box = orientedDocSize(docW, docH, rotationAngle, parX);
+      const z = fillZoom(vp.width, vp.height, box.w, box.h);
+      store.setZoom(z, (vp.width - docW * z * parX) / 2, (vp.height - docH * z) / 2, paneDocId);
+    } else {
+      store.setZoom(1, (vp.width - docW) / 2, (vp.height - docH) / 2, paneDocId);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoomCmd?.nonce]);
 
@@ -705,21 +757,22 @@ export function CanvasView({ paneDocId, floatHost = false, onBoundary, onOverlay
   // grayscale; `\\` composites it as rubylith over the document. Display-only —
   // it reads the compositor's effective coverage (Feather + Density included)
   // and never touches the engine's output buffer.
-  useEffect(() => {
+  const drawMaskView = useCallback(() => {
     const cv = maskViewOverlayRef.current;
     if (!cv) return;
     const ctx = cv.getContext("2d");
     if (!ctx) return;
-    const W = docW, H = docH;
+    const W = store.state.doc.width, H = store.state.doc.height;
+    const mode = store.state.maskView;
     if (!W || !H) return;
     if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; maskViewImgRef.current = null; }
-    const buf = maskView === "off" ? null : store.layerMaskBuffer();
+    const buf = mode === "off" ? null : store.layerMaskBuffer();
     if (!buf) { ctx.clearRect(0, 0, cv.width, cv.height); maskViewImgRef.current = null; return; }
     let img = maskViewImgRef.current;
     if (!img || img.width !== W || img.height !== H) { img = ctx.createImageData(W, H); maskViewImgRef.current = img; }
     const d = img.data;
     for (let i = 0, p = 0; i < W * H; i++, p += 4) {
-      if (maskView === "gray") {
+      if (mode === "gray") {
         // Opaque: the mask channel alone, standing in for the document.
         d[p] = d[p + 1] = d[p + 2] = buf[i]; d[p + 3] = 255;
       } else {
@@ -728,9 +781,11 @@ export function CanvasView({ paneDocId, floatHost = false, onBoundary, onOverlay
       }
     }
     ctx.putImageData(img, 0, 0);
-  // ponytail: rebuilds on toggle / active-layer / doc-size change, not per brush
-  // dab — a live-under-the-brush preview needs a mask revision counter.
-  }, [maskView, activeLayerId, docW, docH, passive]);
+  }, [compositeRev]);
+  useEffect(() => {
+    if (passive) return;
+    drawMaskView();
+  }, [drawMaskView, maskView, activeLayerId, docW, docH, passive]);
 
   // Color Range ▸ Selection Preview: the uncommitted selection drawn over the
   // document while the dialog is open, in Photoshop's five renderings. Reads the
@@ -776,9 +831,10 @@ export function CanvasView({ paneDocId, floatHost = false, onBoundary, onOverlay
     engine.onPaintRegion = (x, y, w, h) => {
       if (store.state.quickMask) drawQuickMask(x, y, w, h);
       if (store.state.patternPreview) drawPatternPreview(x, y, w, h);
+      if (store.state.maskView !== "off") drawMaskView();
     };
     return () => { engine.onPaintRegion = null; };
-  }, [isPane, drawQuickMask, drawPatternPreview]);
+  }, [isPane, drawQuickMask, drawPatternPreview, drawMaskView]);
 
   // Liquify Freeze Mask overlay. Like Quick Mask, this is display-only. The
   // engine stores 255 where future Liquify warps are protected; the document
@@ -1779,6 +1835,7 @@ export function CanvasView({ paneDocId, floatHost = false, onBoundary, onOverlay
     }
     if (d.mode === "pathselect") {
       store.dragSelectedPath(x, y);
+      setVectorRev((r) => r + 1);
       return;
     }
     if (d.mode === "vanishingpoint" && (d.vpHandle || d.vpTearOff || d.vpMarquee || d.vpMove)) {
@@ -2535,7 +2592,7 @@ export function CanvasView({ paneDocId, floatHost = false, onBoundary, onOverlay
     const g = (packed >>> 16) & 255;
     const b = (packed >>> 8) & 255;
     const a = packed & 255;
-    store.setForeground({ ...rgbToHsv({ r, g, b }), a: a / 255 });
+    store.setForeground({ ...rgbToHsv({ r, g, b }), a: store.state.fg.a });
     store.setPicked({ r, g, b, a });
   };
 
@@ -2614,7 +2671,9 @@ export function CanvasView({ paneDocId, floatHost = false, onBoundary, onOverlay
     if (anchors.length >= 6) {
       // True cubics through the clicked anchors — Shape mode and the Paths
       // panel keep an editable bezier; the polyline is just the fill form.
-      store.setPenAnchors(catmullRomAnchors(anchors, true));
+      const bezier = catmullRomAnchors(anchors, true);
+      penAnchorRef.current = bezier.slice();
+      store.setPenAnchors(bezier);
       penRef.current = catmullRomResample(anchors, 12);
       closePen(); // select_polygon + fill + commit; clears penRef + penPath
     }
@@ -2963,7 +3022,8 @@ export function CanvasView({ paneDocId, floatHost = false, onBoundary, onOverlay
           )}
           {xformBox && xformBox[2] > 0 && editors && (
             <LayerTransformOverlay
-              key={activeLayerId}
+              key={`${activeDocId}:${activeLayerId}`}
+              docId={activeDocId}
               box={{ x: xformBox[0], y: xformBox[1], w: xformBox[2], h: xformBox[3] }}
               docW={docW} docH={docH} toDoc={toDoc} zoom={zoom}
             />
@@ -3813,8 +3873,8 @@ export function layerTransformArgs(
 type LayerDrag = { kind: "scale" | "rotate" | "move"; handle: number; t0: PathTransform; from: HandlePt };
 
 function LayerTransformOverlay(
-  { box, docW, docH, toDoc, zoom }:
-  { box: LayerFrameBox; docW: number; docH: number; toDoc: (clientX: number, clientY: number) => { x: number; y: number }; zoom: number },
+  { box, docW, docH, toDoc, zoom, docId }:
+  { box: LayerFrameBox; docW: number; docH: number; toDoc: (clientX: number, clientY: number) => { x: number; y: number }; zoom: number; docId: number },
 ) {
   // The frame is frozen at grab time: the engine bounds only move again once the
   // transform is baked, and re-reading them mid-drag would compound the scale.
@@ -3824,9 +3884,10 @@ function LayerTransformOverlay(
   const frame = sess ?? { box, t: {} as PathTransform };
 
   const commit = useCallback(() => {
+    if (store.state.activeDocId !== docId) { setSess(null); return; }
     if (sess && layerFrameIsDirty(sess.t)) xform.transformLayer(...layerTransformArgs(sess.box, sess.t, docW, docH));
     setSess(null);
-  }, [sess, docW, docH]);
+  }, [sess, docW, docH, docId]);
 
   // Enter/Esc while the frame is live. Capture phase so the app's global
   // shortcuts can't steal them first.
@@ -3934,6 +3995,7 @@ function TextEditOverlay({ id, fresh, toDoc, zoom, grabFocus = true }: {
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const spec = text.get(id);
+  const [sel, setSel] = useState<[number, number]>([0, 0]);
   // Natural (unclipped) content height in doc px, measured off the textarea —
   // drives the auto-height box chrome and the overset ⊞ badge.
   const [contentH, setContentH] = useState(0);
@@ -3985,6 +4047,13 @@ function TextEditOverlay({ id, fresh, toDoc, zoom, grabFocus = true }: {
   // Vertical type lays out top-to-bottom; the (horizontal) on-canvas editor
   // can't match it, so it's edited via the toolbar instead — no overlay here.
   if (!spec || spec.vertical || (spec.path && spec.path.length >= 4)) return null;
+  const scales = spec.runs.map((run) => text.resolveStyle(spec, run).hScale);
+  const hScale = scales[0] ?? 1;
+  const uniform = scales.every((scale) => scale === hScale);
+  // Layout (and its canvas measure) only when the runs disagree. A uniform
+  // scale, including 1, stays on the CSS transform the existing editor uses.
+  const mixed = !uniform && scales.some((scale) => scale !== 1);
+  const caretXs = mixed ? pointTypeCaretXs(spec) : null;
   const st = text.resolveStyle(spec, spec.runs[0] ?? { text: "" });
   const size = st.size;
   const lh = spec.leading > 0 ? spec.leading : size * 1.2;
@@ -4033,6 +4102,14 @@ function TextEditOverlay({ id, fresh, toDoc, zoom, grabFocus = true }: {
       spellCheck={false}
       wrap={isPara ? "soft" : "off"}
       onChange={(e) => text.apply(id, text.setText(spec, e.target.value))}
+      onSelect={(e) => setSel([e.currentTarget.selectionStart, e.currentTarget.selectionEnd])}
+      onPointerUp={(e) => {
+        if (!caretXs) return;
+        const p = toDoc(e.clientX, e.clientY);
+        const idx = caretIndexAt(caretXs, p.x - spec.ax);
+        e.currentTarget.setSelectionRange(idx, idx);
+        setSel([idx, idx]);
+      }}
       onKeyDown={(e) => {
         e.stopPropagation();
         if (e.nativeEvent.isComposing || e.keyCode === 229) return;
@@ -4046,7 +4123,7 @@ function TextEditOverlay({ id, fresh, toDoc, zoom, grabFocus = true }: {
         // draws it (engine first baseline ≈ 0.8·size below the block top).
         left: spec.ax,
         top: spec.ay - (lh - size) / 2,
-        width: isPara ? spec.boxW : "auto",
+        width: isPara ? spec.boxW / (uniform && hScale ? hScale : 1) : "auto",
         minWidth: 2,
         margin: 0,
         padding: 0,
@@ -4054,7 +4131,8 @@ function TextEditOverlay({ id, fresh, toDoc, zoom, grabFocus = true }: {
         outline: "none",
         background: "transparent",
         color: "transparent",
-        caretColor: caret,
+        caretColor: mixed ? "transparent" : caret,
+        transform: uniform && hScale !== 1 ? `scaleX(${hScale})` : undefined,
         // The very font the raster paints (real weight, variable axes), so the
         // caret and selection measure against the face on screen, not a 400/700
         // stand-in — a Semibold or a wide `wdth` run is a different width.
@@ -4069,6 +4147,34 @@ function TextEditOverlay({ id, fresh, toDoc, zoom, grabFocus = true }: {
         transformOrigin: "0 0",
       }}
     />
+    {caretXs && sel[0] === sel[1] && (
+      <div
+        data-mv-text-caret="1"
+        style={{
+          position: "absolute",
+          left: spec.ax + (caretXs[Math.min(sel[0], caretXs.length - 1)] ?? 0),
+          top: spec.ay,
+          width: 1,
+          height: lh,
+          background: caret,
+          pointerEvents: "none",
+        }}
+      />
+    )}
+    {caretXs && sel[0] !== sel[1] && (
+      <div
+        data-mv-text-selection="1"
+        style={{
+          position: "absolute",
+          left: spec.ax + (caretXs[Math.min(sel[0], sel[1])] ?? 0),
+          top: spec.ay,
+          width: Math.abs((caretXs[Math.min(Math.max(sel[0], sel[1]), caretXs.length - 1)] ?? 0) - (caretXs[Math.min(sel[0], sel[1])] ?? 0)),
+          height: lh,
+          background: "rgba(91,140,255,0.35)",
+          pointerEvents: "none",
+        }}
+      />
+    )}
     {isPara && (
       <div
         data-mv-text-box="1"

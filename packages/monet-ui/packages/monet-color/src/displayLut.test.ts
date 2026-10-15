@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DISPLAY_LUT_SIZE, lutSizeFor, proofLutSizeFor, sampleDisplayLut, sampleProofLut } from "./displayLut";
+import { DISPLAY_LUT_SIZE, compensateDisplayPixels, lutSizeFor, proofLutSizeFor, sampleDisplayLut, sampleProofLut } from "./displayLut";
 
 /** Build a LUT whose entry at lattice (r,g,b) is `fn(rv,gv,bv)` of the 8-bit
  *  lattice axis values — mirrors the engine's packing (R fastest, then G, B). */
@@ -99,5 +99,17 @@ describe("proof LUT sampling", () => {
     // The flag is binary — never an interpolated in-between value.
     const mid = sampleProofLut(lut, n, 191, 10, 10)[3];
     expect(mid === 0 || mid === 255).toBe(true);
+  });
+});
+
+describe("compensateDisplayPixels", () => {
+  it("remaps RGB through the LUT, keeps alpha, and does not mutate the source", () => {
+    const lut = buildLut(2, (r, g, b) => [255 - r, 255 - g, 255 - b]);
+    const src = new Uint8ClampedArray([255, 0, 0, 128, 0, 0, 0, 255]);
+    const once = compensateDisplayPixels(src, lut, 2);
+    expect(Array.from(src)).toEqual([255, 0, 0, 128, 0, 0, 0, 255]);
+    expect(Array.from(once)).toEqual([0, 255, 255, 128, 255, 255, 255, 255]);
+    // A constant LUT would make the second pass a no-op. Inversion does not.
+    expect(Array.from(compensateDisplayPixels(once, lut, 2))).toEqual([255, 0, 0, 128, 0, 0, 0, 255]);
   });
 });

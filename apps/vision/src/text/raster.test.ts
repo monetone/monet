@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { effectsPad, type Cell } from "./raster";
+import { effectsPad, layoutTypeOutline, rasterizeSpec, type Cell } from "./raster";
 import { defaultSpec } from "./spec";
 
 // Canvas OpenType features (#16). WebKit ignores `ctx.font = s` when `s` is the
@@ -16,6 +16,8 @@ class FakeHost {
   appendChild(child: { parentNode: unknown }) { child.parentNode = this; }
 }
 
+const paintOps: unknown[][] = [];
+
 class FakeCtx {
   fontKerning = "normal";
   fillStyle = "";
@@ -31,7 +33,17 @@ class FakeCtx {
     this.el.resolved = this.el.feat;        // … the only point features re-resolve
   }
   clearRect() {}
-  fillText(ch: string) { this.drawn = ch; }
+  save() { paintOps.push(["save"]); }
+  restore() { paintOps.push(["restore"]); }
+  translate(x: number, y: number) { paintOps.push(["translate", x, y]); }
+  rotate(angle: number) { paintOps.push(["rotate", angle]); }
+  scale(x: number, y: number) { paintOps.push(["scale", x, y]); }
+  transform(a: number, b: number, c: number, d: number, e: number, f: number) {
+    paintOps.push(["transform", a, b, c, d, e, f]);
+  }
+  fillRect(x: number, y: number, w: number, h: number) { paintOps.push(["fillRect", x, y, w, h]); }
+  strokeText(ch: string, x: number, y: number) { paintOps.push(["strokeText", ch, x, y]); }
+  fillText(ch: string) { this.drawn = ch; paintOps.push(["fillText", ch]); }
   measureText(t: string) { return { width: t.length }; }
   getImageData(_x: number, _y: number, w: number, h: number) {
     // The painted glyph is a function of the tags the CONTEXT resolved, not of
@@ -103,5 +115,35 @@ describe("effectsPad", () => {
     const small = cell({ fauxItalic: true, ascent: 12, descent: 3 });
     const spec = defaultSpec("Nd", { stroke: { width: 20, color: [0, 0, 0, 255] } });
     expect(effectsPad(spec, [small, italic64])).toBe(Math.ceil(20 * 2 + 2 + 0.21 * 51.2));
+  });
+});
+
+describe("type on a path", () => {
+  it("centres the glyph before scaling, and the outline keeps the run's scale and baseline shift", () => {
+    const spec = defaultSpec("A", {
+      path: [0, 0, 400, 0],
+      hScale: 2,
+      vScale: 3,
+      size: 16,
+      shadow: { color: [0, 0, 0, 128], blur: 2, dx: 1, dy: 1 },
+      stroke: { width: 1, color: [255, 0, 0, 255] },
+      runs: [{ text: "A", hScale: 2, vScale: 3, baseline: -40, fauxItalic: true, underline: true, strike: true }],
+    });
+    const outline = layoutTypeOutline(spec);
+    const cell = outline.placements[0].cell;
+    expect(outline.onPath).toBe(true);
+    expect(cell.hScale).toBe(2);
+    expect(cell.vScale).toBe(3);
+    expect(cell.fauxItalic).toBe(true);
+    expect(cell.baseShift).toBeCloseTo(-40, 5);
+
+    paintOps.length = 0;
+    rasterizeSpec(spec);
+    const scaleAt = paintOps.findIndex((op) => op[0] === "scale" && op[1] === 2 && op[2] === 3);
+    expect(scaleAt).toBeGreaterThan(0);
+    const centre = [...paintOps.slice(0, scaleAt)].reverse().find((op) => op[0] === "translate");
+    expect(centre?.slice(1)).toEqual([-cell.advance / 2, -cell.baseShift]);
+    expect(paintOps[scaleAt + 1]).toEqual(["transform", 1, 0, -0.21, 1, 0, 0]);
+    expect(paintOps.some((op) => op[0] === "fillRect")).toBe(true);
   });
 });

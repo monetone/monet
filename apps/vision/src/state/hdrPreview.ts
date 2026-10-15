@@ -45,6 +45,22 @@ export function defaultHdrPreview(): HdrPreviewState {
   return { method: 0, exposure: 0, gamma: 1 };
 }
 
+/** What `engine.getHdrPreview` / `setHdrPreview` actually store, including the
+ *  on/off switch the tone-map math itself does not carry. */
+export interface HdrPreviewSettings extends HdrPreviewState {
+  on: boolean;
+}
+
+/** Replacing the dialog, Escape, or unmount without OK puts the opening
+ *  tone map back. OK keeps the live slider values. */
+export function hdrPreviewOnDismiss(
+  committed: boolean,
+  initial: HdrPreviewSettings,
+  live: HdrPreviewSettings,
+): HdrPreviewSettings {
+  return committed ? live : initial;
+}
+
 /** The single-channel tone map, mirroring `hdr_preview_tone_map` in mod.rs
  *  exactly (that function is the source of truth). Input is scene-linear
  *  (unclamped, may exceed 1); output is unclamped too — callers clamp once at

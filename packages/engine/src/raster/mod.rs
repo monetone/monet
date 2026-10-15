@@ -70,6 +70,16 @@ fn composite_calls() -> u32 {
     COMPOSITE_CALLS.with(|calls| calls.get())
 }
 
+#[cfg(test)]
+thread_local! {
+    static FORCE_SLOW_COMPOSITE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+#[cfg(test)]
+fn force_slow_composite(on: bool) {
+    FORCE_SLOW_COMPOSITE.with(|flag| flag.set(on));
+}
+
 /// `JsValue::from_str` aborts off-wasm, so the dimension refusal needs the same
 /// cfg dance the read-only guard uses — otherwise no native test can observe it.
 fn dims_out_of_range_js_error() -> JsValue {
@@ -3272,7 +3282,17 @@ pub struct Engine {
     brush_tip_h: u32,
     brush_tip_active: bool,
     brush: BrushConfig,
-    stroke_base: Vec<u16>,
+    // Pre-stroke plane, shared with the undo snapshot. A full copy would double
+    // the layer for every dab; readers index this Arc and the live plane is the
+    // only buffer that copy-on-writes.
+    stroke_base: Arc<[u16]>,
+    // Canvas-space origin and size of `stroke_acc`. Zero width means the buffer
+    // has no live coverage. Capacity is kept across strokes so a repeated dab
+    // reuses it instead of growing toward the whole canvas.
+    stroke_acc_x: i32,
+    stroke_acc_y: i32,
+    stroke_acc_w: i32,
+    stroke_acc_h: i32,
     // History Brush (brush mode 12) + Edit ▸ Fill ▸ History source: a frozen copy
     // of a layer's pixels (the History panel's "Set Source"). Runtime-only —
     // mirrors `stroke_base`'s lifecycle and is NOT serialized into save_project, so
@@ -3595,6 +3615,9 @@ pub struct Engine {
     // Edit ▸ Content-Aware Scale job. Runtime-only: the document is unchanged
     // until finish, so cancel is dropping this and undo never sees it.
     content_aware: Option<seam_carve::SeamJob>,
+    /// Full-frame `output` already matches this canvas and the kind-3 view.
+    /// `render` uploads that frame instead of compositing it again.
+    presented_frame: Option<(u32, u32, Option<[f32; 4]>)>,
 }
 
 // Non-exported helpers.
@@ -3623,7 +3646,11 @@ impl Engine {
             brush_tip_h: 0,
             brush_tip_active: false,
             brush: BrushConfig::default(),
-            stroke_base: Vec::new(),
+            stroke_base: Arc::from(Vec::new()),
+            stroke_acc_x: 0,
+            stroke_acc_y: 0,
+            stroke_acc_w: 0,
+            stroke_acc_h: 0,
             history_source: Vec::new(),
             history_source_bounds: None,
             history_source_document: None,
@@ -3753,6 +3780,7 @@ impl Engine {
             defer_vector_font_invalidation: false,
             ai_generated: false,
             content_aware: None,
+            presented_frame: None,
         }
     }
 
@@ -4659,7 +4687,7 @@ impl Engine {
         if !expand_layer_pixel_bounds(&mut self.layers[self.active], expanded) {
             return None;
         }
-        self.stroke_base = stroke_base;
+        self.stroke_base = stroke_base.into();
         self.plane_rect(self.active)
     }
 
@@ -5842,21 +5870,42 @@ impl Engine {
     // Approximate bytes a snapshot retains. Under copy-on-write planes this
     // counts every plane byte even when the snapshot shares the live layer's
     // buffer, so it is an upper bound and eviction can be more aggressive than
-    // the true retained size. ponytail: refine with strong_count-weighted
+    // the true retained size. Animation frames, the selection, saved selections,
+    // spot plates and document channels are cloned into the snapshot, so their
+    // bytes count in full. ponytail: refine with strong_count-weighted
     // accounting if that proves to matter.
     fn snap_cost(snap: &Snap) -> usize {
         match snap {
-            Snap::Stack(doc) => doc
-                .layers
-                .iter()
-                .map(|l| {
-                    l.pixels.len() * 2
-                        + l.pixels_f32.len() * 4
-                        + l.smart_src.len() * 2
-                        + l.smart_src_f32.len() * 4
-                        + l.mask.len()
-                })
-                .sum(),
+            Snap::Stack(doc) => {
+                let layers: usize = doc
+                    .layers
+                    .iter()
+                    .map(|l| {
+                        l.pixels.len() * 2
+                            + l.pixels_f32.len() * 4
+                            + l.smart_src.len() * 2
+                            + l.smart_src_f32.len() * 4
+                            + l.mask.len()
+                    })
+                    .sum();
+                let frames: usize = doc.frames.iter().map(|frame| frame.len()).sum();
+                let saved: usize = doc.saved_sels.iter().map(|(_, mask)| mask.len()).sum();
+                let spots: usize = doc
+                    .spot_channels
+                    .iter()
+                    .map(|channel| channel.coverage.len())
+                    .sum();
+                let channels: usize = doc
+                    .document_channels
+                    .iter()
+                    .map(|channel| {
+                        channel.data.len()
+                            + channel.data16.len() * 2
+                            + channel.data32.len() * 4
+                    })
+                    .sum();
+                layers + frames + saved + spots + channels + doc.sel_mask.len()
+            }
             Snap::LayerPx {
                 px,
                 px_f32,
@@ -7885,10 +7934,167 @@ impl Engine {
         grid
     }
 
+    /// Row-wise Normal composite for a plain raster stack. Returns false when
+    /// any layer needs the general per-pixel plan (masks, effects, groups,
+    /// non-normal blends, float authority, blend gamma, …).
+    fn composite_plain_region(&mut self, x0: i32, y0: i32, x1: i32, y1: i32) -> bool {
+        if !self.plain_stack_eligible() || x1 <= x0 || y1 <= y0 {
+            return false;
+        }
+        if !self.fx_frozen {
+            for i in 0..self.layers.len() {
+                self.ensure_mask_soft(i);
+                self.ensure_fx(i);
+                self.ensure_vector(i);
+            }
+        }
+        let width = self.w as usize;
+        let span = (x1 - x0) as usize;
+        let mut row = vec![0.0f32; span * 4];
+        let extras: Vec<f32> = self
+            .layers
+            .iter()
+            .map(|layer| {
+                if !layer.visible || layer.opacity <= 0.0 || layer.fill_opacity <= 0.0 {
+                    0.0
+                } else {
+                    layer.opacity * layer.fill_opacity
+                }
+            })
+            .collect();
+        for y in y0..y1 {
+            row.fill(0.0);
+            let plane_row = (y as usize * width + x0 as usize) * 4;
+            for (li, &extra) in extras.iter().enumerate() {
+                if extra <= 0.0 {
+                    continue;
+                }
+                let pixels = &self.layers[li].pixels;
+                for dx in 0..span {
+                    let s = plane_row + dx * 4;
+                    let sr = pixels[s] as f32 / 65535.0;
+                    let sg = pixels[s + 1] as f32 / 65535.0;
+                    let sb = pixels[s + 2] as f32 / 65535.0;
+                    let sa = pixels[s + 3] as f32 / 65535.0;
+                    let alpha_s = (sa * extra).clamp(0.0, 1.0);
+                    if alpha_s <= 0.0 {
+                        continue;
+                    }
+                    let o = dx * 4;
+                    if alpha_s >= 1.0 {
+                        row[o] = sr;
+                        row[o + 1] = sg;
+                        row[o + 2] = sb;
+                        row[o + 3] = 1.0;
+                        continue;
+                    }
+                    let alpha_b = row[o + 3];
+                    let ao = alpha_s + alpha_b * (1.0 - alpha_s);
+                    if ao <= 0.0 {
+                        row[o] = 0.0;
+                        row[o + 1] = 0.0;
+                        row[o + 2] = 0.0;
+                        row[o + 3] = 0.0;
+                        continue;
+                    }
+                    let inv = 1.0 - alpha_s;
+                    row[o] = (alpha_s * sr + alpha_b * inv * row[o]) / ao;
+                    row[o + 1] = (alpha_s * sg + alpha_b * inv * row[o + 1]) / ao;
+                    row[o + 2] = (alpha_s * sb + alpha_b * inv * row[o + 2]) / ao;
+                    row[o + 3] = ao;
+                }
+            }
+            let out = plane_row;
+            for dx in 0..span {
+                let o = dx * 4;
+                Rgba::new(row[o], row[o + 1], row[o + 2], row[o + 3])
+                    .to_u8(&mut self.output[out + o..out + o + 4]);
+            }
+        }
+        self.overprint_spot_channels(x0, y0, x1, y1);
+        true
+    }
+
+    fn plain_stack_eligible(&self) -> bool {
+        if self.mode != 0
+            || self.depth == 32
+            || self.fx_frozen
+            || !self.solo.is_empty()
+            || self.export_clip_base.is_some()
+            || !self.indexed_palette.is_empty()
+            || self.active_blend_space().spaces().is_some()
+        {
+            return false;
+        }
+        let canvas = Bounds {
+            x: 0,
+            y: 0,
+            w: self.w,
+            h: self.h,
+        };
+        let plane = (self.w as usize).saturating_mul(self.h as usize).saturating_mul(4);
+        for layer in &self.layers {
+            if !layer.visible || layer.opacity <= 0.0 {
+                continue;
+            }
+            if layer.kind != 0 || layer.group != 0 || layer.clipping {
+                return false;
+            }
+            if layer.blend != BlendMode::Normal
+                || layer.knockout != 0
+                || !layer.blend_if.is_empty()
+                || layer.blend_channels != ALL_BLEND_CHANNELS
+                || layer.blend_interior_group
+                || layer.blend_clipped_group
+            {
+                return false;
+            }
+            if layer.ox != 0
+                || layer.oy != 0
+                || layer.pixel_bounds != canvas
+                || layer.pixels.len() != plane
+                || layer.pixels_f32.len() == layer.pixels.len()
+            {
+                return false;
+            }
+            if !layer.mask.is_empty() && layer.mask_enabled {
+                return false;
+            }
+            if layer.vector_is_mask && !layer.vector_path.is_empty() {
+                return false;
+            }
+            if self.effects_visible
+                && layer
+                    .effects
+                    .iter()
+                    .any(|(_, params)| params.first().copied().unwrap_or(0.0) >= 0.5)
+            {
+                return false;
+            }
+            if !layer.opacity.is_finite() || !layer.fill_opacity.is_finite() {
+                return false;
+            }
+        }
+        true
+    }
+
     pub fn composite(&mut self) {
         #[cfg(test)]
         COMPOSITE_CALLS.with(|calls| calls.set(calls.get() + 1));
         self.composite_region(0, 0, self.w as i32, self.h as i32);
+        self.note_presented_frame();
+    }
+
+    /// Remember the view and canvas size now sitting in `output`.
+    fn note_presented_frame(&mut self) {
+        let view = self.layers.iter().find(|l| l.kind == 3).map(|l| l.vector_view);
+        let bytes = (self.w as usize).saturating_mul(self.h as usize).saturating_mul(4);
+        self.presented_frame = (self.output.len() == bytes).then_some((self.w, self.h, view));
+    }
+
+    fn presented_frame_current(&self) -> bool {
+        let view = self.layers.iter().find(|l| l.kind == 3).map(|l| l.vector_view);
+        self.presented_frame == Some((self.w, self.h, view))
     }
 
     /// Edit ▸ Color Settings ▸ Advanced ▸ Blend RGB Colors Using Gamma and
@@ -7954,6 +8160,21 @@ impl Engine {
         let y0 = y0.clamp(0, h);
         let x1 = x1.clamp(0, w);
         let y1 = y1.clamp(0, h);
+
+        // Ordinary Normal stacks skip the per-pixel plan. Exports and HDR
+        // preview keep the general loop so their extra buffers stay in lockstep.
+        #[cfg(test)]
+        let plain_allowed = !FORCE_SLOW_COMPOSITE.with(|flag| flag.get());
+        #[cfg(not(test))]
+        let plain_allowed = true;
+        if plain_allowed
+            && output16.is_none()
+            && output32.is_none()
+            && hdr_preview.is_none()
+            && self.composite_plain_region(x0, y0, x1, y1)
+        {
+            return;
+        }
 
         // Keep every layer's effect buffers current before we read them. During
         // a Move drag of an fx layer the cache is frozen (shape unchanged, only
@@ -8098,6 +8319,9 @@ impl Engine {
         if let Some(output) = output32 {
             self.overprint_spot_channels_f32(output, x0, y0, x1, y1);
         }
+        if let Some((output, _)) = hdr_preview {
+            self.overprint_spot_channels_u8(output, x0, y0, x1, y1);
+        }
     }
 
     /// Re-run the current compositor directly into an RGBA16 buffer. This
@@ -8135,10 +8359,8 @@ impl Engine {
     /// tone-map. method=0, exposure=0, gamma=1 (the JS-side default) is exact
     /// identity, byte-identical to a plain composite.
     ///
-    /// ponytail: doesn't re-run `overprint_spot_channels` for this buffer, so
-    /// a document combining spot-channel overprint with a non-default HDR
-    /// preview won't show the ink here — narrow enough (both are advanced,
-    /// rarely-combined features) to skip; revisit if that combo matters.
+    /// Spot ink is overprinted onto this buffer after the tone map, including
+    /// the identity map, without taking the plates off the document.
     pub fn hdr_preview_rgba8(&mut self, method: u8, exposure: f32, gamma: f32) -> Vec<u8> {
         if self.depth != 32 {
             self.composite();
@@ -16226,17 +16448,32 @@ impl Engine {
 
     /// Set the world→screen view for the Artisan document (the single vector
     /// layer). Matches Artisan's `set_view(tx, ty, zoom, angle)`.
+    ///
+    /// An identical view is a no-op: the vector cache stays valid and the
+    /// frame is not composited again. A real change updates the view, drops
+    /// the cache, and composites once. The following `render` uploads that
+    /// frame and does not composite again.
     pub fn set_view(&mut self, tx: f32, ty: f32, zoom: f32, angle: f32) {
-        if let Some(l) = self.layers.iter_mut().find(|l| l.kind == 3) {
-            l.vector_view = [tx, ty, zoom, angle];
-            l.vector_cache_key = None;
+        let Some(idx) = self.layers.iter().position(|l| l.kind == 3) else {
+            self.composite();
+            return;
+        };
+        let next = [tx, ty, zoom, angle];
+        if self.layers[idx].vector_view == next {
+            return;
         }
-        self.composite(); // the ensure_vector sweep re-rasterizes at the new view
+        self.layers[idx].vector_view = next;
+        self.layers[idx].vector_cache_key = None;
+        self.composite();
     }
 
-    /// Render the document (Artisan alias for `composite`).
+    /// Upload the current frame. Composites only when `output` is not already
+    /// the full frame for this canvas and vector view, so `set_view` plus
+    /// `render` composites a changed view once.
     pub fn render(&mut self) {
-        self.composite();
+        if !self.presented_frame_current() {
+            self.composite();
+        }
     }
     pub fn layer_adj_params(&self, id: u32) -> Vec<f32> {
         self.layer_index(id)
@@ -18103,7 +18340,7 @@ impl Engine {
             self.bg_eraser_init = false;
             self.mixer_init = false;
             self.stroke_base_mask = self.quick_mask.clone();
-            self.stroke_acc = vec![0f32; (self.w * self.h) as usize];
+            self.begin_stroke_acc();
             self.stroking = true;
             self.have_last = false;
             return true;
@@ -18196,9 +18433,9 @@ self.layers[self.active].mask.to_vec()
             if self.retouch_sample_all && matches!(self.brush.mode, 4 | 9 | 10 | 11) {
                 self.retouch_src = self.composite_hiding_from(self.active);
             }
-            self.stroke_base = self.layers[self.active].pixels.to_vec();
+            self.stroke_base = Arc::clone(&self.layers[self.active].pixels);
         }
-        self.stroke_acc = vec![0f32; (self.w * self.h) as usize];
+        self.begin_stroke_acc();
         self.stroking = true;
         self.have_last = false;
         true
@@ -18647,8 +18884,8 @@ self.layers[self.active].mask.to_vec()
             self.mixer_empty = true;
         }
         self.stroking = false;
-        self.stroke_base = Vec::new();
-        self.stroke_acc = Vec::new();
+        self.stroke_base = Arc::from(Vec::new());
+        self.stroke_acc_w = 0;
         self.clone_src = Vec::new();
         self.retouch_src = Vec::new();
         self.stroke_base_mask = Vec::new();
@@ -19300,6 +19537,72 @@ self.layers[self.active].mask.to_vec()
         composite_over(under, top, BlendMode::Normal, 1.0)
     }
 
+    /// Drop live coverage without releasing the accumulator allocation.
+    fn begin_stroke_acc(&mut self) {
+        self.stroke_acc_w = 0;
+    }
+
+    /// Grow the opacity accumulator to the dab's canvas bounds, once per dab.
+    /// Newly covered pixels start at zero. A later dab reuses the allocation
+    /// when it fits.
+    fn ensure_stroke_acc(&mut self, x0: i32, y0: i32, x1: i32, y1: i32) {
+        if x1 < x0 || y1 < y0 {
+            return;
+        }
+        let (nx0, ny0, nx1, ny1) = if self.stroke_acc_w <= 0 {
+            (x0, y0, x1, y1)
+        } else {
+            (
+                self.stroke_acc_x.min(x0),
+                self.stroke_acc_y.min(y0),
+                (self.stroke_acc_x + self.stroke_acc_w - 1).max(x1),
+                (self.stroke_acc_y + self.stroke_acc_h - 1).max(y1),
+            )
+        };
+        let nw = nx1 - nx0 + 1;
+        let nh = ny1 - ny0 + 1;
+        if self.stroke_acc_w == nw && self.stroke_acc_h == nh && self.stroke_acc_x == nx0 && self.stroke_acc_y == ny0
+        {
+            return;
+        }
+        let need = (nw as usize).saturating_mul(nh as usize);
+        if self.stroke_acc_w <= 0 {
+            if self.stroke_acc.len() < need {
+                self.stroke_acc.resize(need, 0.0);
+            }
+            self.stroke_acc[..need].fill(0.0);
+        } else {
+            let mut next = vec![0.0f32; need];
+            for y in 0..self.stroke_acc_h {
+                for x in 0..self.stroke_acc_w {
+                    let src = (y * self.stroke_acc_w + x) as usize;
+                    let dx = self.stroke_acc_x + x - nx0;
+                    let dy = self.stroke_acc_y + y - ny0;
+                    next[(dy * nw + dx) as usize] = self.stroke_acc[src];
+                }
+            }
+            self.stroke_acc = next;
+        }
+        self.stroke_acc_x = nx0;
+        self.stroke_acc_y = ny0;
+        self.stroke_acc_w = nw;
+        self.stroke_acc_h = nh;
+    }
+
+    /// Opacity/flow accumulation at one canvas pixel. Same recurrence the
+    /// full-canvas buffer used: `acc + (1 - acc) * dab`, capped.
+    fn bump_stroke_acc(&mut self, x: i32, y: i32, dab: f32, cap: f32) -> f32 {
+        let lx = x - self.stroke_acc_x;
+        let ly = y - self.stroke_acc_y;
+        if lx < 0 || ly < 0 || lx >= self.stroke_acc_w || ly >= self.stroke_acc_h {
+            return 0.0;
+        }
+        let i = (ly * self.stroke_acc_w + lx) as usize;
+        let acc = &mut self.stroke_acc[i];
+        *acc = (*acc + (1.0 - *acc) * dab).min(cap);
+        *acc
+    }
+
     fn stamp(&mut self, cx: f32, cy: f32, pressure: f32, eff_size: f32) -> [i32; 4] {
         // The layer's pixel plane in canvas space; every write below translates
         // through it. A stroke on a layer whose plane is unusable is a no-op. (#43)
@@ -19619,6 +19922,7 @@ self.layers[self.active].mask.to_vec()
             self.mixer_empty = false;
         }
         let reservoir = self.mixer_reservoir;
+        self.ensure_stroke_acc(x0, y0, x1, y1);
 
         for y in y0..=y1 {
             for x in x0..=x1 {
@@ -19708,9 +20012,7 @@ self.layers[self.active].mask.to_vec()
                 if self.qm_on {
                     let dab = (flow * falloff * sel_cov).clamp(0.0, 1.0);
                     let cap = opacity * sel_cov;
-                    let acc = &mut self.stroke_acc[i];
-                    *acc = (*acc + (1.0 - *acc) * dab).min(cap);
-                    let cov = *acc;
+                    let cov = self.bump_stroke_acc(x, y, dab, cap);
                     let pv = 0.299 * br + 0.587 * bg + 0.114 * bb;
                     let base_qm = self.stroke_base_mask[i] as f32 / 255.0;
                     self.quick_mask[i] = color::to8(base_qm + (pv - base_qm) * cov);
@@ -19725,9 +20027,7 @@ self.layers[self.active].mask.to_vec()
                 if masking {
                     let dab = (flow * falloff * sel_cov).clamp(0.0, 1.0);
                     let cap = opacity * sel_cov;
-                    let acc = &mut self.stroke_acc[i];
-                    *acc = (*acc + (1.0 - *acc) * dab).min(cap);
-                    let cov = *acc;
+                    let cov = self.bump_stroke_acc(x, y, dab, cap);
                     let pv = if self.mask_reveal {
                         1.0
                     } else {
@@ -19892,9 +20192,7 @@ self.layers[self.active].mask.to_vec()
 
                 let dab = (flow * falloff * sel_cov).clamp(0.0, 1.0);
                 let cap = opacity * sel_cov;
-                let acc = &mut self.stroke_acc[i];
-                *acc = (*acc + (1.0 - *acc) * dab).min(cap);
-                let cov = *acc;
+                let cov = self.bump_stroke_acc(x, y, dab, cap);
 
                 // Per-pixel paint color: History snapshot, clone-source sample, or
                 // the brush color. History sources at the same index (no offset).
@@ -23208,6 +23506,32 @@ self.layers[self.active].mask.to_vec()
             }
         }
         self.spot_channels = spots;
+    }
+    fn overprint_spot_channels_u8(&self, output: &mut [u8], x0: i32, y0: i32, x1: i32, y1: i32) {
+        if self.spot_channels.is_empty() {
+            return;
+        }
+        let w = self.w as i32;
+        for spot in self.spot_channels.iter().filter(|spot| spot.visible) {
+            for y in y0..y1 {
+                for x in x0..x1 {
+                    let index = (y * w + x) as usize;
+                    let coverage = spot.coverage.get(index).copied().unwrap_or(0);
+                    if coverage == 0 {
+                        continue;
+                    }
+                    let amount = (coverage as f32 / 255.0) * spot.solidity;
+                    let offset = index * 4;
+                    for channel in 0..3 {
+                        let base = output[offset + channel] as f32;
+                        let ink = spot.ink[channel] as f32;
+                        output[offset + channel] = (base * (1.0 - amount) + ink * amount)
+                            .round()
+                            .clamp(0.0, 255.0) as u8;
+                    }
+                }
+            }
+        }
     }
     fn overprint_spot_channels_u16(&self, output: &mut [u16], x0: i32, y0: i32, x1: i32, y1: i32) {
         if self.spot_channels.is_empty() {
@@ -61269,6 +61593,29 @@ mod native_float_safety {
     }
 
     #[test]
+    fn hdr_preview_identity_keeps_spot_ink_on_float_documents() {
+        let mut engine = Engine::with_initial_pixels_f32(4, 4, vec![1.0; 4 * 4 * 4])
+            .expect("valid native float document");
+        engine.select_rect(0, 0, 2, 4, 0);
+        engine.add_spot_channel("Pantone".into(), 255, 0, 0, 1.0);
+        engine.select_none();
+        engine.composite();
+        let output = engine.output.clone();
+        let coverage = engine.spot_channels[0].coverage.clone();
+        let pixels = engine.layers[0].pixels_f32.clone();
+        let preview = engine.hdr_preview_rgba8(0, 0.0, 1.0);
+        let px = |buf: &[u8], x: usize| {
+            let o = x * 4;
+            (buf[o], buf[o + 1], buf[o + 2], buf[o + 3])
+        };
+        assert_eq!(px(&preview, 0), (255, 0, 0, 255), "covered identity preview keeps spot ink");
+        assert_eq!(px(&preview, 3), (255, 255, 255, 255), "uncovered identity preview stays white");
+        assert_eq!(engine.output, output, "reading the preview must not rewrite the composite");
+        assert_eq!(engine.spot_channels[0].coverage, coverage);
+        assert_eq!(engine.layers[0].pixels_f32, pixels);
+    }
+
+    #[test]
     fn hdr_preview_ignores_settings_on_non_float_documents() {
         let mut engine = Engine::new(2, 2); // depth defaults to 8, no HDR range to tone-map
         engine.composite();
@@ -81153,6 +81500,16 @@ mod metadata_undo {
         );
     }
 }
+
+#[cfg(test)]
+mod artisan_stacking_tests;
+
+#[cfg(test)]
+mod history_budget_tests;
+#[cfg(test)]
+mod plain_composite_tests;
+#[cfg(test)]
+mod stroke_alloc_tests;
 
 #[cfg(test)]
 mod data_variables_tests;

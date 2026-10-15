@@ -82,10 +82,20 @@ await test("raster-gradient-fill", async () => {
 await test("raster-hybrid-text-in-svg", async () => {
   await s.fixture(`doc.layers[0].items.push(E.makeText("Hybrid Text", 60, 200, {fontSize:40, fill:E.solid(E.BLACK)})); return [];`);
   await s.page.waitForTimeout(400);
-  const ok = await s.page.evaluate(() =>
-    [...document.querySelectorAll("svg.artisan-canvas text")].some((t) => (t.textContent || "").includes("Hybrid Text")),
-  );
-  return { pass: ok, detail: { svgText: ok } };
+  const r = await s.page.evaluate(async () => {
+    const stats = (() => {
+      const c = document.querySelector("canvas.artisan-raster");
+      if (!c || !c.width) return null;
+      const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+      let opaque = 0;
+      for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 10) opaque++;
+      return { opaque };
+    })();
+    const svgText = [...document.querySelectorAll("svg.artisan-canvas text")].some((t) => (t.textContent || "").includes("Hybrid Text"));
+    return { opaque: stats?.opaque ?? 0, svgText };
+  });
+  // Rust paints the glyphs. A second SVG copy would stack the same text on top.
+  return { pass: r.opaque > 30 && r.svgText === false, detail: r };
 });
 
 await test("raster-partition-plain-canvas-vs-effect-svg", async () => {
@@ -104,11 +114,23 @@ await test("raster-partition-plain-canvas-vs-effect-svg", async () => {
   await s.page.waitForTimeout(400);
   const r = await s.page.evaluate((ids) => {
     const inSvg = (id) => !!document.querySelector(`svg.artisan-canvas [data-id="${id}"]`);
-    return { plainInSvg: inSvg(ids.plain), shadowedInSvg: inSvg(ids.shadowed) };
+    const c = document.querySelector("canvas.artisan-raster");
+    if (!c || !c.width) return { error: "no raster canvas" };
+    const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+    let red = 0, blue = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] <= 10) continue;
+      const r = d[i], g = d[i + 1], b = d[i + 2];
+      if (r > 150 && r > g + 40 && r > b + 40) red++;
+      if (b > 150 && b > r + 40 && b > g + 40) blue++;
+    }
+    return { plainInSvg: inSvg(ids.plain), shadowedInSvg: inSvg(ids.shadowed), red, blue };
   }, ids);
-  // Plain rect is painted by the Rust canvas (not in SVG); the shadowed rect is
-  // handed to the SVG fallback overlay (so the engine doesn't double-draw it).
-  return { pass: r.plainInSvg === false && r.shadowedInSvg === true, detail: r };
+  // Both fills are in the Rust canvas. Neither is drawn again by the SVG overlay.
+  return {
+    pass: r.plainInSvg === false && r.shadowedInSvg === false && r.red > 300 && r.blue > 300,
+    detail: r,
+  };
 });
 
 await test("raster-view-zoom-repaints", async () => {

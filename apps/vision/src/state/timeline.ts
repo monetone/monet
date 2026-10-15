@@ -20,6 +20,29 @@ export interface TimelineState {
 
 export const DEFAULT_TIMELINE: TimelineState = { fps: 12, durationS: 3, keys: [] };
 
+/** Copy a timeline, including each key, so one document cannot mutate another's. */
+export function cloneTimeline(t: TimelineState | null | undefined): TimelineState {
+  if (!t || typeof t !== "object") return { ...DEFAULT_TIMELINE, keys: [] };
+  const fps = Number.isFinite(t.fps) ? t.fps : DEFAULT_TIMELINE.fps;
+  const durationS = Number.isFinite(t.durationS) ? t.durationS : DEFAULT_TIMELINE.durationS;
+  const keys = Array.isArray(t.keys) ? t.keys.map((k) => ({ ...k })) : [];
+  return { fps, durationS, keys };
+}
+
+/** Fill a missing or partial per-document timeline with the panel defaults. */
+export function normalizeTimeline(value: unknown): TimelineState {
+  if (!value || typeof value !== "object") return { ...DEFAULT_TIMELINE, keys: [] };
+  return cloneTimeline(value as TimelineState);
+}
+
+/** Keep a playhead or a new key inside `[0, durationS]`. Out-of-range keys that
+ *  already exist are left alone — shortening the duration only moves the head. */
+export function clampPlayhead(t: number, durationS: number): number {
+  const dur = Number.isFinite(durationS) ? Math.max(0.1, durationS) : DEFAULT_TIMELINE.durationS;
+  if (!Number.isFinite(t)) return 0;
+  return Math.min(Math.max(0, t), dur);
+}
+
 /** Distinct layer ids with at least one keyframe, in first-seen order. */
 export function timelineLayerIds(keys: TimelineKey[]): number[] {
   const seen = new Set<number>();

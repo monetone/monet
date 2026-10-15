@@ -212,6 +212,22 @@ export function imageModeCheckedIds(mode: number, depth: number, duotone: boolea
   return [...(modeId ? [modeId] : []), `d${depth}`];
 }
 
+/** View menu checks for Grid, Rulers, Snap, and Proof Colors. The monet ids
+ *  are the menu command ids, not the store field names. */
+export function viewToggleCheckedIds(flags: {
+  showGrid: boolean;
+  showRulers: boolean;
+  snapEnabled: boolean;
+  proofOn: boolean;
+}): string[] {
+  const ids: string[] = [];
+  if (flags.showGrid) ids.push("showgrid");
+  if (flags.showRulers) ids.push("rulers");
+  if (flags.snapEnabled) ids.push("snap");
+  if (flags.proofOn) ids.push("proofcolors");
+  return ids;
+}
+
 /** Edit ▸ Undo names the step it will reverse ("Undo Brush"). An empty label
  *  leaves the blueprint title alone. Only the exact item "Undo" is renamed. */
 type UndoMenuItem = { label?: unknown; items?: UndoMenuItem[] };

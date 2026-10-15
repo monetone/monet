@@ -13,7 +13,7 @@ import {
   Dialog, Button, Slider, NumberField, Checkbox, Input, Textarea, CurveEditor, Histogram, Select, SegmentedControl, OptionsBar, Icon, I, BLEND_MODES, GlyphGrid, useToast,
   Radio, RadioGroup, type CurvePoint,
 } from "@monet-ui/monet-react";
-import { engine, store, useStore, commandPalette, adj, fil, smart, xform, neural, distort, runScript, ml, models, text, openFiles, openImageFiles, openPdfPage, registerPdfPagePicker, registerTiffLayersPicker, registerSaveOptionsPicker, registerPhotoshopRawPicker, closeDocumentTab, placeScaleMarker, exportVideo, anim, actions, batchProcess, dropletRun, saveDropletFile, type BatchFormat, type BatchSource, type HistoryTransactionEngine, skyReplacement, imageProcessor, type ImageProcessorSave, dataVars, contentAwareFill, contentAwareFillWith, removeDistractions, removeReflections, splitReflections, saveForWeb, warpLayer, previewGalleryStack, revertGalleryStack, commitGalleryStack, runBlurSteps as runBlurStepsCommand, commitBlurSteps as commitBlurStepsCommand, exportColorTableAct, colorTableHexes, loadColorTableAct, exportAs, exportSelectedLayersAs, selectedLayerExportTargets, exportAsMetadataChoice, rememberExportAsMetadata, contentCredentialsSigner, pickPemFile, importContentCredentialsSigner, clearContentCredentialsSigner, importProofProfileFile, importDocumentIccProfile, pickColorLutFile, preparePrintJob, spoolPrintJob, pngToImageData, exportIccBytes, saveProofSetupFile, loadProofSetupFile, saveBytes, downloadBytes, pickLocalFileBytes, webExportBytes, optimizeWebExportToFileSize, loadPresetSetFile, savePresetSet, exportAllPresets, importPresetFiles, type SaveForWebOptions, type SignerInfo, type ExportAsFormat, type LayerExportTarget, type PdfPageRequest } from "../state/app";
+import { engine, store, useStore, commandPalette, adj, fil, smart, xform, neural, distort, runScript, ml, models, text, typeEditorSelection, openFiles, openImageFiles, openPdfPage, registerPdfPagePicker, registerTiffLayersPicker, registerSaveOptionsPicker, registerPhotoshopRawPicker, closeDocumentTab, placeScaleMarker, exportVideo, anim, actions, batchProcess, dropletRun, saveDropletFile, type BatchFormat, type BatchSource, type HistoryTransactionEngine, skyReplacement, imageProcessor, type ImageProcessorSave, dataVars, contentAwareFill, contentAwareFillWith, removeDistractions, removeReflections, splitReflections, saveForWeb, warpLayer, previewGalleryStack, revertGalleryStack, commitGalleryStack, runBlurSteps as runBlurStepsCommand, commitBlurSteps as commitBlurStepsCommand, exportColorTableAct, colorTableHexes, loadColorTableAct, exportAs, exportSelectedLayersAs, selectedLayerExportTargets, exportAsMetadataChoice, rememberExportAsMetadata, contentCredentialsSigner, pickPemFile, importContentCredentialsSigner, clearContentCredentialsSigner, importProofProfileFile, importDocumentIccProfile, pickColorLutFile, preparePrintJob, spoolPrintJob, pngToImageData, exportIccBytes, saveProofSetupFile, loadProofSetupFile, saveBytes, downloadBytes, pickLocalFileBytes, webExportBytes, optimizeWebExportToFileSize, loadPresetSetFile, savePresetSet, exportAllPresets, importPresetFiles, type SaveForWebOptions, type SignerInfo, type ExportAsFormat, type LayerExportTarget, type PdfPageRequest } from "../state/app";
 import { PRESET_CATEGORIES, type PresetCategory } from "../state/presetManager";
 import { createDefaultRecipe, type LensCorrectionSettings } from "@monet-ui/monet-photo";
 import { applyLensProfileCorrection } from "../state/app";
@@ -105,6 +105,7 @@ import { DENSITIES, THEMES } from "@monet-ui/monet-core";
 import { orientSize, type Orientation } from "../state/artboardTool";
 import { BATCH_SERIAL_ERROR, DEFAULT_BATCH_TEMPLATE, batchSummary, parseBatchSerial, parseDroplet, type BatchDestination, type DropletDescriptor } from "../state/batchIo";
 import { linkedHeight, linkedWidth } from "../state/imageSizeLink";
+import { commitOwnedEdit } from "./ownedDocumentEdit";
 import { resolveCanvasSize, canvasSizeFits, anchorOffset, type AnchorPos } from "../state/canvasAnchor";
 import { EXTENSION_COLORS, resolveExtensionColor, type ExtensionColor } from "../state/canvasExtension";
 import { LEVELS_CHANNELS, defaultLevels, packLevels, type LevelsParams } from "../state/levelsChannels";
@@ -121,7 +122,7 @@ import {
   patternLibraryId, BLEND_IF_CHANNELS, type FxField,
 } from "../state/effects";
 import type { TextSpec, TextRun, RGBA, Align, WarpStyle } from "../text/spec";
-import { GLYPH_CATEGORIES, OPENTYPE_FEATURE_TAGS, appendGlyph, categoryChars } from "../text/spec";
+import { GLYPH_CATEGORIES, OPENTYPE_FEATURE_TAGS, categoryChars, glyphReplaceRange } from "../text/spec";
 import { fontCoverage, glyphAlternates, pathMetrics } from "../text/raster";
 import { loadRecentGlyphs, pushRecentGlyph, saveRecentGlyphs } from "./glyphsRecent";
 import { GradientBar } from "./GradientBar";
@@ -148,6 +149,7 @@ import {
 } from "../state/exposure";
 import {
   HDR_PREVIEW_METHODS, HDR_EXPOSURE_MIN, HDR_EXPOSURE_MAX, HDR_GAMMA_MIN, HDR_GAMMA_MAX,
+  hdrPreviewOnDismiss,
   type HdrPreviewMethod,
 } from "../state/hdrPreview";
 import {
@@ -3492,9 +3494,14 @@ function RadialBlur() {
 // ── document dialogs (no preview) ──────────────────────────────
 function RenameLayer() {
   const { close } = useDialogs();
-  const active = store.state.layers.find((l) => l.id === store.state.activeLayerId);
+  const ownerDocId = useRef(store.state.activeDocId).current;
+  const ownerLayerId = useRef(store.state.activeLayerId).current;
+  const active = store.state.layers.find((l) => l.id === ownerLayerId);
   const [name, setName] = useState(active?.name ?? "Layer");
-  const commit = () => { const n = name.trim(); if (n && active) store.renameLayer(active.id, n); close(); };
+  const commit = () => {
+    const n = name.trim();
+    commitOwnedEdit(ownerDocId, store.state.activeDocId, () => { if (n) store.renameLayer(ownerLayerId, n); }, close);
+  };
   return (
     <Dialog open onClose={close} title="Rename Layer" width={340}
       footer={<><Button variant="ghost" onClick={close}>Cancel</Button>
@@ -4019,13 +4026,16 @@ function Glyphs() {
   const insert = (ch: string, tag: string | null, swap: boolean) => {
     const s = text.get(activeId);
     if (!s) return;
-    const full = text.fullText(s);
-    // Switching form rewrites the glyph just inserted while it is still the tail
-    // of the layer (nothing typed since); otherwise it appends like any insert.
-    const base = swap && lastInsert.current === ch && full.endsWith(ch)
-      ? text.setText(s, full.slice(0, full.length - ch.length))
-      : s;
-    text.apply(activeId, appendGlyph(base, ch, tag ? { [tag]: true } : undefined));
+    const features = tag ? { [tag]: true } : undefined;
+    // An alternate of the glyph just inserted replaces that character at the
+    // caret. Without an editor, insertGlyph appends and the collapsed-range
+    // helper stays null.
+    if (swap) {
+      const range = glyphReplaceRange(lastInsert.current, ch, typeEditorSelection());
+      const el = typeof document === "undefined" ? null : document.querySelector<HTMLTextAreaElement>("textarea.mv-text-edit");
+      if (range && el) el.setSelectionRange(range[0], range[1]);
+    }
+    text.insertGlyph(ch, features, family);
     lastInsert.current = ch;
     // ponytail: the row remembers the character, not the alternate form it was
     // inserted with — re-picking from it gives the default form, and the
@@ -5539,22 +5549,31 @@ function HdrPreviewDialog() {
   const depth = useStore((s) => s.depth);
   const is32 = depth === 32;
   const initial = useRef(engine.getHdrPreview()).current;
+  const committed = useRef(false);
   const [on, setOn] = useState(initial.on);
   const [method, setMethod] = useState<HdrPreviewMethod>(initial.method as HdrPreviewMethod);
   const [exposure, setExposure] = useState(initial.exposure);
   const [gamma, setGamma] = useState(initial.gamma);
   useEffect(() => {
     engine.setHdrPreview(on && is32, method, exposure, gamma);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [on, method, exposure, gamma, is32]);
+  useEffect(() => () => {
+    const next = hdrPreviewOnDismiss(committed.current, initial, engine.getHdrPreview());
+    if (!committed.current) engine.setHdrPreview(next.on, next.method, next.exposure, next.gamma);
+  }, [initial]);
   const cancel = () => {
-    engine.setHdrPreview(initial.on, initial.method, initial.exposure, initial.gamma);
+    const next = hdrPreviewOnDismiss(false, initial, engine.getHdrPreview());
+    engine.setHdrPreview(next.on, next.method, next.exposure, next.gamma);
+    close();
+  };
+  const ok = () => {
+    committed.current = true;
     close();
   };
   return (
     <Dialog open onClose={cancel} title="32-bit Preview Options" width={360}
       footer={<><Button variant="ghost" onClick={cancel}>Cancel</Button>
-        <Button variant="primary" onClick={close}>OK</Button></>}>
+        <Button variant="primary" onClick={ok}>OK</Button></>}>
       {!is32 && (
         <p className="val" style={{ opacity: 0.6, marginBottom: 10, fontSize: 12 }}>
           This document isn't 32-bit — these settings have no effect until it is.
@@ -5857,6 +5876,7 @@ function NewDocument() {
 }
 function ImageSize() {
   const { close } = useDialogs();
+  const ownerDocId = useRef(store.state.activeDocId).current;
   // Original document dimensions, captured when the dialog opens (constant until close).
   const ow = store.state.doc.width, oh = store.state.doc.height;
   const ppi = store.state.resolutionPpi; // physical units resolve through the document's print resolution
@@ -5890,7 +5910,9 @@ function ImageSize() {
   return (
     <Dialog open onClose={close} title="Image Size" width={340}
       footer={<><Button variant="ghost" onClick={close}>Cancel</Button>
-        <Button variant="primary" disabled={oversized} onClick={() => { xform.resizeImage(wPx, hPx); close(); }}>Resize</Button></>}>
+        <Button variant="primary" disabled={oversized} onClick={() => {
+          commitOwnedEdit(ownerDocId, store.state.activeDocId, () => { xform.resizeImage(wPx, hPx); }, close);
+        }}>Resize</Button></>}>
       <div className="monet-row" style={{ gap: 10, marginBottom: 10 }}>
         <span className="lbl" style={{ width: 60 }}>Width</span>
         <NumberField id="mv-imgsize-w" value={w} min={min} max={max} step={unitDef.step} precision={precision} onChange={onW} suffix={unitDef.suffix} />
@@ -9103,11 +9125,12 @@ function drawBlurPath(ctx: CanvasRenderingContext2D, p: BlurPathStroke, s: numbe
   });
   ctx.restore();
 }
-function PinPreviewCanvas({ tool, pins, selected, onPins, onSelect, paths, selPath, onPaths, onSelectPath }: {
+function PinPreviewCanvas({ tool, pins, selected, onPins, onSelect, paths, selPath, onPaths, onSelectPath, previewRev = 0 }: {
   tool: BlurTool; pins: GalleryPin[]; selected: number;
   onPins: (pins: GalleryPin[]) => void; onSelect: (index: number) => void;
   paths: BlurPathStroke[]; selPath: number;
   onPaths: (paths: BlurPathStroke[]) => void; onSelectPath: (index: number) => void;
+  previewRev?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragRef = useRef<{ index: number; part: "move" | "ring" } | null>(null);
@@ -9122,7 +9145,7 @@ function PinPreviewCanvas({ tool, pins, selected, onPins, onSelect, paths, selPa
     image.onload = () => { if (live) setImg(image); };
     image.src = engine.docThumbUrl(engine.e, 380, 240);
     return () => { live = false; };
-  }, []);
+  }, [previewRev]);
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -9328,6 +9351,11 @@ export function BlurGallery({ tool: initialTool }: { tool: BlurTool }) {
   pathRef.current = { paths, rearSync };
   const flatPaths = () => flattenBlurPaths(pathRef.current.paths);
   const transactionRef = useRef(false);
+  const [previewRev, setPreviewRev] = useState(0);
+  const bumpPinPreview = () => {
+    if (store.state.activeDocId !== targetDocId) return;
+    setPreviewRev((n) => n + 1);
+  };
   const rafRef = useRef(0);
   const settleRef = useRef<ReturnType<typeof setTimeout> | 0>(0);
   const [actionMark] = useState(() => actions.mark());
@@ -9343,7 +9371,10 @@ export function BlurGallery({ tool: initialTool }: { tool: BlurTool }) {
     if (!transactionRef.current) return;
     const cancelled = targetEngine.cancel_history_transaction();
     transactionRef.current = false;
-    if (cancelled && engine.engine === targetEngine) engine.refreshFromEngine();
+    if (cancelled && engine.engine === targetEngine) {
+      engine.refreshFromEngine();
+      bumpPinPreview();
+    }
   };
   const prepareTransaction = () => {
     if (!onTarget()) return false;
@@ -9378,6 +9409,7 @@ export function BlurGallery({ tool: initialTool }: { tool: BlurTool }) {
     catch (error) { cancelPreview(); throw error; }
     finally { actions.suspend(false); engine.syncSuspended = false; }
     engine.blit(); // repaint even when the workspace composes to nothing
+    bumpPinPreview();
   };
   const clearPending = () => {
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0; }
@@ -9490,7 +9522,8 @@ export function BlurGallery({ tool: initialTool }: { tool: BlurTool }) {
         <div style={{ flex: "1 1 340px", minWidth: 240 }}>
           <PinPreviewCanvas tool={tool} pins={st.pins} selected={sel} onSelect={setSelected}
             onPins={(pins) => setSt((s) => ({ ...s, pins }))}
-            paths={paths} selPath={pathAt} onPaths={applyPaths} onSelectPath={setSelPath} />
+            paths={paths} selPath={pathAt} onPaths={applyPaths} onSelectPath={setSelPath}
+            previewRev={previewRev} />
           <div style={{ color: "var(--text-3)", fontSize: 11, margin: "6px 0 0" }}>
             {tool === PATH_TOOL
               ? "Click the preview to draw the path · click again to extend it into a curve · drag a point to reshape it. The blur follows each path; with no path it streaks the whole layer at the fallback angle."

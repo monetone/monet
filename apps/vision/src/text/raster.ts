@@ -900,6 +900,9 @@ export function layoutHorizontal(cells0: Cell[], spec: TextSpec): Layout {
   // ponytail: Roman hanging punctuation is LTR-only (it is a roman-script feature).
   const hangOn = !!spec.hangingPunctuation && isPara && !rtl;
   let y = 0;
+  // Point type has no clipping box. Line advance ignores a downward baseline
+  // shift and a vertical scale's descent, so the bitmap has to grow to the ink.
+  let inkBottom = 0;
   lines.forEach((line, idx) => {
     const lineCells0 = spec.composer === "worldReady" ? layoutBidiOrder(line.cells, (c) => c.bidi, rtl ? "rtl" : "ltr") : line.cells;
     let nominal = spec.size;
@@ -968,10 +971,42 @@ export function layoutHorizontal(cells0: Cell[], spec: TextSpec): Layout {
         x += c.advance + extraAfter(i);
       });
     }
+    for (const c of lineCells) {
+      if (c.isBreak) continue;
+      inkBottom = Math.max(inkBottom, baseY + Math.max(0, -c.baseShift) + c.descent);
+    }
     y += lh;
     if (line.last) y += spec.spaceAfter;
   });
-  return { placements, blockW, blockH: spec.boxH > 0 ? spec.boxH : Math.max(1, y) };
+  const fixedBox = spec.kind === "paragraph" && spec.boxH > 0;
+  return { placements, blockW, blockH: fixedBox ? spec.boxH : Math.max(1, y, inkBottom) };
+}
+
+/** Caret x positions for a horizontal line of placements: one boundary before
+ *  each glyph and one after the last advance. Hit tests use the midpoints. */
+export function caretBoundaries(layout: Pick<Layout, "placements">): number[] {
+  if (!layout.placements.length) return [0];
+  const xs = layout.placements.map((p) => p.x);
+  const last = layout.placements[layout.placements.length - 1];
+  xs.push(last.x + last.cell.advance);
+  return xs;
+}
+
+/** Index of the caret gap whose midpoint is the first one at or after `x`. */
+export function caretIndexAt(xs: readonly number[], x: number): number {
+  if (xs.length < 2) return 0;
+  for (let i = 0; i < xs.length - 1; i++) {
+    if (x < (xs[i] + xs[i + 1]) / 2) return i;
+  }
+  return xs.length - 2;
+}
+
+/** Document-relative caret boundaries for point type whose runs do not share
+ *  one horizontal scale. Callers skip this when every run is scale 1. */
+export function pointTypeCaretXs(spec: TextSpec): number[] {
+  const cells = buildCells(spec);
+  const layout = spec.vertical ? layoutVertical(cells, spec) : layoutHorizontal(cells, spec);
+  return caretBoundaries(layout);
 }
 
 /** Cells in a column that carry ink — the vertical mirror of trimmedWidth's
@@ -1067,7 +1102,8 @@ export function layoutVertical(cells0: Cell[], spec: TextSpec): Layout {
       natural = Math.max(natural, insets + pc.length * lh);
     });
   }
-  const blockH = isPara && spec.boxH > 0 ? spec.boxH : Math.max(1, natural);
+  const fixedBox = isPara && spec.boxH > 0;
+  let blockH = fixedBox ? spec.boxH : Math.max(1, natural);
 
   let total = 0;
   cols.forEach((col, i) => {
@@ -1102,6 +1138,11 @@ export function layoutVertical(cells0: Cell[], spec: TextSpec): Layout {
     }
     if (col.last) right -= spec.spaceAfter;
   });
+  if (!fixedBox) {
+    for (const p of placements) {
+      blockH = Math.max(blockH, p.y + Math.max(0, -p.cell.baseShift) + p.cell.descent);
+    }
+  }
   return { placements, blockW, blockH };
 }
 
@@ -1430,6 +1471,43 @@ export function layoutOnPath(cells: readonly PathCell[], spec: TextSpec): PathPl
   return out;
 }
 
+/** Paint one on-path glyph the way `drawPlacement` paints a block glyph.
+ *  The centre translate uses `advance`, which already includes hScale, so it
+ *  happens before `scale` — scaling first would walk the glyph off the path. */
+function drawOnPathGlyph(
+  ctx: CanvasRenderingContext2D, c: Cell, p: PathPlacement, spec: TextSpec, noShadow: string,
+): void {
+  applyCanvasFeatures(ctx, c.features, c.variations);
+  ctx.save();
+  ctx.direction = "ltr";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.angle);
+  ctx.translate(-c.advance / 2, p.offset - c.baseShift);
+  if (c.hScale !== 1 || c.vScale !== 1) ctx.scale(c.hScale, c.vScale);
+  if (c.fauxItalic) ctx.transform(1, 0, -FAUX_ITALIC_SHEAR, 1, 0, 0);
+  ctx.font = c.font;
+  setFontKerning(ctx, c.kerning === "none" ? "none" : "normal");
+  let shadowOn = setupTextShadow(ctx, spec);
+  if (spec.stroke && spec.stroke.width > 0 && !c.isSpace) {
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = rgba(spec.stroke.color);
+    ctx.lineWidth = spec.stroke.width * 2;
+    drawCellText(ctx, c, "stroke");
+    if (shadowOn) { ctx.shadowColor = noShadow; shadowOn = false; }
+  }
+  ctx.fillStyle = rgba(c.color);
+  if (!c.isSpace) {
+    if (c.fauxBold) { ctx.lineWidth = c.drawSize * 0.05; ctx.strokeStyle = rgba(c.color); drawCellText(ctx, c, "stroke"); }
+    drawCellText(ctx, c, "fill");
+  }
+  ctx.shadowColor = noShadow;
+  if (c.underline) { const th = Math.max(1, c.drawSize * 0.06); ctx.fillRect(0, c.drawSize * 0.14, c.wRaw, th); }
+  if (c.strike) { const th = Math.max(1, c.drawSize * 0.055); ctx.fillRect(0, -c.drawSize * 0.30, c.wRaw, th); }
+  ctx.restore();
+}
+
 function rasterizeOnPath(spec: TextSpec): RasterResult {
   const cells = buildCells(spec);
   let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
@@ -1437,7 +1515,11 @@ function rasterizeOnPath(spec: TextSpec): RasterResult {
     minx = Math.min(minx, spec.path![i]); maxx = Math.max(maxx, spec.path![i]);
     miny = Math.min(miny, spec.path![i + 1]); maxy = Math.max(maxy, spec.path![i + 1]);
   }
-  const pad = Math.ceil(spec.size * 1.5) + effectsPad(spec);
+  let extent = spec.size * 1.5;
+  for (const c of cells) {
+    extent = Math.max(extent, c.ascent, c.descent, Math.abs(c.baseShift), Math.abs(c.advance));
+  }
+  const pad = Math.ceil(extent) + effectsPad(spec, cells);
   const originX = Math.floor(minx) - pad, originY = Math.floor(miny) - pad;
   const w = Math.max(1, Math.ceil(maxx) - originX + pad);
   const h = Math.max(1, Math.ceil(maxy) - originY + pad);
@@ -1445,21 +1527,9 @@ function rasterizeOnPath(spec: TextSpec): RasterResult {
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext("2d")!;
   ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
-  for (const p of layoutOnPath(cells, spec)) {
-    const c = cells[p.index];
-    applyCanvasFeatures(ctx, c.features, c.variations);
-    ctx.save();
-    ctx.translate(p.x - originX, p.y - originY);
-    ctx.rotate(p.angle);
-    ctx.font = c.font;
-    if (spec.stroke && spec.stroke.width > 0) {
-      ctx.lineJoin = "round"; ctx.strokeStyle = rgba(spec.stroke.color); ctx.lineWidth = spec.stroke.width * 2;
-      ctx.strokeText(c.glyph, -c.advance / 2, p.offset);
-    }
-    ctx.fillStyle = rgba(c.color);
-    ctx.fillText(c.glyph, -c.advance / 2, p.offset);
-    ctx.restore();
-  }
+  const noShadow = "rgba(0,0,0,0)";
+  ctx.translate(-originX, -originY);
+  for (const p of layoutOnPath(cells, spec)) drawOnPathGlyph(ctx, cells[p.index], p, spec, noShadow);
   const img = ctx.getImageData(0, 0, w, h);
   releaseCanvas(canvas);
   applyAA(img.data, spec.antialias);
@@ -1471,7 +1541,7 @@ export function layoutTypeOutline(spec: TextSpec): Layout & { pad: number; onPat
   const cells = buildCells(spec);
   if (spec.path && spec.path.length >= 4) return {
     placements: layoutOnPath(cells, spec).map((p) => ({
-      cell: { ...cells[p.index], baseShift: -p.offset, hScale: 1, vScale: 1, fauxItalic: false },
+      cell: { ...cells[p.index], baseShift: cells[p.index].baseShift - p.offset },
       x: p.x, y: p.y, angle: p.angle, centerOffset: -cells[p.index].advance / 2,
     })), blockW: 0, blockH: 0, pad: 0, onPath: true,
   };

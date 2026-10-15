@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import type { MenuBarEntry, MenuItemDef } from "@monet-ui/monet-react";
-import { buildPhotoshopMenus, imageModeCheckedIds } from "./psMenus";
+import { buildPhotoshopMenus, imageModeCheckedIds, viewToggleCheckedIds } from "./psMenus";
 import { PS_MENUS, type PsNode } from "./psMenuData";
 
 const flatten = (items: MenuItemDef[]): MenuItemDef[] =>
@@ -732,5 +732,26 @@ describe("buildPhotoshopMenus", () => {
     expect(itemAtPath(bar, [...TOP, "Create from Work Path"])?.disabled).toBeFalsy();
     expect(itemAtPath(bar, [...TOP, "Bind to Work Path"])?.disabled).toBe(true);
     expect(itemAtPath(bar, [...TOP, "Type on a Path Options…"])?.disabled).toBe(true);
+  });
+
+  it("checks View ▸ Proof Colors, Show ▸ Grid, Rulers, and Snap from the view flags", () => {
+    const on = { showGrid: true, showRulers: true, snapEnabled: true, proofOn: true };
+    const checked = buildPhotoshopMenus(
+      {}, [], () => {}, undefined, undefined, undefined,
+      new Set(viewToggleCheckedIds(on)),
+    );
+    expect(viewToggleCheckedIds(on)).toEqual(["showgrid", "rulers", "snap", "proofcolors"]);
+    expect(itemAtPath(checked, ["View", "Show", "Grid"])?.checked).toBe(true);
+    expect(itemAtPath(checked, ["View", "Rulers"])?.checked).toBe(true);
+    expect(itemAtPath(checked, ["View", "Snap"])?.checked).toBe(true);
+    expect(itemAtPath(checked, ["View", "Proof Colors"])?.checked).toBe(true);
+    const off = buildPhotoshopMenus(
+      {}, [], () => {}, undefined, undefined, undefined,
+      new Set(viewToggleCheckedIds({ showGrid: false, showRulers: false, snapEnabled: false, proofOn: false })),
+    );
+    expect(itemAtPath(off, ["View", "Show", "Grid"])?.checked).toBeFalsy();
+    expect(itemAtPath(off, ["View", "Rulers"])?.checked).toBeFalsy();
+    expect(itemAtPath(off, ["View", "Snap"])?.checked).toBeFalsy();
+    expect(itemAtPath(off, ["View", "Proof Colors"])?.checked).toBeFalsy();
   });
 });

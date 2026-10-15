@@ -164,3 +164,41 @@ export function removeLayerCompAt(list: LayerComp[], i: number): LayerComp[] {
   if (i < 0 || i >= list.length) return list;
   return list.filter((_, idx) => idx !== i);
 }
+
+/** Which comp is applied, and the pre-apply snapshot used by Restore Last
+ *  Document State, keyed by document. Layer ids overlap across documents, so
+ *  this cannot live as one panel-local index. */
+export class LayerCompSessions {
+  private byDoc = new Map<number, { applied: number; last: LayerComp | null }>();
+
+  session(docId: number): { applied: number; last: LayerComp | null } {
+    let row = this.byDoc.get(docId);
+    if (!row) {
+      row = { applied: -1, last: null };
+      this.byDoc.set(docId, row);
+    }
+    return row;
+  }
+
+  /** Remember the document state from before the first apply, then mark `index`. */
+  markApplied(docId: number, index: number, snapshot: LayerComp): void {
+    const row = this.session(docId);
+    if (row.applied < 0) row.last = snapshot;
+    row.applied = index;
+  }
+
+  /** Clear the applied marker and hand back the snapshot captured before it. */
+  restore(docId: number): LayerComp | null {
+    const row = this.session(docId);
+    if (!row.last) return null;
+    row.applied = -1;
+    return row.last;
+  }
+
+  noteRemoved(docId: number, index: number): void {
+    const row = this.session(docId);
+    if (row.applied < 0) return;
+    if (index === row.applied) row.applied = -1;
+    else if (index < row.applied) row.applied -= 1;
+  }
+}

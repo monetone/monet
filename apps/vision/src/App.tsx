@@ -46,7 +46,7 @@ import { syncMacMenu } from "./native/macMenu";
 import { historyTransactionActive } from "./engine/historyTransaction";
 import { installOpenFilesListener } from "./native/openFiles";
 import { installCliListener, isCliBoot } from "./native/cli";
-import { NO_HIDDEN, buildPhotoshopMenus, imageModeCheckedIds, loadHiddenMenuCommands, nameUndoItem } from "./ui/psMenus";
+import { NO_HIDDEN, buildPhotoshopMenus, imageModeCheckedIds, loadHiddenMenuCommands, nameUndoItem, viewToggleCheckedIds } from "./ui/psMenus";
 import { Home } from "./ui/Home";
 import { AppInfoPanel } from "./ui/AppInfoPanel";
 import { OPENTYPE_FEATURE_TAGS, type TextSpec } from "./text/spec";
@@ -3427,6 +3427,10 @@ function Editor({ platform }: { platform: Platform }) {
   // stable string so the (expensive) menu tree only rebuilds when the set of
   // checked ids actually changes, not on every layer edit.
   const generatorWatch = useStore((s) => s.generatorWatch);
+  const showGridChecked = useStore((s) => s.showGrid);
+  const showRulersChecked = useStore((s) => s.showRulers);
+  const snapEnabledChecked = useStore((s) => s.snapEnabled);
+  const proofOnChecked = useStore((s) => s.proofOn);
   const openTypeCheckedKey = useMemo(() => {
     const active = layers.find((l) => l.id === activeLayerId);
     if (active?.kind !== LAYER_KIND.text) return "";
@@ -3532,6 +3536,12 @@ function Editor({ platform }: { platform: Platform }) {
         ...(openTypeCheckedKey ? openTypeCheckedKey.split(",") : []),
         ...(generatorWatch ? ["imageassets"] : []),
         ...imageModeCheckedIds(mode, depth, hasDuotone),
+        ...viewToggleCheckedIds({
+          showGrid: showGridChecked,
+          showRulers: showRulersChecked,
+          snapEnabled: snapEnabledChecked,
+          proofOn: proofOnChecked,
+        }),
       ]),
       !!photoshopPreview,
       hidden,
@@ -3548,7 +3558,7 @@ function Editor({ platform }: { platform: Platform }) {
     }
     nameUndoItem(menus, undoLabel);
     return menus;
-  }, [recentFiles, workspaces, pixelAspect, pixelAspectPresets, measureScale, measureScalePresets, openTypeCheckedKey, photoshopPreview, generatorWatch, activeClipped, openPanelIds, documents, activeDocId, mode, depth, hasDuotone, undoLabel]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [recentFiles, workspaces, pixelAspect, pixelAspectPresets, measureScale, measureScalePresets, openTypeCheckedKey, photoshopPreview, generatorWatch, showGridChecked, showRulersChecked, snapEnabledChecked, proofOnChecked, activeClipped, openPanelIds, documents, activeDocId, mode, depth, hasDuotone, undoLabel]); // eslint-disable-line react-hooks/exhaustive-deps
   const baseMenus = useMemo(
     () => buildMenus(hiddenMenuCommands, menuEnablement),
     [buildMenus, hiddenMenuCommands, menuEnablement],

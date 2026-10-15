@@ -166,7 +166,8 @@ export class EngineClient {
     this.ensure()?.set_view(tx * this.dpr, ty * this.dpr, zoom * this.dpr, angle);
   }
 
-  /** Rasterize + blit the current document/view onto the canvas. */
+  /** Blit the frame `setView` or `setDocument` already composited. `render`
+   *  composites only when that frame is not current. */
   render(): void {
     const e = this.engine;
     if (!e || !this.ctx || !this.imageData) return;

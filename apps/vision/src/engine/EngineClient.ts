@@ -9,7 +9,7 @@
 
 import init, { Engine, develop_profile_info, develop_profile_register, develop_profile_registered, develop_profile_take_missing, engine_version, type InitOutput } from "@engine";
 import { DEFAULT_GAMUT_WARNING, gamutWarningPixel, iccProofSimulationMap, isCmykGamutWarning, normalizeGamutWarningPaint, proofPixel, type GamutWarningPaint, type IccProofSimulation, type ProofMode, type ProofOptions } from "@monet-ui/monet-color";
-import { DISPLAY_LUT_SIZE, lutSizeFor, proofLutSizeFor, sampleDisplayLut, sampleProofLut } from "@monet-ui/monet-color";
+import { DISPLAY_LUT_SIZE, compensateDisplayPixels, lutSizeFor, proofLutSizeFor, sampleDisplayLut, sampleProofLut } from "@monet-ui/monet-color";
 import { channelBars, channelCounts, allChannelBars, type HistChannel } from "../state/channelHistogram";
 import { IMPORTED_PHOTOSHOP_SAVE_BLOCKED, importedPhotoshopApi } from "../state/photoshopContainment";
 import { photoshopVersion } from "../state/photoshopFilePolicy";
@@ -18,6 +18,31 @@ import type { PhotoshopRawLayout } from "../state/photoshopRaw";
 import { assertHistorySettled, historyTransactionActive } from "./historyTransaction";
 
 let wasm: InitOutput | null = null;
+
+/** One WebKit frame split the way the canvas presents it. `cold` is the first
+ *  sample; the medians are the samples after it. */
+export interface PresentationTiming {
+  width: number;
+  height: number;
+  /** Composites actually run, including the cold sample. */
+  iterations: number;
+  /** Samples in the warm median. One when the caller asked for a single frame. */
+  samples: number;
+  surface: "attached" | "document";
+  colorTransform: "lut" | "identity";
+  cold: { engineMs: number; copyColorMs: number; presentMs: number };
+  engineMs: number;
+  copyColorMs: number;
+  presentMs: number;
+  copiedByteSum: number;
+  userAgent: string;
+}
+
+function medianMs(samples: number[]): number {
+  const sorted = samples.slice().sort((a, b) => a - b);
+  const mid = sorted.length >> 1;
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
 
 /** Preferences ▸ Transparency & Gamut ▸ Gamut Warning paint. Display-only, so
  *  it lives with the rest of the proof state here rather than in the document
@@ -676,6 +701,87 @@ export class EngineClient {
     return out;
   }
 
+  /** True once the document canvas has a 2D context the blit can present into. */
+  hasPresentationSurface(): boolean {
+    return this.ctx != null;
+  }
+
+  /** Time one presented frame on the real blit path: `engine.composite`, the
+   *  output copy plus the one `applyDisplayRect` pass blit uses, and
+   *  `putImageData`. A display LUT is applied once — `displayCompensate` is a
+   *  separate copy for overlays, and sampling the same LUT again is not
+   *  identity. Uses the attached document canvas, or a canvas in this document
+   *  when the view has not mounted. */
+  measurePresentation(samples = 5): PresentationTiming {
+    const eng = this.engine;
+    if (!eng) throw new Error("Engine not ready");
+    const w = this.width || eng.width();
+    const h = this.height || eng.height();
+    if (w <= 0 || h <= 0) throw new Error("Document has no pixels");
+    this.width = w;
+    this.height = h;
+    const { ctx, surface } = this.presentationContext(w, h);
+    if (!this.imageData || this.imageData.width !== w || this.imageData.height !== h) {
+      this.imageData = ctx.createImageData(w, h);
+      this.imageDataFresh = true;
+    }
+    const iterations = Math.max(1, Math.min(12, samples | 0));
+    const engineTimes: number[] = [];
+    const copyTimes: number[] = [];
+    const presentTimes: number[] = [];
+    let cold = { engineMs: 0, copyColorMs: 0, presentMs: 0 };
+    for (let i = 0; i < iterations; i++) {
+      const t0 = performance.now();
+      eng.composite();
+      const t1 = performance.now();
+      const ptr = eng.output_ptr();
+      const buf = new Uint8Array(this.mem.buffer, ptr, w * h * 4);
+      this.imageData.data.set(buf);
+      this.applyDisplayRect(0, 0, w, h);
+      const t2 = performance.now();
+      ctx.putImageData(this.imageData, 0, 0);
+      const t3 = performance.now();
+      const sample = { engineMs: t1 - t0, copyColorMs: t2 - t1, presentMs: t3 - t2 };
+      if (i === 0) cold = sample;
+      else {
+        engineTimes.push(sample.engineMs);
+        copyTimes.push(sample.copyColorMs);
+        presentTimes.push(sample.presentMs);
+      }
+    }
+    const warm = (times: number[], coldMs: number) => medianMs(times.length ? times : [coldMs]);
+    let copiedByteSum = 0;
+    const presented = this.imageData.data;
+    for (let i = 0; i < presented.length; i++) copiedByteSum += presented[i];
+    return {
+      width: w,
+      height: h,
+      iterations,
+      samples: engineTimes.length || 1,
+      surface,
+      colorTransform: this.displayLut ? "lut" : "identity",
+      cold,
+      engineMs: warm(engineTimes, cold.engineMs),
+      copyColorMs: warm(copyTimes, cold.copyColorMs),
+      presentMs: warm(presentTimes, cold.presentMs),
+      copiedByteSum,
+      userAgent: globalThis.navigator?.userAgent ?? "",
+    };
+  }
+
+  /** The canvas `blit` presents to, or a same-document canvas before the view mounts. */
+  private presentationContext(w: number, h: number): { ctx: CanvasRenderingContext2D; surface: "attached" | "document" } {
+    if (this.ctx) return { ctx: this.ctx, surface: "attached" };
+    const canvas = globalThis.document?.createElement("canvas");
+    if (canvas) {
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (ctx) return { ctx, surface: "document" };
+    }
+    throw new Error("Presentation canvas is unavailable");
+  }
+
   /** Full repaint of the canvas from the engine's composited output. */
   blit() {
     if (!this.engine || !this.ctx || !this.imageData) return;
@@ -720,6 +826,15 @@ export class EngineClient {
     eng.composite();
     const ptr = eng.output_ptr();
     return new Uint8ClampedArray(new Uint8Array(this.mem.buffer, ptr, w * h * 4));
+  }
+
+  /** Document-profile → display on a copied frame. No LUT (untagged or sRGB
+   *  with no ICC) returns the same clamped buffer. Does not mutate `copy`
+   *  when a LUT is applied, and does not touch engine pixels. */
+  displayCompensate(copy: ArrayLike<number>): Uint8ClampedArray {
+    const src = copy instanceof Uint8ClampedArray ? copy : new Uint8ClampedArray(copy);
+    if (!this.displayLut || !this.displayLutN) return src;
+    return compensateDisplayPixels(src, this.displayLut, this.displayLutN);
   }
 
   activeLayerCopy(): Uint8ClampedArray | null {

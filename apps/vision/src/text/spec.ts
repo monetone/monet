@@ -336,6 +336,7 @@ export function insertGlyph(
   ch: string,
   range: readonly [number, number] | null,
   features?: Record<string, boolean>,
+  style?: { font?: string },
 ): TextSpec {
   const prev = fullText(spec);
   const at = range ? Math.max(0, Math.min(prev.length, Math.min(range[0], range[1]))) : prev.length;
@@ -346,9 +347,23 @@ export function insertGlyph(
   // would silently inherit the swash. applyRangeFormat then leaves an explicit
   // `features: undefined` behind, which would stop mergeRuns folding the run
   // back into its neighbour — drop the key again before merging.
-  const runs = applyRangeFormat(next.runs, at, at + ch.length, { features })
+  let runs = applyRangeFormat(next.runs, at, at + ch.length, { features })
     .map(({ features: f, ...rest }) => (f ? { ...rest, features: f } : rest));
+  if (style?.font) runs = applyRangeFormat(runs, at, at + ch.length, { font: style.font });
   return { ...next, runs: mergeRuns(runs) };
+}
+
+/** Range a Glyphs alternate should replace: the character just inserted, and
+ *  only while the editor caret is still collapsed on it. A selection, a
+ *  different character, or no editor returns null so the insert appends. */
+export function glyphReplaceRange(
+  last: string | null,
+  ch: string,
+  selection: readonly [number, number] | null,
+): [number, number] | null {
+  if (!selection || !last || !ch || last !== ch || selection[0] !== selection[1]) return null;
+  const caret = selection[0];
+  return [Math.max(0, caret - ch.length), caret];
 }
 
 /** `insertGlyph` with no editor open: append to the end of the layer. */

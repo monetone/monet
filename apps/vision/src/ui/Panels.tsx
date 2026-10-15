@@ -43,7 +43,7 @@ import { defaultColors } from "@monet-ui/monet-color";
 import { hasPath, MAX_CLIP_FLATNESS, MIN_CLIP_FLATNESS } from "../state/paths";
 import { hexToRgb, FILL_CONTENTS, type FillContent } from "../state/fillContents";
 import { quickMaskOverlay, setQuickMaskOverlay, type QuickMaskOverlay } from "../state/quickMaskOverlay";
-import { compForApply, type LayerComp } from "../state/layerComps";
+import { LayerCompSessions, compForApply, type LayerComp } from "../state/layerComps";
 import { labelColor, LAYER_LABELS, type LayerLabel } from "../state/layerLabels";
 import { layerColorMatches } from "../state/layerColorFilter";
 import { selectionRect } from "../state/selectionInfo";
@@ -3038,12 +3038,13 @@ export function PathsPanel() {
 
 export function LayerCompsPanel() {
   const layerComps = useStore((s) => s.layerComps);
-  // Which comp is showing, plus the document state from before comps were
-  // applied — Photoshop's "Restore Last Document State" row.
-  // ponytail: panel-local, so it resets on remount/document switch; move it
-  // next to `layerComps` on the store if it must survive a tab switch.
-  const [applied, setApplied] = useState(-1);
-  const lastState = useRef<LayerComp | null>(null);
+  const activeDocId = useStore((s) => s.activeDocId);
+  // Applied index and the pre-apply snapshot are per document. Layer ids
+  // overlap, so one panel-local index would restore document A's snapshot
+  // onto document B.
+  const sessions = useRef(new LayerCompSessions()).current;
+  const [, setTick] = useState(0);
+  const applied = sessions.session(activeDocId).applied;
   // Layer Comp Options dialog (rename, comment, Apply To Layers flags). -1 = closed.
   const [optionsIndex, setOptionsIndex] = useState(-1);
   const [draftName, setDraftName] = useState("");
@@ -3088,10 +3089,12 @@ export function LayerCompsPanel() {
   const apply = (i: number) => {
     const comp = layerComps[i];
     if (!comp) return;
-    if (applied < 0) lastState.current = snapshot();
+    const docId = store.state.activeDocId;
+    const row = sessions.session(docId);
+    sessions.markApplied(docId, i, row.applied < 0 ? snapshot() : (row.last ?? snapshot()));
     store.applyLayerCompToEngine(engine.e, compForApply(comp, store.state.layers));
     engine.commit();
-    setApplied(i);
+    setTick((n) => n + 1);
   };
   const step = (d: number) => {
     const n = layerComps.length;
@@ -3101,13 +3104,17 @@ export function LayerCompsPanel() {
   // ◆ marker (and step()'s base) onto a different comp. (#104)
   const removeComp = (i: number) => {
     store.deleteLayerComp(i);
-    setApplied((a) => (i === a ? -1 : i < a ? a - 1 : a));
+    sessions.noteRemoved(store.state.activeDocId, i);
+    setTick((n) => n + 1);
   };
   const restore = () => {
-    if (!lastState.current) return;
-    store.applyLayerCompToEngine(engine.e, lastState.current);
+    const docId = store.state.activeDocId;
+    if (docId !== activeDocId) return;
+    const last = sessions.restore(docId);
+    if (!last) return;
+    store.applyLayerCompToEngine(engine.e, last);
     engine.commit();
-    setApplied(-1);
+    setTick((n) => n + 1);
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
@@ -3759,15 +3766,15 @@ export function AnimationPanel() {
  *  time, then bake it into frames for GIF/video export. */
 function TimelineSection() {
   const timeline = useStore((s) => s.timeline);
+  const playhead = useStore((s) => s.playhead);
   const activeLayerId = useStore((s) => s.activeLayerId);
-  const [playhead, setPlayhead] = useState(0);
   const { fps, durationS, keys } = timeline;
   return (
     <div style={{ marginTop: 12, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 10 }}>
       <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 6 }}>Timeline <span style={{ fontWeight: 400, color: "var(--text-3)" }}>— keyframe motion (opacity + position)</span></div>
       <div className="monet-row" style={{ gap: 8, marginBottom: 8, alignItems: "center" }}>
         <span className="lbl" style={{ width: 46 }}>Time</span>
-        <Slider value={durationS ? playhead / durationS : 0} accent={ACCENT} onChange={(f) => setPlayhead(+(f * durationS).toFixed(2))} style={{ flex: 1 }} />
+        <Slider value={durationS ? playhead / durationS : 0} accent={ACCENT} onChange={(f) => store.timelineSetPlayhead(+(f * durationS).toFixed(2))} style={{ flex: 1 }} />
         <span className="val" style={{ fontFamily: "var(--font-mono)", width: 42 }}>{playhead.toFixed(2)}s</span>
       </div>
       <div className="monet-row" style={{ gap: 8, marginBottom: 8, alignItems: "center" }}>

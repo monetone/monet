@@ -68,6 +68,14 @@ html, body, #root {
   backdrop-filter: blur(46px) saturate(195%);
   -webkit-backdrop-filter: blur(46px) saturate(195%);
 }
+/* The list is a near-black surface in every theme. Shared option text uses
+   --text-1, which is dark in Light, so force a light foreground here. */
+.monet-listbox .monet-option,
+.monet-listbox .monet-option:hover,
+.monet-listbox .monet-option[aria-disabled="true"],
+.monet-listbox .monet-option * { color: #e7edf8; }
+.monet-listbox .monet-option[aria-selected="true"],
+.monet-listbox .monet-option[aria-selected="true"] * { color: #fff; }
 
 /* ── Type options bar — Photoshop-style compact controls ───────────
    Flat icon/toggle buttons, a thin font combo, a size field, alignment
@@ -319,7 +327,7 @@ html[data-mv-home] .mv-taskbar {
   border-radius: 7px;
   border: none;
   background: transparent;
-  color: var(--text-1);
+  color: #e7edf8;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -327,7 +335,7 @@ html[data-mv-home] .mv-taskbar {
 .mv-taskbar-primary { background: var(--accent-raster); color: #fff; }
 .mv-taskbar-primary:hover { background: var(--accent-raster); filter: brightness(1.1); }
 .mv-taskbar-sep { width: 1px; align-self: stretch; margin: 3px; background: var(--stroke-strong); }
-.mv-taskbar-close { color: var(--text-3); font-size: 15px; line-height: 1; padding: 4px 9px; }
+.mv-taskbar-close { color: #e7edf8; font-size: 15px; line-height: 1; padding: 4px 9px; }
 
 /* ── Native <input type="number"> theming ─────────────────────────────────
    monet-core styles the NumberField *component* (which renders type=text), so

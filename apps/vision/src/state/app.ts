@@ -12,7 +12,7 @@ import type { PathTransform } from "./transformControls";
 import type { FaceLiquifyParams } from "../ml/onnx";
 import type { StyleBlendOpts } from "../ml/styleBlend";
 import { docChanged, editStamp } from "../ml/editStamp";
-import { EngineClient } from "../engine/EngineClient";
+import { EngineClient, type PresentationTiming } from "../engine/EngineClient";
 import { variableImagePath } from "./dataVariables";
 import { runScriptEventBindings, scriptEventRunning, documentSaveEvent } from "./scriptEvents";
 import { assertHistorySettled } from "../engine/historyTransaction";
@@ -2022,16 +2022,29 @@ export async function recordVideo(
   fps = 12,
   opts: { from?: number; to?: number; bitrate?: number } = {},
 ): Promise<{ bytes: Uint8Array; mime: string }> {
-  const w = E().width(), h = E().height();
-  let count = E().frame_count();
-  if (count === 0) { E().add_frame(); count = 1; }
+  const eng = E();
+  const docId = store.state.activeDocId;
+  // An empty document list is the unit-test store and the last-doc Home screen.
+  // Home sets ready false; a test that never opened a tab stays ready with no
+  // documents, and that export is the engine it captured. A real tab list
+  // cancels once the initiating id is gone, even if another tab is now active.
+  const live = () => {
+    const docs = store.state.documents;
+    if (docs.length === 0) return store.state.ready && store.state.activeDocId === docId;
+    return docs.some((d) => d.id === docId);
+  };
+  const cancelled = () => new Error("Video export cancelled: the document was closed");
+  const w = eng.width(), h = eng.height();
+  let count = eng.frame_count();
+  if (count === 0) { eng.add_frame(); count = 1; }
   const from = Math.max(0, Math.min(opts.from ?? 0, count - 1));
   const to = Math.max(from, Math.min(opts.to ?? count - 1, count - 1));
   const canvas = document.createElement("canvas");
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext("2d")!;
   const draw = (i: number) => {
-    const px = E().frame_thumb(i, w, h);
+    if (!live()) throw cancelled();
+    const px = eng.frame_thumb(i, w, h);
     const img = ctx.createImageData(w, h);
     img.data.set(px);
     ctx.putImageData(img, 0, 0);
@@ -2044,17 +2057,24 @@ export async function recordVideo(
   const chunks: BlobPart[] = [];
   rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
   const stopped = new Promise<void>((res) => { rec.onstop = () => res(); });
-  rec.start();
-  for (let i = from; i <= to; i++) {
-    draw(i);
-    track.requestFrame?.();
-    await new Promise((r) => setTimeout(r, 1000 / fps));
+  try {
+    rec.start();
+    for (let i = from; i <= to; i++) {
+      draw(i);
+      track.requestFrame?.();
+      await new Promise((r) => setTimeout(r, 1000 / fps));
+      if (!live()) throw cancelled();
+    }
+    await new Promise((r) => setTimeout(r, 120));
+    if (!live()) throw cancelled();
+    rec.stop();
+    await stopped;
+    const blob = new Blob(chunks, { type: mime });
+    return { bytes: new Uint8Array(await blob.arrayBuffer()), mime };
+  } catch (err) {
+    try { if (rec.state !== "inactive") rec.stop(); } catch { /* already stopped */ }
+    throw err;
   }
-  await new Promise((r) => setTimeout(r, 120));
-  rec.stop();
-  await stopped;
-  const blob = new Blob(chunks, { type: mime });
-  return { bytes: new Uint8Array(await blob.arrayBuffer()), mime };
 }
 export async function exportVideo(name = "video.webm", fps = 12, opts: { from?: number; to?: number; bitrate?: number } = {}) {
   return reportSaveExport(async () => {
@@ -2320,6 +2340,8 @@ export const library = {
 // The worker flushes its pending ops before each read, so a read always sees
 // the script's own edits (see scriptWorker.ts).
 type VisionRead = (...a: never[]) => unknown;
+/** Last presentation split. `vision.read.frameTiming` returns it; only measureFrame writes it. */
+let frameTimingResult: PresentationTiming | null = null;
 function visionReads(): Record<string, VisionRead> {
   const st = () => store.state;
   // Layer thumbs are data URLs (tens of KB each) and every read is structured-
@@ -2343,6 +2365,8 @@ function visionReads(): Record<string, VisionRead> {
     background: () => ({ ...st().bg }),
     frameCount: () => anim.count(),
     historyCount: () => st().history.length,
+    // Stored by measureFrame. Observes that object and does not composite.
+    frameTiming: () => frameTimingResult,
   };
 }
 
@@ -2372,6 +2396,15 @@ function visionOps(): Record<string, VisionOp> {
     setForeground: ((h: number, s: number, v: number, a = 1) => store.setForeground({ h, s, v, a })) as VisionOp,
     addFrame: (() => anim.addFrame()) as VisionOp,
     commit: (() => engine.commit()) as VisionOp,
+    // Native presentation baseline. Waits briefly for the document canvas, then
+    // times composite, the display copy, and putImageData. The script reads the
+    // stored split afterwards; this op is the only writer.
+    measureFrame: (async (samples?: number) => {
+      for (let i = 0; i < 20 && !engine.hasPresentationSurface(); i++) {
+        await new Promise((resolve) => setTimeout(resolve, 16));
+      }
+      frameTimingResult = engine.measurePresentation(typeof samples === "number" ? samples : 5);
+    }) as VisionOp,
     log: ((...args: unknown[]) => console.log("[script]", ...args)) as VisionOp,
     // Recorded free-function ops (their action-descriptor paths). Exposed here so
     // every persisted/imported descriptor is replayable through the one allowlist.
@@ -3339,12 +3372,12 @@ export const text = {
   },
   /** Type ▸ Glyphs: insert a glyph at the type cursor (replacing the selection),
    *  falling back to the end of the layer when no on-canvas editor is open. */
-  insertGlyph(ch: string, features?: Record<string, boolean>) {
+  insertGlyph(ch: string, features?: Record<string, boolean>, font?: string) {
     const id = store.state.activeLayerId;
     const s = getTextSpec(id);
     if (!s) return;
     const range = typeEditorSelection();
-    applyTextSpec(id, insertGlyph(s, ch, range, features));
+    applyTextSpec(id, insertGlyph(s, ch, range, features, font ? { font } : undefined));
     if (range) {
       // Same clamp insertGlyph splices at, so the caret follows the character
       // even when the editor reports a stale out-of-range selection.

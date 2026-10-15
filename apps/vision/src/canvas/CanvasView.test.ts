@@ -12,6 +12,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, createElement, Fragment } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { defaultSpec } from "../text/spec";
+import { pointTypeCaretXs } from "../text/raster";
+import { fitOrientedView } from "../state/zoomPresets";
+import { quickMaskPixel } from "../state/quickMaskOverlay";
 
 /** Every engine call the mounted canvas makes, in order. */
 const calls: { name: string; args: unknown[] }[] = [];
@@ -23,6 +26,11 @@ const textCalls: { name: string; args: unknown[] }[] = [];
 let textSpec: Record<string, unknown> | null = null;
 /** 2D-context calls, so canvas-only redraws are observable. */
 const ctxCalls: string[] = [];
+/** Images handed to putImageData, in call order. */
+const putImages: Uint8ClampedArray[] = [];
+/** ResizeObserver instances the mounted view registered. Callbacks are not fired
+ *  unless a test does it — existing cases still see a viewport of 0×0. */
+const resizeObservers: { cb: ResizeObserverCallback; el: Element }[] = [];
 
 const auto = (): never =>
   new Proxy(function () {} as never, { get: (_t, k) => (k === "then" ? undefined : auto()), apply: () => 0 }) as never;
@@ -108,7 +116,13 @@ let viewport: HTMLElement;
 // A cold dynamic import inside beforeEach can outlive that hook under load and
 // leave its unfinished mount racing the next test's fixture.
 const { CanvasView } = await import("./CanvasView");
-const { store } = await import("../state/app") as unknown as { store: import("../state/store").Store };
+const { store, engine } = await import("../state/app") as unknown as {
+  store: import("../state/store").Store;
+  engine: {
+    onPaintRegion: ((x: number, y: number, w: number, h: number) => void) | null;
+    activate: (eng: unknown) => void;
+  };
+};
 
 const names = () => calls.map((c) => c.name);
 const lastCall = (name: string) => [...calls].reverse().find((c) => c.name === name);
@@ -117,14 +131,40 @@ const lastCall = (name: string) => [...calls].reverse().find((c) => c.name === n
  *  pane per document id in `panes`. `viewport` stays the main canvas's. */
 async function mount(panes: number[] = []): Promise<void> {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-  (globalThis as { ResizeObserver?: unknown }).ResizeObserver =
-    class { observe() {} unobserve() {} disconnect() {} };
+  (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
+    private cb: ResizeObserverCallback;
+    constructor(cb: ResizeObserverCallback) { this.cb = cb; }
+    observe(el: Element) { resizeObservers.push({ cb: this.cb, el }); }
+    unobserve() {}
+    disconnect() {}
+  };
   HTMLCanvasElement.prototype.getContext = (() =>
-    new Proxy({} as Record<string, unknown>, {
-      get: (target, k: string) => (k in target ? target[k] : (...a: unknown[]) => {
-        ctxCalls.push(k);
-        return k === "getImageData" ? { data: new Uint8ClampedArray(4 * a.length), width: 1, height: 1 } : undefined;
-      }),
+    new Proxy({
+      canvas: { style: { setProperty() {} }, parentNode: null, offsetWidth: 1 },
+    } as Record<string, unknown>, {
+      get: (target, k: string) => {
+        if (k in target) return target[k];
+        if (k === "createImageData") {
+          return (w: number, h: number) => {
+            ctxCalls.push(k);
+            return { data: new Uint8ClampedArray(w * h * 4), width: w, height: h };
+          };
+        }
+        if (k === "measureText") {
+          return (text: unknown) => {
+            ctxCalls.push(k);
+            return { width: String(text).length, actualBoundingBoxAscent: 8, actualBoundingBoxDescent: 2 };
+          };
+        }
+        return (...a: unknown[]) => {
+          ctxCalls.push(k);
+          if (k === "putImageData") {
+            const image = a[0] as { data?: Uint8ClampedArray } | undefined;
+            if (image?.data) putImages.push(image.data);
+          }
+          return k === "getImageData" ? { data: new Uint8ClampedArray(4 * Math.max(1, a.length)), width: 1, height: 1 } : undefined;
+        };
+      },
       set: (target, k: string, v) => { target[k] = v; return true; },
     })) as never;
   host = document.createElement("div");
@@ -148,6 +188,8 @@ afterEach(async () => {
   calls.length = 0;
   textCalls.length = 0;
   ctxCalls.length = 0;
+  putImages.length = 0;
+  resizeObservers.length = 0;
   engineReturns.clear();
   textSpec = null;
 });
@@ -1446,5 +1488,377 @@ describe("Window ▸ Arrange float windows", () => {
     read();
     expect((tip.firstElementChild as HTMLElement).style.display).toBe("none");
     expect((tip.lastElementChild as SVGElement).style.display).toBe("block");
+  });
+});
+
+type StoreInternal = {
+  docs: Record<string, unknown>[];
+  activeDocId: number;
+  set: (patch: Record<string, unknown>) => void;
+};
+const internalStore = () => store as unknown as StoreInternal;
+
+function resetIssueState() {
+  const internal = internalStore();
+  internal.docs = [];
+  internal.activeDocId = 0;
+  internal.set({
+    documents: [],
+    activeDocId: 0,
+    ready: false,
+    tool: "brush",
+    patternPreview: false,
+    maskView: "off",
+    showTransformControls: false,
+    doc: { width: 0, height: 0, name: "Untitled" },
+    fg: { h: 0, s: 0, v: 0, a: 1 },
+    penPath: [],
+    penAnchors: [],
+    penContours: [],
+    textEdit: null,
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+    rotationAngle: 0,
+    pixelAspect: 1,
+    pixelAspectCorrection: true,
+    activeLayerId: 0,
+    camDrop: null,
+    selectionTransform: null,
+    spacePan: false,
+    paintSymmetryTransforming: false,
+    showTargetPath: true,
+    showExtras: true,
+    picked: null,
+  });
+}
+
+function sizeOf(el: Element, w: number, h: number) {
+  Object.defineProperty(el, "clientWidth", { configurable: true, get: () => w });
+  Object.defineProperty(el, "clientHeight", { configurable: true, get: () => h });
+}
+
+const sceneAt = (x: number) => JSON.stringify({
+  layers: [{
+    items: [{
+      id: "p1",
+      geometry: {
+        closed: true,
+        anchors: [
+          { point: { x, y: 0 }, handleIn: { x: 0, y: 0 }, handleOut: { x: 0, y: 0 } },
+          { point: { x: x + 40, y: 0 }, handleIn: { x: 0, y: 0 }, handleOut: { x: 0, y: 0 } },
+          { point: { x: x + 40, y: 30 }, handleIn: { x: 0, y: 0 }, handleOut: { x: 0, y: 0 } },
+        ],
+      },
+    }],
+  }],
+});
+
+describe("eyedropper sampling", () => {
+  beforeEach(async () => { resetIssueState(); await mount(); });
+  afterEach(() => { resetIssueState(); });
+
+  it("paints a transparent or partial sample at full foreground alpha and keeps a chosen alpha", async () => {
+    engineReturns.set("pick_sample", 0x11223300);
+    await act(async () => { store.setTool("dropper"); });
+    await act(async () => { fire("pointerdown", 4, 4); });
+    expect(store.state.fg.a).toBe(1);
+    expect(store.state.picked).toMatchObject({ r: 0x11, g: 0x22, b: 0x33, a: 0 });
+
+    await act(async () => { store.setForeground({ ...store.state.fg, a: 0.4 }); });
+    engineReturns.set("pick_sample", 0x11223380);
+    await act(async () => { fire("pointerdown", 4, 4); });
+    expect(store.state.fg.a).toBe(0.4);
+    expect(store.state.picked).toMatchObject({ r: 0x11, g: 0x22, b: 0x33, a: 128 });
+  });
+
+  it("samples with Alt+brush and does not start a stroke", async () => {
+    engineReturns.set("pick_sample", 0x11223380);
+    engineReturns.set("stroke_begin", 1);
+    await act(async () => {
+      store.setForeground({ h: 0, s: 0, v: 0, a: 0.4 });
+      store.setTool("brush");
+    });
+    calls.length = 0;
+    await act(async () => { fire("pointerdown", 4, 4, { altKey: true }); });
+    expect(names()).not.toContain("stroke_begin");
+    expect(store.state.fg.a).toBe(0.4);
+    expect(store.state.picked?.a).toBe(128);
+  });
+});
+
+describe("the first positive viewport fits, then locks", () => {
+  afterEach(() => { resetIssueState(); });
+
+  it("fits a cold document twice before the frame lock and ignores a later resize", async () => {
+    const queued: FrameRequestCallback[] = [];
+    const real = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+      queued.push(cb);
+      return queued.length;
+    }) as typeof requestAnimationFrame;
+    try {
+      await mount();
+      queued.length = 0;
+      internalStore().set({ doc: { width: 200, height: 100, name: "cold" }, rotationAngle: 0, pixelAspect: 1, pixelAspectCorrection: true });
+      const ro = resizeObservers.find((entry) => entry.el === viewport);
+      expect(ro).toBeTruthy();
+      const fireSize = async (w: number, h: number) => {
+        sizeOf(viewport, w, h);
+        await act(async () => { ro!.cb([], {} as ResizeObserver); });
+      };
+      await fireSize(0, 0);
+      expect(store.state.zoom).toBe(1);
+      await fireSize(900, 600);
+      const first = fitOrientedView(900, 600, 200, 100, 0, 1);
+      expect(store.state.zoom).toBeCloseTo(first.zoom, 5);
+      expect(store.state.panX).toBeCloseTo(first.panX, 5);
+      await fireSize(1000, 800);
+      const second = fitOrientedView(1000, 800, 200, 100, 0, 1);
+      expect(store.state.zoom).toBeCloseTo(second.zoom, 5);
+      await act(async () => {
+        const raf1 = queued.shift();
+        raf1?.(0);
+        const raf2 = queued.pop();
+        raf2?.(0);
+      });
+      await fireSize(400, 300);
+      expect(store.state.zoom).toBeCloseTo(second.zoom, 5);
+      await fireSize(0, 0);
+      expect(store.state.zoom).toBeCloseTo(second.zoom, 5);
+    } finally {
+      globalThis.requestAnimationFrame = real;
+    }
+  });
+
+  it("fits an arrange pane once", async () => {
+    internalStore().docs = [{ id: 7, engine: { width: () => 200, height: () => 100 } }];
+    await mount([7]);
+    const pane = host.querySelectorAll(".mv-canvas-viewport")[1];
+    const ro = resizeObservers.find((entry) => entry.el === pane);
+    expect(ro).toBeTruthy();
+    const zoom = () => store.state.paneViews[7]?.zoom;
+    sizeOf(pane, 500, 400);
+    await act(async () => { ro!.cb([], {} as ResizeObserver); });
+    const fitted = fitOrientedView(500, 400, 200, 100, 0, 1);
+    expect(zoom()).toBeCloseTo(fitted.zoom, 5);
+    sizeOf(pane, 800, 200);
+    await act(async () => { ro!.cb([], {} as ResizeObserver); });
+    expect(zoom()).toBeCloseTo(fitted.zoom, 5);
+  });
+});
+
+describe("mask and pattern previews", () => {
+  afterEach(() => { resetIssueState(); });
+
+  it("paints a gray mask as opaque gray and a rubylith mask with the quick-mask pixel", async () => {
+    resetIssueState();
+    engineReturns.set("layer_mask_gray", new Uint8Array([10, 20, 30, 40]));
+    internalStore().set({ ready: true, maskView: "gray", doc: { width: 2, height: 2, name: "mask" } });
+    await mount();
+    const gray = putImages.at(-1);
+    expect(gray?.[0]).toBe(10);
+    expect(gray?.[1]).toBe(10);
+    expect(gray?.[2]).toBe(10);
+    expect(gray?.[3]).toBe(255);
+    putImages.length = 0;
+    engineReturns.set("layer_mask_gray", new Uint8Array([128, 0, 0, 0]));
+    await act(async () => { internalStore().set({ maskView: "rubylith" }); });
+    const ruby = putImages.at(-1);
+    const px = quickMaskPixel(128);
+    expect(ruby?.[0]).toBe(px.r);
+    expect(ruby?.[1]).toBe(px.g);
+    expect(ruby?.[2]).toBe(px.b);
+    expect(ruby?.[3]).toBe(px.a);
+  });
+
+  it("repaints the mask overlay on a paint and on a density or undo sync without toggling the mode", async () => {
+    resetIssueState();
+    engineReturns.set("layer_mask_gray", new Uint8Array([10, 20, 30, 40]));
+    internalStore().set({ ready: true, maskView: "gray", doc: { width: 2, height: 2, name: "mask" } });
+    await mount();
+    expect(putImages.at(-1)?.[0]).toBe(10);
+
+    putImages.length = 0;
+    engineReturns.set("layer_mask_gray", new Uint8Array([80, 90, 100, 110]));
+    await act(async () => { engine.onPaintRegion?.(1, 0, 1, 1); });
+    expect(store.state.maskView).toBe("gray");
+    expect(putImages.some((img) => img[0] === 80 && img[4] === 90 && img[3] === 255)).toBe(true);
+
+    putImages.length = 0;
+    engineReturns.set("layer_mask_gray", new Uint8Array([200, 210, 220, 230]));
+    await act(async () => {
+      internalStore().set({ doc: { width: 2, height: 2, name: "mask" } });
+    });
+    expect(store.state.maskView).toBe("gray");
+    expect(putImages.some((img) => img[0] === 200 && img[4] === 210 && img[3] === 255)).toBe(true);
+  });
+
+  it("clears each pattern tile before drawing it, including after a paint region", async () => {
+    resetIssueState();
+    internalStore().set({ ready: true, patternPreview: true, doc: { width: 8, height: 8, name: "pattern" } });
+    await mount();
+    const paired = () => ctxCalls.some((name, i) => name === "clearRect" && ctxCalls[i + 1] === "drawImage");
+    expect(paired()).toBe(true);
+    ctxCalls.length = 0;
+    await act(async () => { engine.onPaintRegion?.(0, 0, 4, 4); });
+    expect(paired()).toBe(true);
+  });
+});
+
+describe("pen anchors follow the active document", () => {
+  afterEach(() => { resetIssueState(); });
+
+  it("restores the new document's anchors and closes that path", async () => {
+    const anchors = (points: [number, number][]) => points.flatMap(([x, y]) => [x, y, 0, 0, 0, 0]);
+    const doc = (id: number, points: [number, number][]) => ({
+      id, name: `doc-${id}`, engine: null, savedPath: null,
+      zoom: 1, panX: 0, panY: 0, rotationAngle: 0, historyLabels: [], dirty: false,
+      notes: [], activeNoteId: 0, nextNoteId: 1, layerComps: [], guides: [],
+      resolutionPpi: 72, pixelAspect: 1, pixelAspectCorrection: true,
+      savedPaths: [], penPath: points.flatMap(([x, y]) => [x, y]), penAnchors: anchors(points), penContours: [],
+      vanishingPointPlanes: [{ quad: [1, 1, 9, 1, 9, 9, 1, 9], parent: null, edge: 0, angle: 90 }],
+      vanishingPointActivePlane: 0, vanishingPointSource: null,
+      measureScale: { px: 1, units: 1, unit: "px" },
+      layerColorLabels: {},
+      timeline: { fps: 12, durationS: 3, keys: [] },
+      playhead: 0,
+    });
+    const a = anchors([[0, 0], [20, 0], [20, 30]]);
+    resetIssueState();
+    const internal = internalStore();
+    internal.docs = [doc(1, [[0, 0], [20, 0], [20, 30]]), doc(2, [[5, 6], [15, 6], [15, 40]])];
+    internal.activeDocId = 1;
+    internal.set({
+      ready: true,
+      doc: { width: 100, height: 80, name: "doc-1" },
+      activeDocId: 1,
+      penAnchors: a,
+      penPath: [0, 0, 20, 0, 20, 30],
+      documents: [
+        { id: 1, name: "doc-1", dirty: false, hasFile: false },
+        { id: 2, name: "doc-2", dirty: false, hasFile: false },
+      ],
+    });
+    engine.activate = () => { internal.set({ activeDocId: internal.activeDocId }); };
+    await mount();
+    await act(async () => { store.setTool("pen"); });
+    const circles = () => [...host.querySelectorAll("[data-mv-pen-anchor]")].map((node) => [node.getAttribute("cx"), node.getAttribute("cy")]);
+    expect(circles()[0]).toEqual(["0", "0"]);
+    await act(async () => { store.activateDoc(2); });
+    expect(circles().map((pair) => pair.map(Number))).toEqual([[5, 6], [15, 6], [15, 40]]);
+    calls.length = 0;
+    await act(async () => { viewport.dispatchEvent(new MouseEvent("dblclick", { bubbles: true })); });
+    const polygon = lastCall("select_polygon");
+    const xs = polygon?.args[0] as Float32Array;
+    expect(xs[0]).toBe(5);
+    expect(xs[1]).toBe(15);
+  });
+});
+
+describe("a path drag redraws the outline", () => {
+  beforeEach(async () => { await mount(); });
+  afterEach(() => { resetIssueState(); });
+
+  it("reads the scene again when the drag bumps the vector revision", async () => {
+    resetIssueState();
+    internalStore().docs = [];
+    engineReturns.set("layer_kind", 3);
+    engineReturns.set("vector_scene_json", sceneAt(0));
+    engineReturns.set("vector_hit_test", "p1");
+    await act(async () => {
+      internalStore().set({ ready: true, doc: { width: 80, height: 60, name: "path" } });
+      store.setTool("pathselect");
+      store.setZoom(1, 0, 0);
+    });
+    const outline = () => host.querySelector("[data-mv-vector-paths] path")?.getAttribute("d") ?? "";
+    expect(outline()).toContain("M 0 0");
+    await act(async () => { fire("pointerdown", 0, 0); });
+    engineReturns.set("vector_scene_json", sceneAt(12));
+    await act(async () => { fire("pointermove", 5, 0); });
+    expect(outline()).toContain("M 12 0");
+  });
+});
+
+describe("a layer transform does not bake into a different document", () => {
+  beforeEach(async () => { await mount(); });
+  afterEach(() => { resetIssueState(); });
+
+  it("ignores Enter after the active document changed and applies it when the document is still the owner", async () => {
+    resetIssueState();
+    engineReturns.set("active_layer_bounds", Int32Array.from([10, 10, 40, 30]));
+    await act(async () => {
+      store.setTool("move");
+      internalStore().set({
+        ready: true,
+        showTransformControls: true,
+        doc: { width: 100, height: 80, name: "xform" },
+      });
+    });
+    const handle = host.querySelector("[data-mv-xform-handle]") as Element;
+    expect(handle).toBeTruthy();
+    const pointer = (type: string, x: number, y: number) => handle.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, button: 0 }));
+    await act(async () => { pointer("pointerdown", 10, 10); pointer("pointermove", 80, 80); pointer("pointerup", 80, 80); });
+    expect(host.querySelector("[data-mv-xform-commit]")).toBeTruthy();
+    calls.length = 0;
+    const previous = store.state.activeDocId;
+    store.state.activeDocId = 9;
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+    expect(names()).not.toContain("xform.transformLayer");
+    store.state.activeDocId = previous;
+    await act(async () => { window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })); });
+    expect(names()).toContain("xform.transformLayer");
+  });
+});
+
+describe("mixed horizontal scales position the on-canvas caret", () => {
+  beforeEach(async () => { await mount(); });
+  afterEach(async () => {
+    await act(async () => { store.endTextEdit(); });
+    resetIssueState();
+  });
+
+  it("scales a uniform run with CSS and does not measure a caret layout", async () => {
+    engineReturns.set("layer_kind", 2);
+    textSpec = { ...defaultSpec("AB", { hScale: 2, kind: "paragraph", boxW: 100, boxH: 40 }) } as never;
+    await act(async () => {
+      internalStore().set({ ready: true, doc: { width: 200, height: 100, name: "type" } });
+      store.beginTextEdit(0, false);
+    });
+    const editor = host.querySelector("textarea.mv-text-edit") as HTMLTextAreaElement;
+    expect(editor.style.transform).toBe("scaleX(2)");
+    expect(editor.style.width).toBe("50px");
+    expect(host.querySelector("[data-mv-text-caret]")).toBeNull();
+  });
+
+  it("places the caret from the laid-out boundaries when the runs disagree", async () => {
+    engineReturns.set("layer_kind", 2);
+    const spec = {
+      ...defaultSpec("AB"),
+      runs: [{ text: "A", hScale: 2 }, { text: "B", hScale: 1 }],
+    };
+    textSpec = spec as never;
+    await act(async () => {
+      internalStore().set({ ready: true, doc: { width: 200, height: 100, name: "type" } });
+      store.beginTextEdit(0, false);
+    });
+    const editor = host.querySelector("textarea.mv-text-edit") as HTMLTextAreaElement;
+    expect(editor.style.caretColor).toBe("transparent");
+    const xs = pointTypeCaretXs(spec);
+    const caret = () => host.querySelector("[data-mv-text-caret]") as HTMLElement;
+    // Opening an existing layer parks the textarea at the end. Place the caret
+    // through the same pointer path a click uses, so the overlay is not racing
+    // that initial selection.
+    await act(async () => {
+      editor.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, clientX: xs[0] - 1, clientY: 0 }));
+    });
+    expect(editor.selectionStart).toBe(0);
+    expect(parseFloat(caret().style.left)).toBeCloseTo(spec.ax + xs[0], 5);
+    const x = (xs[1] + xs[2]) / 2 - 0.1;
+    await act(async () => {
+      editor.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, clientX: x, clientY: 0 }));
+    });
+    expect(editor.selectionStart).toBe(1);
+    expect(parseFloat(caret().style.left)).toBeCloseTo(spec.ax + xs[1], 5);
   });
 });

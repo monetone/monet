@@ -335,7 +335,7 @@ export function CanvasView() {
               {!useRaster && <ArtboardBackgrounds artboards={doc.artboards} outline={outlineMode} />}
               {!state.trimView && gridLines}
               {!useRaster && <DocumentContent doc={doc} outline={outlineMode} hideId={state.editingTextId} selectedSlice={state.selectedSlice} />}
-              {/* Hybrid: the Rust canvas paints vector content; text + effects/masks stay in SVG. */}
+              {/* Hybrid: Rust paints the scene. SVG here is only what that rasterizer cannot decode. */}
               {useRaster && <FallbackOverlay doc={doc} hideId={state.editingTextId} />}
             </g>
             {!state.hideEdges && !state.trimView && <SelectionOutlines doc={doc} selection={selection} hideId={state.editingTextId} keyId={state.keyObjectId} />}

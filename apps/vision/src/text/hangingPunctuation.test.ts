@@ -8,7 +8,7 @@
 // ─────────────────────────────────────────────────────────────
 import { readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
-import { layoutHorizontal, type Cell } from "./raster";
+import { layoutHorizontal, layoutVertical, type Cell } from "./raster";
 import { defaultSpec, type TextSpec } from "./spec";
 
 /** A minimal Cell: letters advance 10px, spaces 5px, drawSize 16. */
@@ -59,6 +59,41 @@ describe("Roman Hanging Punctuation", () => {
 // The renderer half worked all along; what was missing was any way to reach it.
 // Panels.tsx pulls the WASM engine, so the wiring is asserted from source (the
 // house idiom — see channelPlates.test / spotChannels.test).
+describe("scaled type keeps the ink that a downward baseline shift hangs below the line", () => {
+  const scaled = (glyph: string): Cell => ({
+    ...cell(glyph, 10),
+    ascent: 12.8 * 3,
+    descent: 3.2 * 3,
+    baseShift: -40,
+    vScale: 3,
+  });
+
+  it("grows a point-type block to the ink bottom", () => {
+    const glyph = scaled("A");
+    // size 16 keeps the nominal line at 19.2 so a line-height block would miss the
+    // ink. defaultSpec's own 64px size would hide that by growing the em box.
+    const layout = layoutHorizontal([glyph], defaultSpec("A", { size: 16 }));
+    const placed = layout.placements[0];
+    const ink = placed.y + Math.max(0, -glyph.baseShift) + glyph.descent;
+    expect(ink).toBeCloseTo(88, 5);
+    expect(layout.blockH).toBeGreaterThanOrEqual(ink);
+    expect(layout.blockH).toBeGreaterThan(16 * 1.2);
+  });
+
+  it("keeps a fixed paragraph box", () => {
+    const spec = { ...defaultSpec("A", { size: 16 }), kind: "paragraph" as const, boxW: 100, boxH: 40 };
+    expect(layoutHorizontal([scaled("A")], spec).blockH).toBe(40);
+  });
+
+  it("grows a vertical column the same way", () => {
+    const glyph = scaled("A");
+    const layout = layoutVertical([glyph], defaultSpec("A", { size: 16, vertical: true }));
+    const placed = layout.placements[0];
+    const ink = placed.y + Math.max(0, -glyph.baseShift) + glyph.descent;
+    expect(layout.blockH).toBeGreaterThanOrEqual(ink);
+  });
+});
+
 describe("the Paragraph panel exposes it", () => {
   const panels = readFileSync(new URL("../ui/Panels.tsx", import.meta.url), "utf8");
 

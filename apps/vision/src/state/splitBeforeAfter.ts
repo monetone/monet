@@ -32,3 +32,21 @@ export function splitBeforeAfter(
   }
   return out;
 }
+
+/** Camera Raw's on-screen frame: split Before/After when asked, then run the
+ *  document-profile → display transform exactly once. Clipping and spot
+ *  overlays paint after this, so their warning colours stay uncompensated. */
+export function presentCameraRawFrame(
+  copy: ArrayLike<number>,
+  before: ArrayLike<number> | null | undefined,
+  after: ArrayLike<number> | null | undefined,
+  w: number,
+  h: number,
+  split: SplitMode,
+  compensate: (px: Uint8ClampedArray) => Uint8ClampedArray,
+): Uint8ClampedArray {
+  const frame = split !== "off" && before && after && before.length === after.length
+    ? splitBeforeAfter(before as Uint8Array, after as Uint8Array, w, h, split)
+    : (copy instanceof Uint8ClampedArray ? copy : new Uint8ClampedArray(copy));
+  return compensate(frame instanceof Uint8ClampedArray ? frame : new Uint8ClampedArray(frame));
+}

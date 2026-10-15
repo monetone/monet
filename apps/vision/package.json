@@ -14,6 +14,7 @@
     "build:libs": "pnpm --filter 'monet-vision^...' run build",
     "engine:build": "wasm-pack build ../../packages/engine --target web --out-dir ../../apps/vision/engine/pkg --dev",
     "engine:build:release": "wasm-pack build ../../packages/engine --target web --out-dir ../../apps/vision/engine/pkg --release",
+    "bench:wasm": "node scripts/wasm-bench.mjs",
     "dev": "vite",
     "build": "pnpm run typecheck && vite build",
     "build:release": "pnpm run build:libs && pnpm run mcp:check && pnpm run check:models && pnpm run check:ort && pnpm run engine:build:release && pnpm run build && pnpm run verify:bundle",

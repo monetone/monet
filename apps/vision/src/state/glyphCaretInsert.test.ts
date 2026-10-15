@@ -82,6 +82,13 @@ describe("Type ▸ Glyphs inserts at the caret", () => {
     expect(runs.filter((r) => r.features).map((r) => r.text)).toEqual(["R"]);
   });
 
+  it("puts the Glyphs family on the inserted character's run", () => {
+    installEditor([5, 5]);
+    text.insertGlyph("©", undefined, "Georgia, serif");
+    expect(fullText(activeSpec())).toBe("Hello© world");
+    expect(activeSpec().runs.find((run) => run.text.includes("©"))?.font).toBe("Georgia, serif");
+  });
+
   it("reads the caret straight off the overlay textarea", () => {
     installEditor([2, 7]);
     expect(typeEditorSelection()).toEqual([2, 7]);

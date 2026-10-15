@@ -26,7 +26,7 @@ import { LensProfileControls } from "./LensProfileControls";
 import type { CameraRawDialogRequest } from "../../state/store";
 import { channelCounts, downsampleBins } from "../../state/channelHistogram";
 import { visualizeSpots } from "@monet-ui/monet-photo";
-import { splitBeforeAfter, type SplitMode } from "../../state/splitBeforeAfter";
+import { presentCameraRawFrame, type SplitMode } from "../../state/splitBeforeAfter";
 import { detectDustSpots, healSourceFor, healStrokeSpots } from "@monet-ui/monet-photo";
 import { autoDevelopBasic } from "../../state/autoDevelopBasic";
 import { clippingOverlay } from "@monet-ui/monet-color";
@@ -639,11 +639,10 @@ export function CameraRawWorkspace() {
     const ctx = cv.getContext("2d");
     if (!ctx) return;
     const img = ctx.createImageData(w, h);
-    let shown: Uint8ClampedArray | Uint8Array = copy;
-    if (splitBA !== "off" && pristineRef.current && lastCopyRef.current
-      && pristineRef.current.length === lastCopyRef.current.length) {
-      shown = splitBeforeAfter(pristineRef.current, lastCopyRef.current, w, h, splitBA);
-    }
+    let shown: Uint8ClampedArray | Uint8Array = presentCameraRawFrame(
+      copy, pristineRef.current, lastCopyRef.current, w, h, splitBA,
+      (px) => engine.displayCompensate(px),
+    );
     if (showShadowClip || showHighlightClip) shown = clippingOverlay(shown, w, h, showShadowClip, showHighlightClip);
     if (showSpots) shown = visualizeSpots(shown, w, h, spotThreshold);
     img.data.set(shown);

@@ -86,3 +86,18 @@ export function sampleProofLut(
   ) + 3];
   return out;
 }
+
+/** Copy `src` and remap RGB through the document-profile → display LUT.
+ *  Alpha is preserved. `src` is not mutated. A second pass is not identity
+ *  unless the LUT itself is. */
+export function compensateDisplayPixels(src: ArrayLike<number>, lut: Uint8Array, n: number): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(src.length);
+  for (let i = 0; i + 3 < src.length; i += 4) {
+    const [r, g, b] = sampleDisplayLut(lut, n, src[i], src[i + 1], src[i + 2]);
+    out[i] = r;
+    out[i + 1] = g;
+    out[i + 2] = b;
+    out[i + 3] = src[i + 3];
+  }
+  return out;
+}
