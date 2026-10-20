@@ -181,6 +181,51 @@ test("a late fullscreen entry is exited after returning to Standard", async ({ p
   await expect(html(page)).toHaveAttribute("data-mv-screen-mode", "standard");
 });
 
+test("a delayed fullscreen exit from Standard does not reset a newly entered Full Screen mode", async ({ page }) => {
+  await scene(page, "screen-delayed-exit");
+  const reconciled = await page.evaluate(async () => {
+    const root = document.documentElement;
+    let fullscreenElement: Element | null = null;
+    let finishExit = () => {};
+    Object.defineProperty(document, "fullscreenElement", {
+      configurable: true,
+      get: () => fullscreenElement,
+    });
+    Object.defineProperty(root, "requestFullscreen", {
+      configurable: true,
+      value: () => {
+        fullscreenElement = root;
+        document.dispatchEvent(new Event("fullscreenchange"));
+        return Promise.resolve();
+      },
+    });
+    Object.defineProperty(document, "exitFullscreen", {
+      configurable: true,
+      value: () => new Promise<void>((resolve) => {
+        finishExit = () => {
+          fullscreenElement = null;
+          document.dispatchEvent(new Event("fullscreenchange"));
+          resolve();
+        };
+      }),
+    });
+    const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+    (window as any).__mv.store.setScreenMode("fullMenu");
+    await frame();
+    (window as any).__mv.store.setScreenMode("standard");
+    await frame();
+    (window as any).__mv.store.setScreenMode("full");
+    await frame();
+    finishExit();
+    await frame();
+    return fullscreenElement === root;
+  });
+
+  expect(reconciled).toBe(true);
+  await expect(html(page)).toHaveAttribute("data-mv-screen-mode", "full");
+});
+
 test("an idle Liquify tool does not consume Screen Mode Escape", async ({ page }) => {
   await scene(page, "screen-idle-liquify");
   await page.evaluate(() => (window as any).__mv.store.setTool("liquify"));

@@ -3613,11 +3613,20 @@ function Editor({ platform }: { platform: Platform }) {
 
   // View ▸ Screen Mode: mirror the mode onto the document root (app CSS hides the
   // chrome in Full Screen) + best-effort OS fullscreen for the two full modes.
+  const browserFullscreenRef = useRef(false);
+  const pendingStandardExitRef = useRef(false);
   useEffect(() => {
     document.documentElement.setAttribute("data-mv-screen-mode", screenMode);
     if (screenMode === "standard") {
-      if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {});
-    } else if (!document.fullscreenElement) {
+      if (document.fullscreenElement || browserFullscreenRef.current) {
+        pendingStandardExitRef.current = true;
+      }
+      if (document.fullscreenElement) {
+        void document.exitFullscreen?.().catch(() => {
+          pendingStandardExitRef.current = false;
+        });
+      }
+    } else if (!document.fullscreenElement && !pendingStandardExitRef.current) {
       void document.documentElement.requestFullscreen?.().catch(() => {});
     }
   }, [screenMode]);
@@ -3673,10 +3682,26 @@ function Editor({ platform }: { platform: Platform }) {
   // the app has already returned to Standard.
   useEffect(() => {
     const onFullscreenChange = () => {
-      if (document.fullscreenElement && store.state.screenMode === "standard") {
-        void document.exitFullscreen?.().catch(() => {});
-      } else if (!document.fullscreenElement && store.state.screenMode !== "standard") {
-        store.setScreenMode("standard");
+      if (document.fullscreenElement) {
+        browserFullscreenRef.current = true;
+        if (store.state.screenMode === "standard") {
+          pendingStandardExitRef.current = true;
+          void document.exitFullscreen?.().catch(() => {
+            pendingStandardExitRef.current = false;
+          });
+        } else {
+          pendingStandardExitRef.current = false;
+        }
+      } else {
+        browserFullscreenRef.current = false;
+        if (pendingStandardExitRef.current) {
+          pendingStandardExitRef.current = false;
+          if (store.state.screenMode !== "standard") {
+            void document.documentElement.requestFullscreen?.().catch(() => {});
+          }
+        } else if (store.state.screenMode !== "standard") {
+          store.setScreenMode("standard");
+        }
       }
     };
     document.addEventListener("fullscreenchange", onFullscreenChange);
