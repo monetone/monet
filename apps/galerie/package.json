@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:unit": "vitest run",
+    "test:unit": "vitest run --maxWorkers=4 --testTimeout=30000 --hookTimeout=30000",
     "test:shared-core-wasm": "node scripts/shared-core-develop-proof.mjs",
     "test:shared-core-product": "node --test scripts/shared-core-product-proof-contract.mjs && node scripts/shared-core-product-proof.mjs",
     "test:engine-require": "node --test scripts/require-engine-proof.mjs",

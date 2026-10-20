@@ -34,7 +34,7 @@ describe("panel cache keys", () => {
 // below it slid the ◆ marker (and the ◀/▶ base) onto a different comp.
 describe("Layer Comps keeps the applied index in step with the list (#104)", () => {
   it("remaps `applied` at the delete call site", () => {
-    expect(source).toContain("setApplied((a) => (i === a ? -1 : i < a ? a - 1 : a));");
+    expect(source).toContain("sessions.noteRemoved(store.state.activeDocId, i);");
     expect(source, "the row button must go through the remapping helper").toContain("e.stopPropagation(); removeComp(i);");
     expect(source).not.toContain("e.stopPropagation(); store.deleteLayerComp(i);");
   });

@@ -4033,12 +4033,14 @@ function TextEditOverlay({ id, fresh, toDoc, zoom, grabFocus = true }: {
     };
     el.focus({ preventScroll: true });
     place();
+    const expectedStart = el.selectionStart;
+    const expectedEnd = el.selectionEnd;
     // Re-grab focus next frame (a mid-click mount can lose it to the opening
     // click's trailing events), but only re-place the caret/selection if
     // nothing has been typed yet — otherwise we'd drop the first keystroke.
     const raf = requestAnimationFrame(() => {
       el.focus({ preventScroll: true });
-      if (el.value === initial) place();
+      if (el.value === initial && el.selectionStart === expectedStart && el.selectionEnd === expectedEnd) place();
     });
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps

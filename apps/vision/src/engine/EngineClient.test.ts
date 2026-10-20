@@ -698,7 +698,7 @@ describe("EngineClient", () => {
     for (let i = 0; i < lut.length; i += 3) lut.set([0, 255, 255], i);
     lut.set([255, 0, 0], 0);
     const displayLut = vi.fn(() => lut);
-    (client.engine as { display_lut: typeof displayLut }).display_lut = displayLut;
+    (client.engine as unknown as { display_lut: typeof displayLut }).display_lut = displayLut;
     client.setDisplayProfile(2, true, null, null);
     const compensate = vi.spyOn(client, "displayCompensate");
     putImageData.mockClear();

@@ -11,6 +11,7 @@ import init, { Engine, develop_profile_info, develop_profile_register, develop_p
 import { DEFAULT_GAMUT_WARNING, gamutWarningPixel, iccProofSimulationMap, isCmykGamutWarning, normalizeGamutWarningPaint, proofPixel, type GamutWarningPaint, type IccProofSimulation, type ProofMode, type ProofOptions } from "@monet-ui/monet-color";
 import { DISPLAY_LUT_SIZE, compensateDisplayPixels, lutSizeFor, proofLutSizeFor, sampleDisplayLut, sampleProofLut } from "@monet-ui/monet-color";
 import { channelBars, channelCounts, allChannelBars, type HistChannel } from "../state/channelHistogram";
+import type { HdrPreviewMethod, HdrPreviewSettings } from "../state/hdrPreview";
 import { IMPORTED_PHOTOSHOP_SAVE_BLOCKED, importedPhotoshopApi } from "../state/photoshopContainment";
 import { photoshopVersion } from "../state/photoshopFilePolicy";
 import type { Photoshop32BitImport, RawDemosaic } from "../state/webExportPrefs";
@@ -160,7 +161,7 @@ export class EngineClient {
    *  by default, and a no-op on non-32-bit documents (the engine ignores the
    *  settings there), so every existing caller is unaffected. */
   private hdrPreviewOn = false;
-  private hdrPreviewMethod = 0;
+  private hdrPreviewMethod: HdrPreviewMethod = 0;
   private hdrPreviewExposure = 0;
   private hdrPreviewGamma = 1;
   /** Called after any structural change so the UI store can resync. */
@@ -557,14 +558,14 @@ export class EngineClient {
    *  map and repaint. Display-only — see the `hdrPreviewOn` field comment. */
   setHdrPreview(on: boolean, method: number, exposure: number, gamma: number) {
     this.hdrPreviewOn = on;
-    this.hdrPreviewMethod = method;
+    this.hdrPreviewMethod = method === 1 ? 1 : 0;
     this.hdrPreviewExposure = exposure;
     this.hdrPreviewGamma = gamma;
     this.blit();
   }
 
   /** Current View ▸ 32-bit Preview Options state (off/identity until set). */
-  getHdrPreview(): { on: boolean; method: number; exposure: number; gamma: number } {
+  getHdrPreview(): HdrPreviewSettings {
     return {
       on: this.hdrPreviewOn,
       method: this.hdrPreviewMethod,

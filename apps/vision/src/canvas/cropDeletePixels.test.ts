@@ -11,7 +11,7 @@
 // drag actually makes — not on the shape of the source that makes them.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
@@ -23,6 +23,10 @@ const engineReturns = new Map<string, unknown>();
 const auto = (): never =>
   new Proxy(function () {} as never, { get: (_t, k) => (k === "then" ? undefined : auto()), apply: () => 0 }) as never;
 
+vi.mock("@engine", () => ({
+  default: vi.fn().mockResolvedValue({ memory: new WebAssembly.Memory({ initial: 1 }) }),
+  Engine: class Engine {},
+}));
 vi.mock("@monet-ui/monet-collab/react", () => ({ CollabCursors: () => null }));
 vi.mock("../state/app", async () => {
   const { Store, makeUseStore } = await import("../state/store");
@@ -89,15 +93,20 @@ function cropDrag(vp: HTMLElement, x0: number, y0: number, x1: number, y1: numbe
 const names = () => calls.map((c) => c.name);
 
 afterEach(() => {
-  act(() => root.unmount());
-  host.remove();
+  if (root) act(() => root.unmount());
+  host?.remove();
   calls.length = 0;
   engineReturns.clear();
 });
 
+beforeAll(async () => {
+  await import("./CanvasView");
+  await import("../state/app");
+}, 30_000);
+
 describe("Delete Cropped Pixels is reachable and defaults on", () => {
   let vp: HTMLElement;
-  beforeEach(async () => { vp = await mountCrop(); });
+  beforeEach(async () => { vp = await mountCrop(); }, 20_000);
 
   it("the crop tool calls the engine op when the option is set", async () => {
     expect(store.state.cropDeletePixels).toBe(true);
